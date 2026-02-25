@@ -14,10 +14,12 @@ import 'src/features/features_ui/calendar/calendar_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
   await Supabase.initialize(
-    url: 'https://owgnwagxxnsjnfuplfrq.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93Z253YWd4eG5zam5mdXBsZnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MTkwNzMsImV4cCI6MjA4NzE5NTA3M30.kYTePia5SLSr862b4dJAPvMNbqLQ2uC1q8hJKOQyxk8',
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(const ProviderScope(child: ShowUpApp()));
