@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub get:*)",
+      "Bash(/bin/bash -c 'export PATH=\"\"$HOME/.pub-cache/bin:$HOME/development/flutter/bin:/opt/homebrew/bin:$PATH\"\" && which flutter 2>/dev/null || ls /Users/k/ | grep -i flutter')",
+      "Bash(/usr/bin/find:*)",
+      "Bash(/Users/k/coding/flutter/bin/flutter pub get:*)",
+      "Bash(/Users/k/coding/flutter/bin/dart run build_runner:*)",
+      "Bash(head:*)"
+    ]
+  }
+}
