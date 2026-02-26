@@ -288,7 +288,6 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           .from('food_entries')
           .delete()
           .eq('id', entryId);
-      print('Deleted food entry $entryId from Supabase');
     } catch (_) {}
   }
 

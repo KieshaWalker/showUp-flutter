@@ -850,34 +850,6 @@ class _MealChip extends StatelessWidget {
 // quick show widget of Todays foods
 //------------------------------------------------------------------------------------------
 
-// once a food is quick added, display a widget of foods eaten today.
-// here is an example of how it could look like:
-// Row(
-//   children: [
-//     Container(
-//       width: 28,
-//       height: 28,
-//       decoration: BoxDecoration(
-//         color: AppColors.terracotta.withValues(alpha: 0.15),
-//         borderRadius: AppRadius.smAll,
-//       ),
-//       child: const Icon(Icons.set_meal_outlined,
-//           size: 14, color: AppColors.terracotta),
-//     ),
-//     const SizedBox(width: AppSpacing.sm - 2),
-//     Text('Chicken Breast', style: AppTextStyles.bodyMedium),
-//     const SizedBox(width: AppSpacing.sm - 2),
-//     Text('200 kcal', style: AppTextStyles.labelSmall.copyWith(color: AppColors.terracotta)),
-//   ],
-// ),
-
-// this widget will be placed at the bottom of the presentation screen,
-// above the bottom nav bar. it will show a list of foods eaten today,
-//with their name and calories. it will only show if there are foods eaten today.
-//it will update in real time as foods are added.
-// to add an abilty to remove a food from the list, we can add a long press gesture to each food item, which will show a confirmation dialog to remove the food. if confirmed,
-//it will remove the food from the nutrition notifier.
-// to implement this we will add to line
 class _ShowFoodsToday extends ConsumerWidget {
   const _ShowFoodsToday();
 
