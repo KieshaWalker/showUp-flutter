@@ -55,8 +55,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
+    return AppBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 48),
@@ -75,7 +76,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.terracotta.withOpacity(0.3),
+                      color: AppColors.terracotta.withValues(alpha: 0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -87,9 +88,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
               Text(
                 'Show Up',
-                style: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.silhouette,
-                ),
+                style: AppTextStyles.displayLarge,
               ),
               const SizedBox(height: 6),
               Text(
@@ -97,7 +96,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ? 'Good to see you again.'
                     : 'Start your journey today.',
                 style: AppTextStyles.bodyLarge
-                    .copyWith(color: const Color(0xFF9A8F85)),
+                    .copyWith(color: AppColors.textOnDarkSecondary),
               ),
 
               const SizedBox(height: 48),
@@ -146,10 +145,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.terracotta.withOpacity(0.08),
+                    color: AppColors.terracotta.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.terracotta.withOpacity(0.3)),
+                        color: AppColors.terracotta.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _error!,
@@ -185,13 +184,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       ? "Don't have an account?  Sign up"
                       : 'Already have an account?  Log in',
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.mahogany),
+                      .copyWith(color: AppColors.terracotta),
                 ),
               ),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

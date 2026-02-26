@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/app_theme.dart';
 import '../habits/habits_notifier.dart';
 
@@ -12,7 +13,7 @@ class SettingsScreen extends ConsumerWidget {
     final habitsAsync = ref.watch(habitsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Settings'),
         titleTextStyle: AppTextStyles.displayLarge,
@@ -20,10 +21,14 @@ class SettingsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(
               Icons.calendar_month_outlined,
-              color: AppColors.mahogany,
             ),
             onPressed:
                 () => _showCalendarSheet(context, ref, habitsAsync.value ?? []),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Log out',
+            onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
@@ -50,16 +55,16 @@ class SettingsScreen extends ConsumerWidget {
                   Icon(
                     Icons.check_circle_outline,
                     size: 64,
-                    color: AppColors.khaki.withOpacity(0.5),
+                    color: AppColors.khaki.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     'No habits yet',
                     style: AppTextStyles.titleMedium.copyWith(
                       color: AppColors.khaki,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm - 2),
                   Text(
                     'Tap "Add Habit" to get started',
                     style: AppTextStyles.bodyMedium,
@@ -70,22 +75,21 @@ class SettingsScreen extends ConsumerWidget {
           }
 
           return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: AppPaddings.all,
             children: [
-              // Weekly progress strip
               _WeekStrip(habits: habits),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg - 4),
 
               if (active.isNotEmpty) ...[
                 Text(
                   'Today',
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.silhouette,
+                    color: AppColors.textOnDark,
                   ),
                 ),
                 const SizedBox(height: 10),
                 ...active.map((h) => _HabitTile(item: h)),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg - 4),
               ],
 
               if (done.isNotEmpty) ...[
@@ -99,10 +103,39 @@ class SettingsScreen extends ConsumerWidget {
                 ...done.map((h) => _HabitTile(item: h)),
               ],
 
-              const SizedBox(height: 100), // FAB clearance
+              const SizedBox(height: 100),
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Log out?', style: AppTextStyles.titleMedium),
+        content: Text(
+          'You will be returned to the login screen.',
+          style: AppTextStyles.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.terracotta,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await Supabase.instance.client.auth.signOut();
+            },
+            child: const Text('Log out'),
+          ),
+        ],
       ),
     );
   }
@@ -115,17 +148,13 @@ class SettingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.warmWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder:
           (ctx) => Padding(
             padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.lg,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
             ),
             child: StatefulBuilder(
               builder:
@@ -134,7 +163,7 @@ class SettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text('New Habit', style: AppTextStyles.headlineMedium),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.lg - 4),
                       TextField(
                         controller: nameController,
                         style: AppTextStyles.bodyLarge,
@@ -143,7 +172,7 @@ class SettingsScreen extends ConsumerWidget {
                           labelText: 'Habit name',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           _FreqChip(
@@ -168,7 +197,7 @@ class SettingsScreen extends ConsumerWidget {
                         ],
                       ),
                       if (frequencyType == 'weekly') ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.md),
                         Text(
                           'Target: $targetDays× per week',
                           style: AppTextStyles.bodyMedium,
@@ -179,13 +208,13 @@ class SettingsScreen extends ConsumerWidget {
                           max: 6,
                           divisions: 5,
                           activeColor: AppColors.terracotta,
-                          inactiveColor: AppColors.divider,
+                          inactiveColor: AppColors.glassBorder,
                           label: '$targetDays',
                           onChanged:
                               (v) => setState(() => targetDays = v.round()),
                         ),
                       ],
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.lg - 4),
                       FilledButton(
                         onPressed: () {
                           final name = nameController.text.trim();
@@ -216,10 +245,6 @@ class SettingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.warmWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder:
           (ctx) => DraggableScrollableSheet(
             expand: false,
@@ -253,13 +278,9 @@ class _WeekStrip extends StatelessWidget {
     const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     final today = DateTime(now.year, now.month, now.day);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
+    return AppGlass.card(
+      padding: AppPaddings.section,
+      borderRadius: AppRadius.lgAll,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -275,7 +296,7 @@ class _WeekStrip extends StatelessWidget {
               return Column(
                 children: [
                   Text(labels[i], style: AppTextStyles.labelSmall),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm - 2),
                   Container(
                     width: 32,
                     height: 32,
@@ -285,16 +306,16 @@ class _WeekStrip extends StatelessWidget {
                           isToday
                               ? AppColors.terracotta
                               : isPast
-                              ? AppColors.divider
+                              ? AppColors.glassBorder
                               : Colors.transparent,
                       border:
-                          isToday ? null : Border.all(color: AppColors.divider),
+                          isToday ? null : Border.all(color: AppColors.glassBorder),
                     ),
                     child: Center(
                       child: Text(
                         '${days[i].day}',
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: isToday ? Colors.white : AppColors.silhouette,
+                          color: isToday ? Colors.white : AppColors.textOnDark,
                           fontWeight:
                               isToday ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -310,12 +331,6 @@ class _WeekStrip extends StatelessWidget {
     );
   }
 }
-
-
-// ---------------------------------------------------------------------------
-// OnPress Daily view
-
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Habit tile
@@ -339,28 +354,26 @@ class _HabitTile extends ConsumerWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              print('Toggling habit ${habit.name} (ID: ${habit.id})');
-              // Toggle completion status
               ref.read(habitsNotifierProvider.notifier).toggleCompletion(habit.id);
-              // line by line explanation for 336 - When the tile is tapped, we call the toggleCompletion method on the HabitsNotifier (Riverpod state notifier) with the habit's ID. This will flip the completion status for today (or this week) in the database, which will then trigger a UI update through the stream provider.
             },
             onLongPress:
                 () => _confirmDelete(context, ref, habit.id, habit.name),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lgAll,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: AppPaddings.section,
               decoration: BoxDecoration(
                 color:
                     isDone
-                        ? AppColors.sage.withOpacity(0.08)
-                        : AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
+                        ? AppColors.eucalyptus.withValues(alpha: 0.15)
+                        : AppColors.glassBg,
+                borderRadius: AppRadius.lgAll,
                 border: Border.all(
                   color:
                       isDone
-                          ? AppColors.eucalyptus.withOpacity(0.3)
-                          : AppColors.divider,
+                          ? AppColors.eucalyptus.withValues(alpha: 0.4)
+                          : AppColors.glassBorder,
                 ),
+                boxShadow: AppShadows.glass,
               ),
               child: Row(
                 children: [
@@ -386,8 +399,8 @@ class _HabitTile extends ConsumerWidget {
                             isDone
                                 ? [
                                   BoxShadow(
-                                    color: AppColors.eucalyptus.withOpacity(
-                                      0.3,
+                                    color: AppColors.eucalyptus.withValues(
+                                      alpha: 0.3,
                                     ),
                                     blurRadius: 8,
                                   ),
@@ -435,13 +448,13 @@ class _HabitTile extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 4,
+                        vertical: AppSpacing.xs,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.ochre.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.ochre.withValues(alpha: 0.15),
+                        borderRadius: AppRadius.xlAll,
                         border: Border.all(
-                          color: AppColors.ochre.withOpacity(0.3),
+                          color: AppColors.ochre.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -478,7 +491,6 @@ class _HabitTile extends ConsumerWidget {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            backgroundColor: AppColors.warmWhite,
             title: Text('Delete habit?', style: AppTextStyles.titleMedium),
             content: Text(
               'Delete "$name"? All history will be lost.',
@@ -528,15 +540,15 @@ class _FreqChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.terracotta : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdAll,
           border: Border.all(
-            color: selected ? AppColors.terracotta : AppColors.divider,
+            color: selected ? AppColors.terracotta : AppColors.glassBorder,
           ),
         ),
         child: Text(
           label,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: selected ? Colors.white : AppColors.silhouette,
+            color: selected ? Colors.white : AppColors.textOnDark,
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -611,31 +623,21 @@ class _CalendarSheetState extends State<_CalendarSheet> {
   @override
   Widget build(BuildContext context) {
     final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
     return Container(
-      color: AppColors.warmWhite,
+      color: AppColors.glassModal,
       child: Column(
         children: [
           // Handle
           Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            margin: const EdgeInsets.only(top: 12, bottom: AppSpacing.sm),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.divider,
+              color: AppColors.glassBorder,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -643,21 +645,21 @@ class _CalendarSheetState extends State<_CalendarSheet> {
           Expanded(
             child: ListView(
               controller: widget.scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg - 4),
               children: [
                 Text('Progress Calendar', style: AppTextStyles.headlineMedium),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
 
                 // Habit selector
                 if (widget.habits.isNotEmpty) ...[
                   Text('Habit', style: AppTextStyles.labelSmall),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   SizedBox(
                     height: 38,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: widget.habits.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
                       itemBuilder: (ctx, i) {
                         final h = widget.habits[i];
                         final sel = h.habit.id == _selectedHabitId;
@@ -669,20 +671,20 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
-                              vertical: 8,
+                              vertical: AppSpacing.sm,
                             ),
                             decoration: BoxDecoration(
                               color:
                                   sel
                                       ? AppColors.terracotta
-                                      : AppColors.surface,
-                              borderRadius: BorderRadius.circular(20),
+                                      : AppColors.glassBg,
+                              borderRadius: AppRadius.xlAll,
                             ),
                             child: Text(
                               h.habit.name,
                               style: AppTextStyles.labelSmall.copyWith(
                                 color:
-                                    sel ? Colors.white : AppColors.silhouette,
+                                    sel ? Colors.white : AppColors.textOnDark,
                                 fontWeight:
                                     sel ? FontWeight.bold : FontWeight.normal,
                               ),
@@ -692,7 +694,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg - 4),
                 ],
 
                 // Month nav
@@ -703,7 +705,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                       onPressed: _prevMonth,
                       icon: const Icon(
                         Icons.chevron_left,
-                        color: AppColors.mahogany,
+                        color: Colors.white,
                       ),
                     ),
                     Text(
@@ -714,12 +716,12 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                       onPressed: _nextMonth,
                       icon: const Icon(
                         Icons.chevron_right,
-                        color: AppColors.mahogany,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
 
                 // Day labels
                 Row(
@@ -736,20 +738,20 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                           )
                           .toList(),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
 
                 // Calendar grid
                 _buildCalendarGrid(),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.lg),
 
                 // Legend
                 Row(
                   children: [
                     _LegendDot(color: AppColors.eucalyptus, label: 'Completed'),
-                    const SizedBox(width: 16),
-                    _LegendDot(color: AppColors.divider, label: 'Missed'),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.md),
+                    _LegendDot(color: AppColors.glassBorder, label: 'Missed'),
+                    const SizedBox(width: AppSpacing.md),
                     _LegendDot(color: AppColors.terracotta, label: 'Today'),
                   ],
                 ),
@@ -768,8 +770,6 @@ class _CalendarSheetState extends State<_CalendarSheet> {
     final firstDay = DateTime(_displayMonth.year, _displayMonth.month, 1);
     final daysInMonth =
         DateTime(_displayMonth.year, _displayMonth.month + 1, 0).day;
-
-    // Monday-based offset (Mon=1 → offset 0, Sun=7 → offset 6)
     final offset = (firstDay.weekday - 1) % 7;
     final totalCells = offset + daysInMonth;
     final rows = (totalCells / 7).ceil();
@@ -805,10 +805,10 @@ class _CalendarSheetState extends State<_CalendarSheet> {
               textColor = Colors.white;
             } else if (isFuture) {
               bgColor = Colors.transparent;
-              textColor = AppColors.divider;
+              textColor = AppColors.glassBorder;
             } else {
-              bgColor = AppColors.surface;
-              textColor = AppColors.silhouette;
+              bgColor = AppColors.glassBg;
+              textColor = AppColors.textOnDark;
             }
 
             return Padding(

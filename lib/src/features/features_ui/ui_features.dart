@@ -74,7 +74,7 @@ class BackgroundColor extends AnimatedWidget {
           radius: animation.value / 150, // Example: scales with the logo
           colors: [
             const Color.fromARGB(255, 173, 56, 56),
-            const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5),
+            const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 0.5),
           ],
         ),
       ),

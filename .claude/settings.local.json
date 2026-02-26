@@ -6,7 +6,9 @@
       "Bash(/usr/bin/find:*)",
       "Bash(/Users/k/coding/flutter/bin/flutter pub get:*)",
       "Bash(/Users/k/coding/flutter/bin/dart run build_runner:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(dart run:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

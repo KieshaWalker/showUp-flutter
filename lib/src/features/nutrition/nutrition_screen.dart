@@ -29,23 +29,16 @@ class NutritionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    /// LISTEN TO NOTIFIER STATE: Watches the nutrition_notifier provider.
-    /// This triggers a rebuild whenever the notifier's state (TodayNutrition) changes.
-    /// TodayNutrition contains all data fetched from the database:
-    /// - List of meals with food entries
-    /// - Calorie and macro totals
-    /// - Water intake
-    /// - Daily nutrition goals
     final nutritionAsync = ref.watch(nutritionNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Your Nutrition'),
         titleTextStyle: AppTextStyles.displayLarge,
         actions: [
           IconButton(
-            icon: const Icon(Icons.tune_outlined, color: AppColors.mahogany),
+            icon: const Icon(Icons.tune_outlined),
             tooltip: 'Edit goals',
             onPressed:
                 () => _showGoalsSheet(context, ref, nutritionAsync.value),
@@ -73,24 +66,20 @@ class NutritionScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.warmWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder:
           (ctx) => Padding(
             padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.lg,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text('New Meal', style: AppTextStyles.headlineMedium),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg - 4),
                 TextField(
                   controller: nameController,
                   style: AppTextStyles.bodyLarge,
@@ -99,19 +88,16 @@ class NutritionScreen extends ConsumerWidget {
                     labelText: 'e.g. Breakfast, Lunch, Snack',
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg - 4),
                 FilledButton(
                   onPressed: () async {
                     final name = nameController.text.trim();
                     if (name.isEmpty) return;
                     Navigator.pop(ctx);
-                    /// SEND TO DATABASE: Calls the notifier's addMeal() method to:
-                    /// 1. Create a new meal in the database
-                    /// 2. Trigger a rebuild with updated state
                     await ref
                         .read(nutritionNotifierProvider.notifier)
                         .addMeal(name);
-                        print('Added meal: $name'); // Debug print to confirm meal creation
+                        print('Added meal: $name');
                   },
                   child: const Text('Create Meal'),
                 ),
@@ -144,17 +130,13 @@ class NutritionScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.warmWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder:
           (ctx) => Padding(
             padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.lg,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -162,23 +144,20 @@ class NutritionScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('Daily Goals', style: AppTextStyles.headlineMedium),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm - 2),
                   Text(
                     'Set your daily nutrition targets',
                     style: AppTextStyles.bodyMedium,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg - 4),
                   _FormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
                   _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
                   _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
                   _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
                   _FormField(ctrl: waterCtrl, label: 'Water', unit: 'ml'),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg - 4),
                   FilledButton(
                     onPressed: () {
-                      /// SEND TO DATABASE: Calls updateGoals() to:
-                      /// 1. Save new daily targets to the database
-                      /// 2. Automatically trigger a state update and rebuild
                       ref
                           .read(nutritionNotifierProvider.notifier)
                           .updateGoals(
@@ -210,18 +189,15 @@ class _NutritionBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    /// ACCESS DATABASE DATA: The nutrition parameter contains all data from the database
-    /// fetched and computed by the nutrition_notifier. This is passed down to child
-    /// widgets to render the UI based on current state.
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: AppPaddings.all,
       children: [
         _CalorieSummary(nutrition: nutrition),
         const SizedBox(height: 12),
         _MacroRow(nutrition: nutrition),
         const SizedBox(height: 12),
         _WaterCard(nutrition: nutrition, ref: ref),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.lg),
         Text('Today\'s Meals', style: AppTextStyles.titleMedium),
         const SizedBox(height: 10),
         if (nutrition.meals.isEmpty)
@@ -234,7 +210,7 @@ class _NutritionBody extends ConsumerWidget {
                   Icon(
                     Icons.restaurant_outlined,
                     size: 48,
-                    color: AppColors.khaki.withOpacity(0.5),
+                    color: AppColors.khaki.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -243,7 +219,7 @@ class _NutritionBody extends ConsumerWidget {
                       color: AppColors.khaki,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Tap "Add Meal" to log your first meal',
                     style: AppTextStyles.bodyMedium,
@@ -269,9 +245,6 @@ class _CalorieSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /// DISPLAY DATABASE DATA: Accesses nutrition data from the database via the notifier:
-    /// nutrition.goals - daily calorie targets stored in database
-    /// nutrition.totalCalories - sum of all food entries for today from database
     final goal = nutrition.goals?.calories ?? 2000;
     final current = nutrition.totalCalories;
     final remaining = (goal - current).clamp(0, double.infinity);
@@ -280,13 +253,9 @@ class _CalorieSummary extends StatelessWidget {
     final isOver = current > goal;
     final barColor = isOver ? AppColors.terracotta : AppColors.eucalyptus;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
-      ),
+    return AppGlass.card(
+      padding: AppPaddings.card,
+      borderRadius: AppRadius.xlAll,
       child: Row(
         children: [
           // Ring
@@ -299,7 +268,7 @@ class _CalorieSummary extends StatelessWidget {
                 CircularProgressIndicator(
                   value: progress,
                   strokeWidth: 8,
-                  backgroundColor: AppColors.divider,
+                  backgroundColor: AppColors.glassBorder,
                   color: barColor,
                   strokeCap: StrokeCap.round,
                 ),
@@ -315,14 +284,14 @@ class _CalorieSummary extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: AppSpacing.lg - 4),
           // Stats
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Calories', style: AppTextStyles.labelSmall),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${current.toInt()}',
                   style: AppTextStyles.displayLarge.copyWith(fontSize: 28),
@@ -331,7 +300,7 @@ class _CalorieSummary extends StatelessWidget {
                   'of ${goal.toInt()} kcal',
                   style: AppTextStyles.bodyMedium,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.sm - 2),
                 Text(
                   isOver
                       ? '${(current - goal).toInt()} kcal over'
@@ -360,11 +329,6 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /// DISPLAY DATABASE DATA: nutrition contains computed macro totals from all meals
-    /// - nutrition.totalProtein: sum of protein from all food entries
-    /// - nutrition.totalCarbs: sum of carbs from all food entries
-    /// - nutrition.totalFat: sum of fat from all food entries
-    /// - nutrition.goals: user's daily targets stored in database
     final goals = nutrition.goals;
     return Row(
       children: [
@@ -377,7 +341,7 @@ class _MacroRow extends StatelessWidget {
             color: AppColors.proteinColor,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: _MacroPill(
             label: 'Carbs',
@@ -387,7 +351,7 @@ class _MacroRow extends StatelessWidget {
             color: AppColors.carbColor,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: _MacroPill(
             label: 'Fat',
@@ -422,35 +386,31 @@ class _MacroPill extends StatelessWidget {
     final progress = (current / goal).clamp(0.0, 1.0);
     final isOver = current > goal;
 
-    return Container(
+    return AppGlass.card(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
-      ),
+      borderRadius: AppRadius.lgAll,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppTextStyles.labelSmall),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm - 2),
           Text(
             '${current.toInt()}$unit',
             style: AppTextStyles.titleMedium.copyWith(
-              color: isOver ? AppColors.terracotta : AppColors.silhouette,
+              color: isOver ? AppColors.terracotta : AppColors.textOnDark,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm - 2),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 5,
               color: isOver ? AppColors.terracotta : color,
-              backgroundColor: color.withOpacity(0.15),
+              backgroundColor: color.withValues(alpha: 0.15),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text('/ ${goal.toInt()}$unit', style: AppTextStyles.labelSmall),
         ],
       ),
@@ -469,21 +429,14 @@ class _WaterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /// DISPLAY DATABASE DATA: Accesses water intake from database
-    /// nutrition.goals?.waterMl - user's daily water target from database
-    /// nutrition.totalWaterMl - sum of all water log entries for today
     final goal = nutrition.goals?.waterMl ?? 2500;
     final current = nutrition.totalWaterMl;
     final progress = (current / goal).clamp(0.0, 1.0);
-    final glasses = (current / 250).floor(); // 250ml = 1 glass
+    final glasses = (current / 250).floor();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
+    return AppGlass.card(
+      padding: AppPaddings.all,
+      borderRadius: AppRadius.lgAll,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -494,7 +447,7 @@ class _WaterCard extends StatelessWidget {
                 color: AppColors.waterColor,
                 size: 18,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm - 2),
               Text('Water', style: AppTextStyles.titleMedium),
               const Spacer(),
               Text(
@@ -510,17 +463,14 @@ class _WaterCard extends StatelessWidget {
               value: progress,
               minHeight: 10,
               color: AppColors.waterColor,
-              backgroundColor: AppColors.waterColor.withOpacity(0.15),
+              backgroundColor: AppColors.waterColor.withValues(alpha: 0.15),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text('$glasses glasses', style: AppTextStyles.bodyMedium),
           const SizedBox(height: 12),
           Row(
             children: [
-              /// SEND TO DATABASE: Each button calls logWater() on the notifier to:
-              /// 1. Add a water log entry to the database for today
-              /// 2. Update the state so UI rebuilds with new total
               _WaterBtn(
                 label: '+250ml',
                 onTap:
@@ -528,7 +478,7 @@ class _WaterCard extends StatelessWidget {
                         .read(nutritionNotifierProvider.notifier)
                         .logWater(250),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _WaterBtn(
                 label: '+500ml',
                 onTap:
@@ -536,9 +486,7 @@ class _WaterCard extends StatelessWidget {
                         .read(nutritionNotifierProvider.notifier)
                         .logWater(500),
               ),
-              const SizedBox(width: 8),
-              /// SEND TO DATABASE: Same pattern - notify the notifier of water intake
-              /// The notifier handles persisting to database and updating state
+              const SizedBox(width: AppSpacing.sm),
               _WaterBtn(
                 label: '+1L',
                 onTap:
@@ -566,9 +514,9 @@ class _WaterBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.waterColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.waterColor.withOpacity(0.3)),
+          color: AppColors.waterColor.withValues(alpha: 0.1),
+          borderRadius: AppRadius.circular(10),
+          border: Border.all(color: AppColors.waterColor.withValues(alpha: 0.3)),
         ),
         child: Text(
           label,
@@ -592,25 +540,16 @@ class _MealCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    /// DISPLAY DATABASE DATA: meal is a MealWithEntries from the database containing:
-    /// meal.meal.name - meal name (e.g., "Breakfast")
-    /// meal.entries - list of FoodEntry objects for this meal
-    /// meal.calories, meal.protein, meal.carbs, meal.fat - computed totals from entries
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.divider),
-        ),
+      child: AppGlass.card(
+        borderRadius: AppRadius.lgAll,
         child: Theme(
-          // Remove ExpansionTile's default divider color
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
             ),
             childrenPadding: EdgeInsets.zero,
             title: Text(meal.meal.name, style: AppTextStyles.titleMedium),
@@ -621,14 +560,10 @@ class _MealCard extends ConsumerWidget {
             children: [
               if (meal.entries.isNotEmpty)
                 const Divider(height: 1, indent: 16, endIndent: 16),
-              /// DISPLAY DATABASE DATA: Renders each food entry stored in the database
-              /// meal.entries contains FoodEntry objects with:
-              /// e.name - food name from database
-              /// e.calories, e.protein, e.carbs, e.fat - nutrition values from database
               ...meal.entries.map(
                 (e) => Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: AppSpacing.md,
                     vertical: 10,
                   ),
                   child: Row(
@@ -649,18 +584,16 @@ class _MealCard extends ConsumerWidget {
                         '${e.calories.toInt()} kcal',
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.silhouette,
+                          color: AppColors.textOnDark,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              /// INTERACT WITH DATABASE: The "Add food" button opens a modal
-              /// where the user can add a new food entry to this meal
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: AppSpacing.md,
                   vertical: 12,
                 ),
                 child: SizedBox(
@@ -690,17 +623,13 @@ class _MealCard extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.warmWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder:
           (ctx) => Padding(
             padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.lg,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -708,7 +637,7 @@ class _MealCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('Add Food', style: AppTextStyles.headlineMedium),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg - 4),
                   _FormField(ctrl: nameCtrl, label: 'Food name'),
                   _FormField(
                     ctrl: calCtrl,
@@ -734,15 +663,11 @@ class _MealCard extends ConsumerWidget {
                     unit: 'g',
                     numeric: true,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   FilledButton(
                     onPressed: () {
                       final name = nameCtrl.text.trim();
                       if (name.isEmpty) return;
-                      /// SEND TO DATABASE: Calls addFoodEntry() on the notifier to:
-                      /// 1. Create a new food entry in the database linked to this meal
-                      /// 2. Update the state with new totals
-                      /// 3. Trigger a rebuild to show the new food entry in the meal
                       ref
                           .read(nutritionNotifierProvider.notifier)
                           .addFoodEntry(

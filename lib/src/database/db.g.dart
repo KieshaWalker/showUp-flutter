@@ -59,6 +59,17 @@ class $HabitsTable extends Habits with TableInfo<$HabitsTable, Habit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _skipsAllowedPerWeekMeta =
+      const VerificationMeta('skipsAllowedPerWeek');
+  @override
+  late final GeneratedColumn<int> skipsAllowedPerWeek = GeneratedColumn<int>(
+    'skips_allowed_per_week',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -91,6 +102,7 @@ class $HabitsTable extends Habits with TableInfo<$HabitsTable, Habit> {
     name,
     frequencyType,
     targetDaysPerWeek,
+    skipsAllowedPerWeek,
     createdAt,
     synced,
   ];
@@ -145,6 +157,15 @@ class $HabitsTable extends Habits with TableInfo<$HabitsTable, Habit> {
         ),
       );
     }
+    if (data.containsKey('skips_allowed_per_week')) {
+      context.handle(
+        _skipsAllowedPerWeekMeta,
+        skipsAllowedPerWeek.isAcceptableOrUnknown(
+          data['skips_allowed_per_week']!,
+          _skipsAllowedPerWeekMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -191,6 +212,11 @@ class $HabitsTable extends Habits with TableInfo<$HabitsTable, Habit> {
             DriftSqlType.int,
             data['${effectivePrefix}target_days_per_week'],
           )!,
+      skipsAllowedPerWeek:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}skips_allowed_per_week'],
+          )!,
       createdAt:
           attachedDatabase.typeMapping.read(
             DriftSqlType.dateTime,
@@ -216,6 +242,7 @@ class Habit extends DataClass implements Insertable<Habit> {
   final String name;
   final String frequencyType;
   final int targetDaysPerWeek;
+  final int skipsAllowedPerWeek;
   final DateTime createdAt;
   final bool synced;
   const Habit({
@@ -224,6 +251,7 @@ class Habit extends DataClass implements Insertable<Habit> {
     required this.name,
     required this.frequencyType,
     required this.targetDaysPerWeek,
+    required this.skipsAllowedPerWeek,
     required this.createdAt,
     required this.synced,
   });
@@ -235,6 +263,7 @@ class Habit extends DataClass implements Insertable<Habit> {
     map['name'] = Variable<String>(name);
     map['frequency_type'] = Variable<String>(frequencyType);
     map['target_days_per_week'] = Variable<int>(targetDaysPerWeek);
+    map['skips_allowed_per_week'] = Variable<int>(skipsAllowedPerWeek);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['synced'] = Variable<bool>(synced);
     return map;
@@ -247,6 +276,7 @@ class Habit extends DataClass implements Insertable<Habit> {
       name: Value(name),
       frequencyType: Value(frequencyType),
       targetDaysPerWeek: Value(targetDaysPerWeek),
+      skipsAllowedPerWeek: Value(skipsAllowedPerWeek),
       createdAt: Value(createdAt),
       synced: Value(synced),
     );
@@ -263,6 +293,9 @@ class Habit extends DataClass implements Insertable<Habit> {
       name: serializer.fromJson<String>(json['name']),
       frequencyType: serializer.fromJson<String>(json['frequencyType']),
       targetDaysPerWeek: serializer.fromJson<int>(json['targetDaysPerWeek']),
+      skipsAllowedPerWeek: serializer.fromJson<int>(
+        json['skipsAllowedPerWeek'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
@@ -276,6 +309,7 @@ class Habit extends DataClass implements Insertable<Habit> {
       'name': serializer.toJson<String>(name),
       'frequencyType': serializer.toJson<String>(frequencyType),
       'targetDaysPerWeek': serializer.toJson<int>(targetDaysPerWeek),
+      'skipsAllowedPerWeek': serializer.toJson<int>(skipsAllowedPerWeek),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'synced': serializer.toJson<bool>(synced),
     };
@@ -287,6 +321,7 @@ class Habit extends DataClass implements Insertable<Habit> {
     String? name,
     String? frequencyType,
     int? targetDaysPerWeek,
+    int? skipsAllowedPerWeek,
     DateTime? createdAt,
     bool? synced,
   }) => Habit(
@@ -295,6 +330,7 @@ class Habit extends DataClass implements Insertable<Habit> {
     name: name ?? this.name,
     frequencyType: frequencyType ?? this.frequencyType,
     targetDaysPerWeek: targetDaysPerWeek ?? this.targetDaysPerWeek,
+    skipsAllowedPerWeek: skipsAllowedPerWeek ?? this.skipsAllowedPerWeek,
     createdAt: createdAt ?? this.createdAt,
     synced: synced ?? this.synced,
   );
@@ -311,6 +347,10 @@ class Habit extends DataClass implements Insertable<Habit> {
           data.targetDaysPerWeek.present
               ? data.targetDaysPerWeek.value
               : this.targetDaysPerWeek,
+      skipsAllowedPerWeek:
+          data.skipsAllowedPerWeek.present
+              ? data.skipsAllowedPerWeek.value
+              : this.skipsAllowedPerWeek,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
@@ -324,6 +364,7 @@ class Habit extends DataClass implements Insertable<Habit> {
           ..write('name: $name, ')
           ..write('frequencyType: $frequencyType, ')
           ..write('targetDaysPerWeek: $targetDaysPerWeek, ')
+          ..write('skipsAllowedPerWeek: $skipsAllowedPerWeek, ')
           ..write('createdAt: $createdAt, ')
           ..write('synced: $synced')
           ..write(')'))
@@ -337,6 +378,7 @@ class Habit extends DataClass implements Insertable<Habit> {
     name,
     frequencyType,
     targetDaysPerWeek,
+    skipsAllowedPerWeek,
     createdAt,
     synced,
   );
@@ -349,6 +391,7 @@ class Habit extends DataClass implements Insertable<Habit> {
           other.name == this.name &&
           other.frequencyType == this.frequencyType &&
           other.targetDaysPerWeek == this.targetDaysPerWeek &&
+          other.skipsAllowedPerWeek == this.skipsAllowedPerWeek &&
           other.createdAt == this.createdAt &&
           other.synced == this.synced);
 }
@@ -359,6 +402,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
   final Value<String> name;
   final Value<String> frequencyType;
   final Value<int> targetDaysPerWeek;
+  final Value<int> skipsAllowedPerWeek;
   final Value<DateTime> createdAt;
   final Value<bool> synced;
   final Value<int> rowid;
@@ -368,6 +412,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
     this.name = const Value.absent(),
     this.frequencyType = const Value.absent(),
     this.targetDaysPerWeek = const Value.absent(),
+    this.skipsAllowedPerWeek = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -378,6 +423,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
     required String name,
     this.frequencyType = const Value.absent(),
     this.targetDaysPerWeek = const Value.absent(),
+    this.skipsAllowedPerWeek = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -390,6 +436,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
     Expression<String>? name,
     Expression<String>? frequencyType,
     Expression<int>? targetDaysPerWeek,
+    Expression<int>? skipsAllowedPerWeek,
     Expression<DateTime>? createdAt,
     Expression<bool>? synced,
     Expression<int>? rowid,
@@ -400,6 +447,8 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
       if (name != null) 'name': name,
       if (frequencyType != null) 'frequency_type': frequencyType,
       if (targetDaysPerWeek != null) 'target_days_per_week': targetDaysPerWeek,
+      if (skipsAllowedPerWeek != null)
+        'skips_allowed_per_week': skipsAllowedPerWeek,
       if (createdAt != null) 'created_at': createdAt,
       if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
@@ -412,6 +461,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
     Value<String>? name,
     Value<String>? frequencyType,
     Value<int>? targetDaysPerWeek,
+    Value<int>? skipsAllowedPerWeek,
     Value<DateTime>? createdAt,
     Value<bool>? synced,
     Value<int>? rowid,
@@ -422,6 +472,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
       name: name ?? this.name,
       frequencyType: frequencyType ?? this.frequencyType,
       targetDaysPerWeek: targetDaysPerWeek ?? this.targetDaysPerWeek,
+      skipsAllowedPerWeek: skipsAllowedPerWeek ?? this.skipsAllowedPerWeek,
       createdAt: createdAt ?? this.createdAt,
       synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
@@ -446,6 +497,9 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
     if (targetDaysPerWeek.present) {
       map['target_days_per_week'] = Variable<int>(targetDaysPerWeek.value);
     }
+    if (skipsAllowedPerWeek.present) {
+      map['skips_allowed_per_week'] = Variable<int>(skipsAllowedPerWeek.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -466,6 +520,7 @@ class HabitsCompanion extends UpdateCompanion<Habit> {
           ..write('name: $name, ')
           ..write('frequencyType: $frequencyType, ')
           ..write('targetDaysPerWeek: $targetDaysPerWeek, ')
+          ..write('skipsAllowedPerWeek: $skipsAllowedPerWeek, ')
           ..write('createdAt: $createdAt, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
@@ -838,6 +893,370 @@ class HabitCompletionsCompanion extends UpdateCompanion<HabitCompletion> {
           ..write('habitId: $habitId, ')
           ..write('userId: $userId, ')
           ..write('completedDate: $completedDate, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $HabitSkipsTable extends HabitSkips
+    with TableInfo<$HabitSkipsTable, HabitSkip> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HabitSkipsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _habitIdMeta = const VerificationMeta(
+    'habitId',
+  );
+  @override
+  late final GeneratedColumn<String> habitId = GeneratedColumn<String>(
+    'habit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weekStartMeta = const VerificationMeta(
+    'weekStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> weekStart = GeneratedColumn<DateTime>(
+    'week_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    habitId,
+    userId,
+    weekStart,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'habit_skips';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HabitSkip> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('habit_id')) {
+      context.handle(
+        _habitIdMeta,
+        habitId.isAcceptableOrUnknown(data['habit_id']!, _habitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_habitIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(
+        _weekStartMeta,
+        weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartMeta);
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HabitSkip map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HabitSkip(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      habitId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}habit_id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      weekStart:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}week_start'],
+          )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $HabitSkipsTable createAlias(String alias) {
+    return $HabitSkipsTable(attachedDatabase, alias);
+  }
+}
+
+class HabitSkip extends DataClass implements Insertable<HabitSkip> {
+  final String id;
+  final String habitId;
+  final String userId;
+  final DateTime weekStart;
+  final bool synced;
+  const HabitSkip({
+    required this.id,
+    required this.habitId,
+    required this.userId,
+    required this.weekStart,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['habit_id'] = Variable<String>(habitId);
+    map['user_id'] = Variable<String>(userId);
+    map['week_start'] = Variable<DateTime>(weekStart);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  HabitSkipsCompanion toCompanion(bool nullToAbsent) {
+    return HabitSkipsCompanion(
+      id: Value(id),
+      habitId: Value(habitId),
+      userId: Value(userId),
+      weekStart: Value(weekStart),
+      synced: Value(synced),
+    );
+  }
+
+  factory HabitSkip.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HabitSkip(
+      id: serializer.fromJson<String>(json['id']),
+      habitId: serializer.fromJson<String>(json['habitId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      weekStart: serializer.fromJson<DateTime>(json['weekStart']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'habitId': serializer.toJson<String>(habitId),
+      'userId': serializer.toJson<String>(userId),
+      'weekStart': serializer.toJson<DateTime>(weekStart),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  HabitSkip copyWith({
+    String? id,
+    String? habitId,
+    String? userId,
+    DateTime? weekStart,
+    bool? synced,
+  }) => HabitSkip(
+    id: id ?? this.id,
+    habitId: habitId ?? this.habitId,
+    userId: userId ?? this.userId,
+    weekStart: weekStart ?? this.weekStart,
+    synced: synced ?? this.synced,
+  );
+  HabitSkip copyWithCompanion(HabitSkipsCompanion data) {
+    return HabitSkip(
+      id: data.id.present ? data.id.value : this.id,
+      habitId: data.habitId.present ? data.habitId.value : this.habitId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitSkip(')
+          ..write('id: $id, ')
+          ..write('habitId: $habitId, ')
+          ..write('userId: $userId, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, habitId, userId, weekStart, synced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HabitSkip &&
+          other.id == this.id &&
+          other.habitId == this.habitId &&
+          other.userId == this.userId &&
+          other.weekStart == this.weekStart &&
+          other.synced == this.synced);
+}
+
+class HabitSkipsCompanion extends UpdateCompanion<HabitSkip> {
+  final Value<String> id;
+  final Value<String> habitId;
+  final Value<String> userId;
+  final Value<DateTime> weekStart;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const HabitSkipsCompanion({
+    this.id = const Value.absent(),
+    this.habitId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HabitSkipsCompanion.insert({
+    required String id,
+    required String habitId,
+    required String userId,
+    required DateTime weekStart,
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       habitId = Value(habitId),
+       userId = Value(userId),
+       weekStart = Value(weekStart);
+  static Insertable<HabitSkip> custom({
+    Expression<String>? id,
+    Expression<String>? habitId,
+    Expression<String>? userId,
+    Expression<DateTime>? weekStart,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (habitId != null) 'habit_id': habitId,
+      if (userId != null) 'user_id': userId,
+      if (weekStart != null) 'week_start': weekStart,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HabitSkipsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? habitId,
+    Value<String>? userId,
+    Value<DateTime>? weekStart,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return HabitSkipsCompanion(
+      id: id ?? this.id,
+      habitId: habitId ?? this.habitId,
+      userId: userId ?? this.userId,
+      weekStart: weekStart ?? this.weekStart,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (habitId.present) {
+      map['habit_id'] = Variable<String>(habitId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<DateTime>(weekStart.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitSkipsCompanion(')
+          ..write('id: $id, ')
+          ..write('habitId: $habitId, ')
+          ..write('userId: $userId, ')
+          ..write('weekStart: $weekStart, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2563,6 +2982,576 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
   }
 }
 
+class $PantryFoodsTable extends PantryFoods
+    with TableInfo<$PantryFoodsTable, PantryFood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PantryFoodsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _caloriesMeta = const VerificationMeta(
+    'calories',
+  );
+  @override
+  late final GeneratedColumn<double> calories = GeneratedColumn<double>(
+    'calories',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _proteinMeta = const VerificationMeta(
+    'protein',
+  );
+  @override
+  late final GeneratedColumn<double> protein = GeneratedColumn<double>(
+    'protein',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _carbsMeta = const VerificationMeta('carbs');
+  @override
+  late final GeneratedColumn<double> carbs = GeneratedColumn<double>(
+    'carbs',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _fatMeta = const VerificationMeta('fat');
+  @override
+  late final GeneratedColumn<double> fat = GeneratedColumn<double>(
+    'fat',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _servingLabelMeta = const VerificationMeta(
+    'servingLabel',
+  );
+  @override
+  late final GeneratedColumn<String> servingLabel = GeneratedColumn<String>(
+    'serving_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('1 serving'),
+  );
+  static const VerificationMeta _isPresetMeta = const VerificationMeta(
+    'isPreset',
+  );
+  @override
+  late final GeneratedColumn<bool> isPreset = GeneratedColumn<bool>(
+    'is_preset',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_preset" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    calories,
+    protein,
+    carbs,
+    fat,
+    servingLabel,
+    isPreset,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pantry_foods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PantryFood> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('calories')) {
+      context.handle(
+        _caloriesMeta,
+        calories.isAcceptableOrUnknown(data['calories']!, _caloriesMeta),
+      );
+    }
+    if (data.containsKey('protein')) {
+      context.handle(
+        _proteinMeta,
+        protein.isAcceptableOrUnknown(data['protein']!, _proteinMeta),
+      );
+    }
+    if (data.containsKey('carbs')) {
+      context.handle(
+        _carbsMeta,
+        carbs.isAcceptableOrUnknown(data['carbs']!, _carbsMeta),
+      );
+    }
+    if (data.containsKey('fat')) {
+      context.handle(
+        _fatMeta,
+        fat.isAcceptableOrUnknown(data['fat']!, _fatMeta),
+      );
+    }
+    if (data.containsKey('serving_label')) {
+      context.handle(
+        _servingLabelMeta,
+        servingLabel.isAcceptableOrUnknown(
+          data['serving_label']!,
+          _servingLabelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_preset')) {
+      context.handle(
+        _isPresetMeta,
+        isPreset.isAcceptableOrUnknown(data['is_preset']!, _isPresetMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PantryFood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PantryFood(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      calories:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}calories'],
+          )!,
+      protein:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}protein'],
+          )!,
+      carbs:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}carbs'],
+          )!,
+      fat:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}fat'],
+          )!,
+      servingLabel:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}serving_label'],
+          )!,
+      isPreset:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_preset'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $PantryFoodsTable createAlias(String alias) {
+    return $PantryFoodsTable(attachedDatabase, alias);
+  }
+}
+
+class PantryFood extends DataClass implements Insertable<PantryFood> {
+  final String id;
+  final String name;
+
+  /// Calories per serving
+  final double calories;
+
+  /// Protein per serving (g)
+  final double protein;
+
+  /// Carbs per serving (g)
+  final double carbs;
+
+  /// Fat per serving (g)
+  final double fat;
+
+  /// Human-readable serving description e.g. "1 slice (28g)", "1 egg (50g)"
+  final String servingLabel;
+
+  /// True for built-in preset foods seeded on first launch
+  final bool isPreset;
+  final DateTime createdAt;
+  const PantryFood({
+    required this.id,
+    required this.name,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    required this.servingLabel,
+    required this.isPreset,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['calories'] = Variable<double>(calories);
+    map['protein'] = Variable<double>(protein);
+    map['carbs'] = Variable<double>(carbs);
+    map['fat'] = Variable<double>(fat);
+    map['serving_label'] = Variable<String>(servingLabel);
+    map['is_preset'] = Variable<bool>(isPreset);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PantryFoodsCompanion toCompanion(bool nullToAbsent) {
+    return PantryFoodsCompanion(
+      id: Value(id),
+      name: Value(name),
+      calories: Value(calories),
+      protein: Value(protein),
+      carbs: Value(carbs),
+      fat: Value(fat),
+      servingLabel: Value(servingLabel),
+      isPreset: Value(isPreset),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PantryFood.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PantryFood(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      calories: serializer.fromJson<double>(json['calories']),
+      protein: serializer.fromJson<double>(json['protein']),
+      carbs: serializer.fromJson<double>(json['carbs']),
+      fat: serializer.fromJson<double>(json['fat']),
+      servingLabel: serializer.fromJson<String>(json['servingLabel']),
+      isPreset: serializer.fromJson<bool>(json['isPreset']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'calories': serializer.toJson<double>(calories),
+      'protein': serializer.toJson<double>(protein),
+      'carbs': serializer.toJson<double>(carbs),
+      'fat': serializer.toJson<double>(fat),
+      'servingLabel': serializer.toJson<String>(servingLabel),
+      'isPreset': serializer.toJson<bool>(isPreset),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PantryFood copyWith({
+    String? id,
+    String? name,
+    double? calories,
+    double? protein,
+    double? carbs,
+    double? fat,
+    String? servingLabel,
+    bool? isPreset,
+    DateTime? createdAt,
+  }) => PantryFood(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    calories: calories ?? this.calories,
+    protein: protein ?? this.protein,
+    carbs: carbs ?? this.carbs,
+    fat: fat ?? this.fat,
+    servingLabel: servingLabel ?? this.servingLabel,
+    isPreset: isPreset ?? this.isPreset,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PantryFood copyWithCompanion(PantryFoodsCompanion data) {
+    return PantryFood(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      calories: data.calories.present ? data.calories.value : this.calories,
+      protein: data.protein.present ? data.protein.value : this.protein,
+      carbs: data.carbs.present ? data.carbs.value : this.carbs,
+      fat: data.fat.present ? data.fat.value : this.fat,
+      servingLabel:
+          data.servingLabel.present
+              ? data.servingLabel.value
+              : this.servingLabel,
+      isPreset: data.isPreset.present ? data.isPreset.value : this.isPreset,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PantryFood(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbs: $carbs, ')
+          ..write('fat: $fat, ')
+          ..write('servingLabel: $servingLabel, ')
+          ..write('isPreset: $isPreset, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    calories,
+    protein,
+    carbs,
+    fat,
+    servingLabel,
+    isPreset,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PantryFood &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.calories == this.calories &&
+          other.protein == this.protein &&
+          other.carbs == this.carbs &&
+          other.fat == this.fat &&
+          other.servingLabel == this.servingLabel &&
+          other.isPreset == this.isPreset &&
+          other.createdAt == this.createdAt);
+}
+
+class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<double> calories;
+  final Value<double> protein;
+  final Value<double> carbs;
+  final Value<double> fat;
+  final Value<String> servingLabel;
+  final Value<bool> isPreset;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const PantryFoodsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.protein = const Value.absent(),
+    this.carbs = const Value.absent(),
+    this.fat = const Value.absent(),
+    this.servingLabel = const Value.absent(),
+    this.isPreset = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PantryFoodsCompanion.insert({
+    required String id,
+    required String name,
+    this.calories = const Value.absent(),
+    this.protein = const Value.absent(),
+    this.carbs = const Value.absent(),
+    this.fat = const Value.absent(),
+    this.servingLabel = const Value.absent(),
+    this.isPreset = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name);
+  static Insertable<PantryFood> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<double>? calories,
+    Expression<double>? protein,
+    Expression<double>? carbs,
+    Expression<double>? fat,
+    Expression<String>? servingLabel,
+    Expression<bool>? isPreset,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (calories != null) 'calories': calories,
+      if (protein != null) 'protein': protein,
+      if (carbs != null) 'carbs': carbs,
+      if (fat != null) 'fat': fat,
+      if (servingLabel != null) 'serving_label': servingLabel,
+      if (isPreset != null) 'is_preset': isPreset,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PantryFoodsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<double>? calories,
+    Value<double>? protein,
+    Value<double>? carbs,
+    Value<double>? fat,
+    Value<String>? servingLabel,
+    Value<bool>? isPreset,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return PantryFoodsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      calories: calories ?? this.calories,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fat: fat ?? this.fat,
+      servingLabel: servingLabel ?? this.servingLabel,
+      isPreset: isPreset ?? this.isPreset,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (calories.present) {
+      map['calories'] = Variable<double>(calories.value);
+    }
+    if (protein.present) {
+      map['protein'] = Variable<double>(protein.value);
+    }
+    if (carbs.present) {
+      map['carbs'] = Variable<double>(carbs.value);
+    }
+    if (fat.present) {
+      map['fat'] = Variable<double>(fat.value);
+    }
+    if (servingLabel.present) {
+      map['serving_label'] = Variable<String>(servingLabel.value);
+    }
+    if (isPreset.present) {
+      map['is_preset'] = Variable<bool>(isPreset.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PantryFoodsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbs: $carbs, ')
+          ..write('fat: $fat, ')
+          ..write('servingLabel: $servingLabel, ')
+          ..write('isPreset: $isPreset, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2570,11 +3559,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HabitCompletionsTable habitCompletions = $HabitCompletionsTable(
     this,
   );
+  late final $HabitSkipsTable habitSkips = $HabitSkipsTable(this);
   late final $MealsTable meals = $MealsTable(this);
   late final $FoodEntriesTable foodEntries = $FoodEntriesTable(this);
   late final $WaterLogsTable waterLogs = $WaterLogsTable(this);
   late final $DailyNutritionGoalsTable dailyNutritionGoals =
       $DailyNutritionGoalsTable(this);
+  late final $PantryFoodsTable pantryFoods = $PantryFoodsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2582,10 +3573,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     habits,
     habitCompletions,
+    habitSkips,
     meals,
     foodEntries,
     waterLogs,
     dailyNutritionGoals,
+    pantryFoods,
   ];
 }
 
@@ -2596,6 +3589,7 @@ typedef $$HabitsTableCreateCompanionBuilder =
       required String name,
       Value<String> frequencyType,
       Value<int> targetDaysPerWeek,
+      Value<int> skipsAllowedPerWeek,
       Value<DateTime> createdAt,
       Value<bool> synced,
       Value<int> rowid,
@@ -2607,6 +3601,7 @@ typedef $$HabitsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> frequencyType,
       Value<int> targetDaysPerWeek,
+      Value<int> skipsAllowedPerWeek,
       Value<DateTime> createdAt,
       Value<bool> synced,
       Value<int> rowid,
@@ -2643,6 +3638,11 @@ class $$HabitsTableFilterComposer
 
   ColumnFilters<int> get targetDaysPerWeek => $composableBuilder(
     column: $table.targetDaysPerWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get skipsAllowedPerWeek => $composableBuilder(
+    column: $table.skipsAllowedPerWeek,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2691,6 +3691,11 @@ class $$HabitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get skipsAllowedPerWeek => $composableBuilder(
+    column: $table.skipsAllowedPerWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2727,6 +3732,11 @@ class $$HabitsTableAnnotationComposer
 
   GeneratedColumn<int> get targetDaysPerWeek => $composableBuilder(
     column: $table.targetDaysPerWeek,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get skipsAllowedPerWeek => $composableBuilder(
+    column: $table.skipsAllowedPerWeek,
     builder: (column) => column,
   );
 
@@ -2770,6 +3780,7 @@ class $$HabitsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> frequencyType = const Value.absent(),
                 Value<int> targetDaysPerWeek = const Value.absent(),
+                Value<int> skipsAllowedPerWeek = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -2779,6 +3790,7 @@ class $$HabitsTableTableManager
                 name: name,
                 frequencyType: frequencyType,
                 targetDaysPerWeek: targetDaysPerWeek,
+                skipsAllowedPerWeek: skipsAllowedPerWeek,
                 createdAt: createdAt,
                 synced: synced,
                 rowid: rowid,
@@ -2790,6 +3802,7 @@ class $$HabitsTableTableManager
                 required String name,
                 Value<String> frequencyType = const Value.absent(),
                 Value<int> targetDaysPerWeek = const Value.absent(),
+                Value<int> skipsAllowedPerWeek = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -2799,6 +3812,7 @@ class $$HabitsTableTableManager
                 name: name,
                 frequencyType: frequencyType,
                 targetDaysPerWeek: targetDaysPerWeek,
+                skipsAllowedPerWeek: skipsAllowedPerWeek,
                 createdAt: createdAt,
                 synced: synced,
                 rowid: rowid,
@@ -3052,6 +4066,210 @@ typedef $$HabitCompletionsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $HabitCompletionsTable, HabitCompletion>,
       ),
       HabitCompletion,
+      PrefetchHooks Function()
+    >;
+typedef $$HabitSkipsTableCreateCompanionBuilder =
+    HabitSkipsCompanion Function({
+      required String id,
+      required String habitId,
+      required String userId,
+      required DateTime weekStart,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$HabitSkipsTableUpdateCompanionBuilder =
+    HabitSkipsCompanion Function({
+      Value<String> id,
+      Value<String> habitId,
+      Value<String> userId,
+      Value<DateTime> weekStart,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$HabitSkipsTableFilterComposer
+    extends Composer<_$AppDatabase, $HabitSkipsTable> {
+  $$HabitSkipsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get habitId => $composableBuilder(
+    column: $table.habitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HabitSkipsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HabitSkipsTable> {
+  $$HabitSkipsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get habitId => $composableBuilder(
+    column: $table.habitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HabitSkipsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HabitSkipsTable> {
+  $$HabitSkipsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get habitId =>
+      $composableBuilder(column: $table.habitId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$HabitSkipsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HabitSkipsTable,
+          HabitSkip,
+          $$HabitSkipsTableFilterComposer,
+          $$HabitSkipsTableOrderingComposer,
+          $$HabitSkipsTableAnnotationComposer,
+          $$HabitSkipsTableCreateCompanionBuilder,
+          $$HabitSkipsTableUpdateCompanionBuilder,
+          (
+            HabitSkip,
+            BaseReferences<_$AppDatabase, $HabitSkipsTable, HabitSkip>,
+          ),
+          HabitSkip,
+          PrefetchHooks Function()
+        > {
+  $$HabitSkipsTableTableManager(_$AppDatabase db, $HabitSkipsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$HabitSkipsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$HabitSkipsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$HabitSkipsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> habitId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<DateTime> weekStart = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HabitSkipsCompanion(
+                id: id,
+                habitId: habitId,
+                userId: userId,
+                weekStart: weekStart,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String habitId,
+                required String userId,
+                required DateTime weekStart,
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HabitSkipsCompanion.insert(
+                id: id,
+                habitId: habitId,
+                userId: userId,
+                weekStart: weekStart,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HabitSkipsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HabitSkipsTable,
+      HabitSkip,
+      $$HabitSkipsTableFilterComposer,
+      $$HabitSkipsTableOrderingComposer,
+      $$HabitSkipsTableAnnotationComposer,
+      $$HabitSkipsTableCreateCompanionBuilder,
+      $$HabitSkipsTableUpdateCompanionBuilder,
+      (HabitSkip, BaseReferences<_$AppDatabase, $HabitSkipsTable, HabitSkip>),
+      HabitSkip,
       PrefetchHooks Function()
     >;
 typedef $$MealsTableCreateCompanionBuilder =
@@ -4000,6 +5218,292 @@ typedef $$DailyNutritionGoalsTableProcessedTableManager =
       DailyNutritionGoal,
       PrefetchHooks Function()
     >;
+typedef $$PantryFoodsTableCreateCompanionBuilder =
+    PantryFoodsCompanion Function({
+      required String id,
+      required String name,
+      Value<double> calories,
+      Value<double> protein,
+      Value<double> carbs,
+      Value<double> fat,
+      Value<String> servingLabel,
+      Value<bool> isPreset,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$PantryFoodsTableUpdateCompanionBuilder =
+    PantryFoodsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<double> calories,
+      Value<double> protein,
+      Value<double> carbs,
+      Value<double> fat,
+      Value<String> servingLabel,
+      Value<bool> isPreset,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$PantryFoodsTableFilterComposer
+    extends Composer<_$AppDatabase, $PantryFoodsTable> {
+  $$PantryFoodsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get protein => $composableBuilder(
+    column: $table.protein,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbs => $composableBuilder(
+    column: $table.carbs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fat => $composableBuilder(
+    column: $table.fat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPreset => $composableBuilder(
+    column: $table.isPreset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PantryFoodsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PantryFoodsTable> {
+  $$PantryFoodsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get protein => $composableBuilder(
+    column: $table.protein,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbs => $composableBuilder(
+    column: $table.carbs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fat => $composableBuilder(
+    column: $table.fat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPreset => $composableBuilder(
+    column: $table.isPreset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PantryFoodsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PantryFoodsTable> {
+  $$PantryFoodsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get calories =>
+      $composableBuilder(column: $table.calories, builder: (column) => column);
+
+  GeneratedColumn<double> get protein =>
+      $composableBuilder(column: $table.protein, builder: (column) => column);
+
+  GeneratedColumn<double> get carbs =>
+      $composableBuilder(column: $table.carbs, builder: (column) => column);
+
+  GeneratedColumn<double> get fat =>
+      $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isPreset =>
+      $composableBuilder(column: $table.isPreset, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$PantryFoodsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PantryFoodsTable,
+          PantryFood,
+          $$PantryFoodsTableFilterComposer,
+          $$PantryFoodsTableOrderingComposer,
+          $$PantryFoodsTableAnnotationComposer,
+          $$PantryFoodsTableCreateCompanionBuilder,
+          $$PantryFoodsTableUpdateCompanionBuilder,
+          (
+            PantryFood,
+            BaseReferences<_$AppDatabase, $PantryFoodsTable, PantryFood>,
+          ),
+          PantryFood,
+          PrefetchHooks Function()
+        > {
+  $$PantryFoodsTableTableManager(_$AppDatabase db, $PantryFoodsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$PantryFoodsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$PantryFoodsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$PantryFoodsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> calories = const Value.absent(),
+                Value<double> protein = const Value.absent(),
+                Value<double> carbs = const Value.absent(),
+                Value<double> fat = const Value.absent(),
+                Value<String> servingLabel = const Value.absent(),
+                Value<bool> isPreset = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PantryFoodsCompanion(
+                id: id,
+                name: name,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
+                servingLabel: servingLabel,
+                isPreset: isPreset,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<double> calories = const Value.absent(),
+                Value<double> protein = const Value.absent(),
+                Value<double> carbs = const Value.absent(),
+                Value<double> fat = const Value.absent(),
+                Value<String> servingLabel = const Value.absent(),
+                Value<bool> isPreset = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PantryFoodsCompanion.insert(
+                id: id,
+                name: name,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
+                servingLabel: servingLabel,
+                isPreset: isPreset,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PantryFoodsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PantryFoodsTable,
+      PantryFood,
+      $$PantryFoodsTableFilterComposer,
+      $$PantryFoodsTableOrderingComposer,
+      $$PantryFoodsTableAnnotationComposer,
+      $$PantryFoodsTableCreateCompanionBuilder,
+      $$PantryFoodsTableUpdateCompanionBuilder,
+      (
+        PantryFood,
+        BaseReferences<_$AppDatabase, $PantryFoodsTable, PantryFood>,
+      ),
+      PantryFood,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4008,6 +5512,8 @@ class $AppDatabaseManager {
       $$HabitsTableTableManager(_db, _db.habits);
   $$HabitCompletionsTableTableManager get habitCompletions =>
       $$HabitCompletionsTableTableManager(_db, _db.habitCompletions);
+  $$HabitSkipsTableTableManager get habitSkips =>
+      $$HabitSkipsTableTableManager(_db, _db.habitSkips);
   $$MealsTableTableManager get meals =>
       $$MealsTableTableManager(_db, _db.meals);
   $$FoodEntriesTableTableManager get foodEntries =>
@@ -4016,4 +5522,6 @@ class $AppDatabaseManager {
       $$WaterLogsTableTableManager(_db, _db.waterLogs);
   $$DailyNutritionGoalsTableTableManager get dailyNutritionGoals =>
       $$DailyNutritionGoalsTableTableManager(_db, _db.dailyNutritionGoals);
+  $$PantryFoodsTableTableManager get pantryFoods =>
+      $$PantryFoodsTableTableManager(_db, _db.pantryFoods);
 }

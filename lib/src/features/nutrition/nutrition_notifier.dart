@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:async/async.dart';
 import '../../database/database_provider.dart';
 import '../../database/db.dart';
 
@@ -84,7 +85,27 @@ class MealWithEntries {
 /// - addFoodEntry() - Adds food item to a meal with macro info
 /// - addWaterLog() - Logs water drink
 /// - setGoals() - Updates daily nutrition targets
-/// - deleteMeal()/deleteFoodEntry() - Remove items from database
+/// - deleteMeal()/deleteFoodEntry() - Remove items from database.]
+///  // Here's how we can modify the build() method to watch both meals and food entries:
+/*
+  @override
+  Stream<TodayNutrition> build() {
+    final db = ref.watch(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1)); 
+    // Watch both meals and food entries streams
+    final mealsStream = (db.select(db.meals)..where(
+      (m) =>
+          m.userId.equals(userId) &
+          m.loggedAt.isBiggerOrEqualValue(startOfDay) &
+          m.loggedAt.isSmallerThanValue(endOfDay),
+    )).watch();
+    final entriesStream = (db.select(db.foodEntries)..where(
+      (e) => e.userId.equals(userId),
+    )).watch();
+*/
 class NutritionNotifier extends StreamNotifier<TodayNutrition> {
   @override
   Stream<TodayNutrition> build() {
@@ -102,7 +123,41 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
               m.loggedAt.isSmallerThanValue(endOfDay),
         )).watch();
 
-    return mealsStream.asyncMap((meals) async {
+    final entriesStream =
+        (db.select(db.foodEntries)
+          ..where((e) => e.userId.equals(userId))).watch();
+
+    final waterStream =
+        (db.select(db.waterLogs)..where(
+          (w) =>
+              w.userId.equals(userId) &
+              w.loggedAt.isBiggerOrEqualValue(startOfDay) &
+              w.loggedAt.isSmallerThanValue(endOfDay),
+        )).watch();
+
+    final goalsStream =
+        (db.select(db.dailyNutritionGoals)
+          ..where((g) => g.userId.equals(userId))).watch();
+
+    // merge all query streams into a single trigger stream; we ignore the
+    // payload and recompute the full TodayNutrition on any change.
+    final trigger = StreamGroup.merge<List<dynamic>>([
+      mealsStream.map((_) => []),
+      entriesStream.map((_) => []),
+      waterStream.map((_) => []),
+      goalsStream.map((_) => []),
+    ]).map((_) => null);
+
+    return trigger.asyncMap((_) async {
+      // re‑query everything each time any underlying table changes
+      final meals =
+          await (db.select(db.meals)..where(
+            (m) =>
+                m.userId.equals(userId) &
+                m.loggedAt.isBiggerOrEqualValue(startOfDay) &
+                m.loggedAt.isSmallerThanValue(endOfDay),
+          )).get();
+
       final allEntries =
           await (db.select(db.foodEntries)
             ..where((e) => e.userId.equals(userId))).get();
@@ -216,6 +271,51 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     } catch (_) {}
   }
 
+  Future<void> deleteMeal(String mealId) async {
+    final db = ref.read(databaseProvider);
+    await db.delete(db.meals)
+      ..where((m) => m.id.equals(mealId));
+    try {
+      await Supabase.instance.client.from('meals').delete().eq('id', mealId);
+    } catch (_) {}
+  }
+
+  Future<void> deleteFoodEntry(String entryId) async {
+    final db = ref.read(databaseProvider);
+    await (db.delete(db.foodEntries)..where((e) => e.id.equals(entryId))).go();
+    try {
+      await Supabase.instance.client
+          .from('food_entries')
+          .delete()
+          .eq('id', entryId);
+      print('Deleted food entry $entryId from Supabase');
+    } catch (_) {}
+  }
+
+  Future<void> deleteWaterLog(String logId) async {
+    final db = ref.read(databaseProvider);
+    await (db.delete(db.waterLogs)..where((w) => w.id.equals(logId))).go();
+    try {
+      await Supabase.instance.client
+          .from('water_logs')
+          .delete()
+          .eq('id', logId);
+    } catch (_) {}
+  }
+
+  Future<void> updateMeal(String mealId, String newName) async {
+    final db = ref.read(databaseProvider);
+    await (db.update(db.meals)..where(
+      (m) => m.id.equals(mealId),
+    )).write(MealsCompanion(name: Value(newName)));
+    try {
+      await Supabase.instance.client
+          .from('meals')
+          .update({'name': newName})
+          .eq('id', mealId);
+    } catch (_) {}
+  }
+
   Future<void> logWater(double amountMl) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser!.id;
@@ -282,36 +382,35 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
 
-    final meals = await (db.select(db.meals)
-          ..where(
-            (m) =>
-                m.userId.equals(userId) &
-                m.loggedAt.isBiggerOrEqualValue(start) &
-                m.loggedAt.isSmallerThanValue(end),
-          ))
-        .get();
+    final meals =
+        await (db.select(db.meals)..where(
+          (m) =>
+              m.userId.equals(userId) &
+              m.loggedAt.isBiggerOrEqualValue(start) &
+              m.loggedAt.isSmallerThanValue(end),
+        )).get();
 
-    final allEntries = await (db.select(db.foodEntries)
-          ..where((e) => e.userId.equals(userId)))
-        .get();
+    final allEntries =
+        await (db.select(db.foodEntries)
+          ..where((e) => e.userId.equals(userId))).get();
 
-    final goals = await (db.select(db.dailyNutritionGoals)
-          ..where((g) => g.userId.equals(userId)))
-        .getSingleOrNull();
+    final goals =
+        await (db.select(db.dailyNutritionGoals)
+          ..where((g) => g.userId.equals(userId))).getSingleOrNull();
 
-    final waterLogs = await (db.select(db.waterLogs)
-          ..where(
-            (w) =>
-                w.userId.equals(userId) &
-                w.loggedAt.isBiggerOrEqualValue(start) &
-                w.loggedAt.isSmallerThanValue(end),
-          ))
-        .get();
+    final waterLogs =
+        await (db.select(db.waterLogs)..where(
+          (w) =>
+              w.userId.equals(userId) &
+              w.loggedAt.isBiggerOrEqualValue(start) &
+              w.loggedAt.isSmallerThanValue(end),
+        )).get();
 
-    final mealsWithEntries = meals.map((meal) {
-      final entries = allEntries.where((e) => e.mealId == meal.id).toList();
-      return MealWithEntries(meal: meal, entries: entries);
-    }).toList();
+    final mealsWithEntries =
+        meals.map((meal) {
+          final entries = allEntries.where((e) => e.mealId == meal.id).toList();
+          return MealWithEntries(meal: meal, entries: entries);
+        }).toList();
 
     double cal = 0, pro = 0, carb = 0, fat = 0;
     for (final m in mealsWithEntries) {
@@ -329,6 +428,55 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
       totalCarbs: carb,
       totalFat: fat,
       totalWaterMl: waterLogs.fold<double>(0.0, (s, w) => s + w.amountMl),
+    );
+  }
+
+  /// Aggregates nutrition data across a date range (used for weekly calendar summaries).
+  Future<TodayNutrition> getNutritionForDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+    final meals =
+        await (db.select(db.meals)..where(
+          (m) =>
+              m.userId.equals(userId) &
+              m.loggedAt.isBiggerOrEqualValue(start) &
+              m.loggedAt.isSmallerThanValue(end),
+        )).get();
+
+    final allEntries =
+        await (db.select(db.foodEntries)
+          ..where((e) => e.userId.equals(userId))).get();
+
+    final goals =
+        await (db.select(db.dailyNutritionGoals)
+          ..where((g) => g.userId.equals(userId))).getSingleOrNull();
+
+    final mealsWithEntries =
+        meals.map((meal) {
+          final entries = allEntries.where((e) => e.mealId == meal.id).toList();
+          return MealWithEntries(meal: meal, entries: entries);
+        }).toList();
+
+    double cal = 0, pro = 0, carb = 0, fat = 0;
+    for (final m in mealsWithEntries) {
+      cal += m.calories;
+      pro += m.protein;
+      carb += m.carbs;
+      fat += m.fat;
+    }
+
+    return TodayNutrition(
+      meals: mealsWithEntries,
+      goals: goals,
+      totalCalories: cal,
+      totalProtein: pro,
+      totalCarbs: carb,
+      totalFat: fat,
+      totalWaterMl: 0,
     );
   }
 

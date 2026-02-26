@@ -11,59 +11,39 @@ const _uuid = Uuid();
 // Data models
 // ---------------------------------------------------------------------------
 
-/// Represents a habit with its completion status and streak information.
-/// Combines the raw Habit data with computed completion metrics.
-///
-/// Widget hierarchy connection:
-/// HabitsScreen watches habitsNotifierProvider → receives List<HabitWithStatus>
-///   ↓
-/// _HabitTile displays each HabitWithStatus (shows name, streak, completion button)
-///   ↓
-/// User taps completion button → triggers toggleCompletion() mutation
 class HabitWithStatus {
   final Habit habit;
   final bool completedToday;
-  final bool completedThisWeek; // weekly habits: met full weekly target
+  final bool completedThisWeek;
   final int completionsThisWeek;
-  final int streak; // days (daily) or weeks (weekly)
+  final int skipsThisWeek;
+  final int streak;
 
   const HabitWithStatus({
     required this.habit,
     required this.completedToday,
     required this.completedThisWeek,
     required this.completionsThisWeek,
+    required this.skipsThisWeek,
     required this.streak,
   });
 
-  /// Whether to show this habit as "done" and visually fade it out.
-  /// - Daily: done when completed today
-  /// - Weekly: done when completionsThisWeek >= targetDaysPerWeek
+  /// Effective completions = actual completions + skips used
   bool get isDone {
-    if (habit.frequencyType == 'weekly') return completedThisWeek;
+    if (habit.frequencyType == 'weekly') {
+      return (completionsThisWeek + skipsThisWeek) >= habit.targetDaysPerWeek;
+    }
     return completedToday;
   }
+
+  int get skipsRemaining =>
+      (habit.skipsAllowedPerWeek - skipsThisWeek).clamp(0, 99);
 }
 
 // ---------------------------------------------------------------------------
 // Notifier
 // ---------------------------------------------------------------------------
 
-/// Manages all habit data and operations.
-/// Provides a real-time stream of habits with completion status and streak calculations.
-///
-/// Data flow:
-/// 1. HabitsScreen watches habitsNotifierProvider
-/// 2. build() returns Stream<List<HabitWithStatus>> by combining:
-///    - habits table (habit definitions)
-///    - habitCompletions table (today's + historical completions)
-/// 3. Each habit is with computed values (streaks, completion status)
-/// 4. Whenever database changes, stream updates automatically
-/// 5. UI widgets receive updated data and rebuild
-///
-/// Mutations (triggered by UI interactions):
-/// - addHabit() - Creates new habit in local DB and syncs to Supabase
-/// - toggleCompletion() - Marks habit complete/incomplete for today
-/// - deleteHabit() - Removes habit and all its history
 class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   @override
   Stream<List<HabitWithStatus>> build() {
@@ -77,6 +57,10 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
       final completions =
           await (db.select(db.habitCompletions)
             ..where((c) => c.userId.equals(userId))).get();
+
+      final skips =
+          await (db.select(db.habitSkips)
+            ..where((s) => s.userId.equals(userId))).get();
 
       final today = _dateOnly(DateTime.now());
       final weekStart = _startOfWeek(today);
@@ -99,6 +83,15 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         final completedThisWeek =
             completionsThisWeek >= habit.targetDaysPerWeek;
 
+        final skipsThisWeek =
+            skips
+                .where(
+                  (s) =>
+                      s.habitId == habit.id &&
+                      _dateOnly(s.weekStart) == weekStart,
+                )
+                .length;
+
         final streak =
             habit.frequencyType == 'weekly'
                 ? _calculateWeeklyStreak(
@@ -112,6 +105,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
           completedToday: completedToday,
           completedThisWeek: completedThisWeek,
           completionsThisWeek: completionsThisWeek,
+          skipsThisWeek: skipsThisWeek,
           streak: streak,
         );
       }).toList();
@@ -126,6 +120,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     String name, {
     String frequencyType = 'daily',
     int targetDaysPerWeek = 7,
+    int skipsAllowedPerWeek = 0,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser!.id;
@@ -140,6 +135,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
             name: name,
             frequencyType: Value(frequencyType),
             targetDaysPerWeek: Value(targetDaysPerWeek),
+            skipsAllowedPerWeek: Value(skipsAllowedPerWeek),
           ),
         );
 
@@ -150,7 +146,47 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         'name': name,
         'frequency_type': frequencyType,
         'target_days_per_week': targetDaysPerWeek,
+        'skips_allowed_per_week': skipsAllowedPerWeek,
       });
+      await (db.update(db.habits)..where(
+        (h) => h.id.equals(id),
+      )).write(const HabitsCompanion(synced: Value(true)));
+    } catch (_) {}
+  }
+
+  Future<void> updateHabit(
+    String id, {
+    String? name,
+    String? frequencyType,
+    int? targetDaysPerWeek,
+    int? skipsAllowedPerWeek,
+  }) async {
+    final db = ref.read(databaseProvider);
+
+    await (db.update(db.habits)..where((h) => h.id.equals(id))).write(
+      HabitsCompanion(
+        name: name != null ? Value(name) : const Value.absent(),
+        frequencyType: frequencyType != null
+            ? Value(frequencyType)
+            : const Value.absent(),
+        targetDaysPerWeek: targetDaysPerWeek != null
+            ? Value(targetDaysPerWeek)
+            : const Value.absent(),
+        skipsAllowedPerWeek: skipsAllowedPerWeek != null
+            ? Value(skipsAllowedPerWeek)
+            : const Value.absent(),
+        synced: const Value(false),
+      ),
+    );
+
+    try {
+      await Supabase.instance.client.from('habits').update({
+        if (name != null) 'name': name,
+        if (frequencyType != null) 'frequency_type': frequencyType,
+        if (targetDaysPerWeek != null) 'target_days_per_week': targetDaysPerWeek,
+        if (skipsAllowedPerWeek != null)
+          'skips_allowed_per_week': skipsAllowedPerWeek,
+      }).eq('id', id);
       await (db.update(db.habits)..where(
         (h) => h.id.equals(id),
       )).write(const HabitsCompanion(synced: Value(true)));
@@ -189,26 +225,71 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
             ),
           );
       try {
-        print('Inserting  for habit $habitId on ${today.toIso8601String()}');
-        // Insert new completion record for today
         await Supabase.instance.client.from('habit_completions').insert({
           'id': id,
           'habit_id': habitId,
           'user_id': userId,
           'completed_date': today.toIso8601String(),
         });
-        // Mark local record as synced
         await (db.update(db.habitCompletions)..where(
           (c) => c.id.equals(id),
         )).write(const HabitCompletionsCompanion(synced: Value(true)));
-        // line by line explanation for 148-149 --- When toggling a completion,
-        //we first check if a completion record already exists for today.
-        //If it does, we delete it (marking as incomplete).
-        //If it doesn't exist, we create a new completion record for today.
-        // After inserting or deleting the record in Supabase, we also update
-        // our local Drift database to keep the 'synced' status accurate. This ensures that our UI reflects the correct completion status and that any future sync operations know which records are already in sync with the backend.
       } catch (_) {}
     }
+  }
+
+  /// Use a skip for the current week. No-op if no skips remaining.
+  Future<void> skipWeek(String habitId) async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final weekStart = _startOfWeek(_dateOnly(DateTime.now()));
+    final id = _uuid.v4();
+
+    await db
+        .into(db.habitSkips)
+        .insert(
+          HabitSkipsCompanion.insert(
+            id: id,
+            habitId: habitId,
+            userId: userId,
+            weekStart: weekStart,
+          ),
+        );
+
+    try {
+      await Supabase.instance.client.from('habit_skips').insert({
+        'id': id,
+        'habit_id': habitId,
+        'user_id': userId,
+        'week_start': weekStart.toIso8601String(),
+      });
+      await (db.update(db.habitSkips)..where(
+        (s) => s.id.equals(id),
+      )).write(const HabitSkipsCompanion(synced: Value(true)));
+    } catch (_) {}
+  }
+
+  /// Remove a skip for the current week (undo skip).
+  Future<void> unskipWeek(String habitId) async {
+    final db = ref.read(databaseProvider);
+    final weekStart = _startOfWeek(_dateOnly(DateTime.now()));
+
+    final existing =
+        await (db.select(db.habitSkips)..where(
+          (s) =>
+              s.habitId.equals(habitId) & s.weekStart.equals(weekStart),
+        )).get();
+
+    if (existing.isEmpty) return;
+    final last = existing.last;
+
+    await (db.delete(db.habitSkips)..where((s) => s.id.equals(last.id))).go();
+    try {
+      await Supabase.instance.client
+          .from('habit_skips')
+          .delete()
+          .eq('id', last.id);
+    } catch (_) {}
   }
 
   Future<void> deleteHabit(String habitId) async {
@@ -216,6 +297,8 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     await (db.delete(db.habits)..where((h) => h.id.equals(habitId))).go();
     await (db.delete(db.habitCompletions)
       ..where((c) => c.habitId.equals(habitId))).go();
+    await (db.delete(db.habitSkips)
+      ..where((s) => s.habitId.equals(habitId))).go();
     try {
       await Supabase.instance.client.from('habits').delete().eq('id', habitId);
     } catch (_) {}
@@ -242,6 +325,9 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
                 name: h['name'] as String,
                 frequencyType: Value(h['frequency_type'] as String),
                 targetDaysPerWeek: Value(h['target_days_per_week'] as int),
+                skipsAllowedPerWeek: Value(
+                  (h['skips_allowed_per_week'] as int?) ?? 0,
+                ),
                 synced: const Value(true),
               ),
             );
@@ -265,6 +351,25 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
               ),
             );
       }
+
+      final skips = await Supabase.instance.client
+          .from('habit_skips')
+          .select()
+          .eq('user_id', userId);
+
+      for (final s in skips as List) {
+        await db
+            .into(db.habitSkips)
+            .insertOnConflictUpdate(
+              HabitSkipsCompanion.insert(
+                id: s['id'] as String,
+                habitId: s['habit_id'] as String,
+                userId: s['user_id'] as String,
+                weekStart: DateTime.parse(s['week_start'] as String),
+                synced: const Value(true),
+              ),
+            );
+      }
     } catch (_) {}
   }
 
@@ -272,7 +377,6 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // Calendar queries
   // ---------------------------------------------------------------------------
 
-  /// Returns all habits with their completion status for the given [date].
   Future<List<({Habit habit, bool completed})>> getHabitsForDate(
     DateTime date,
   ) async {
@@ -296,7 +400,37 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         .toList();
   }
 
-  /// Returns Set<DateTime> of completed dates for a habit in a given month.
+  Future<({int done, int total})> getWeekHabitStats(
+    DateTime weekStart,
+    DateTime weekEnd,
+  ) async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+    final habits = await (db.select(db.habits)
+          ..where((h) => h.userId.equals(userId)))
+        .get();
+    if (habits.isEmpty) return (done: 0, total: 0);
+
+    final completions = await (db.select(db.habitCompletions)
+          ..where(
+            (c) =>
+                c.userId.equals(userId) &
+                c.completedDate.isBiggerOrEqualValue(weekStart) &
+                c.completedDate.isSmallerThanValue(weekEnd),
+          ))
+        .get();
+
+    final now = DateTime.now();
+    final todayUtc = DateTime.utc(now.year, now.month, now.day);
+    final effectiveEnd = weekEnd.isAfter(todayUtc)
+        ? todayUtc.add(const Duration(days: 1))
+        : weekEnd;
+    final elapsedDays = effectiveEnd.difference(weekStart).inDays.clamp(0, 7);
+
+    return (done: completions.length, total: habits.length * elapsedDays);
+  }
+
   Future<Set<DateTime>> getCompletedDatesForMonth(
     String habitId,
     int year,
@@ -323,13 +457,11 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
 
   DateTime _dateOnly(DateTime dt) => DateTime.utc(dt.year, dt.month, dt.day);
 
-  /// Monday of the week containing [date]
   DateTime _startOfWeek(DateTime date) {
-    final weekday = date.weekday; // Mon=1, Sun=7
+    final weekday = date.weekday;
     return date.subtract(Duration(days: weekday - 1));
   }
 
-  /// Consecutive daily completions ending today or yesterday
   int _calculateDailyStreak(List<HabitCompletion> completions) {
     if (completions.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
@@ -348,14 +480,12 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     return streak;
   }
 
-  /// Consecutive weeks where target was met
   int _calculateWeeklyStreak(List<HabitCompletion> completions, int target) {
     if (completions.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
     int streak = 0;
     DateTime weekStart = _startOfWeek(today);
 
-    // Walk backwards week by week
     for (var i = 0; i < 52; i++) {
       final weekEnd = weekStart.add(const Duration(days: 7));
       final count =
