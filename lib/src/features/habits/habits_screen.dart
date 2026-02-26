@@ -172,7 +172,7 @@ class HabitsScreen extends ConsumerWidget {
         initialChildSize: 0.85,
         minChildSize: 0.5,
         maxChildSize: 0.95,
-        builder: (ctx, scrollCtrl) => _CalendarSheet(
+        builder: (ctx, scrollCtrl) => HabitCalendarSheet(
           habits: habits,
           scrollController: scrollCtrl,
           notifier: ref.read(habitsNotifierProvider.notifier),
@@ -585,7 +585,7 @@ class _HabitFormSheetState extends State<_HabitFormSheet> {
           // Frequency chips
           Row(
             children: [
-              _FreqChip(
+              HabitFreqChip(
                 label: 'Daily',
                 selected: _frequencyType == 'daily',
                 onTap: () => setState(() {
@@ -594,7 +594,7 @@ class _HabitFormSheetState extends State<_HabitFormSheet> {
                 }),
               ),
               const SizedBox(width: 10),
-              _FreqChip(
+              HabitFreqChip(
                 label: 'Weekly',
                 selected: _frequencyType == 'weekly',
                 onTap: () => setState(() {
@@ -772,11 +772,12 @@ class _CounterBtn extends StatelessWidget {
 // Frequency chip
 // ---------------------------------------------------------------------------
 
-class _FreqChip extends StatelessWidget {
+class HabitFreqChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _FreqChip({
+  const HabitFreqChip({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -812,22 +813,23 @@ class _FreqChip extends StatelessWidget {
 // Calendar sheet (habit history)
 // ---------------------------------------------------------------------------
 
-class _CalendarSheet extends StatefulWidget {
+class HabitCalendarSheet extends StatefulWidget {
   final List<HabitWithStatus> habits;
   final ScrollController scrollController;
   final HabitsNotifier notifier;
 
-  const _CalendarSheet({
+  const HabitCalendarSheet({
+    super.key,
     required this.habits,
     required this.scrollController,
     required this.notifier,
   });
 
   @override
-  State<_CalendarSheet> createState() => _CalendarSheetState();
+  State<HabitCalendarSheet> createState() => _CalendarSheetState();
 }
 
-class _CalendarSheetState extends State<_CalendarSheet> {
+class _CalendarSheetState extends State<HabitCalendarSheet> {
   late DateTime _displayMonth;
   String? _selectedHabitId;
   Set<DateTime> _completedDates = {};

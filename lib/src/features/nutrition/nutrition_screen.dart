@@ -97,7 +97,6 @@ class NutritionScreen extends ConsumerWidget {
                     await ref
                         .read(nutritionNotifierProvider.notifier)
                         .addMeal(name);
-                        print('Added meal: $name');
                   },
                   child: const Text('Create Meal'),
                 ),
@@ -192,9 +191,9 @@ class _NutritionBody extends ConsumerWidget {
     return ListView(
       padding: AppPaddings.all,
       children: [
-        _CalorieSummary(nutrition: nutrition),
+        NutritionCalorieSummary(nutrition: nutrition),
         const SizedBox(height: 12),
-        _MacroRow(nutrition: nutrition),
+        NutritionMacroRow(nutrition: nutrition),
         const SizedBox(height: 12),
         _WaterCard(nutrition: nutrition, ref: ref),
         const SizedBox(height: AppSpacing.lg),
@@ -239,9 +238,9 @@ class _NutritionBody extends ConsumerWidget {
 // Calorie summary ring-style card
 // ---------------------------------------------------------------------------
 
-class _CalorieSummary extends StatelessWidget {
+class NutritionCalorieSummary extends StatelessWidget {
   final TodayNutrition nutrition;
-  const _CalorieSummary({required this.nutrition});
+  const NutritionCalorieSummary({super.key, required this.nutrition});
 
   @override
   Widget build(BuildContext context) {
@@ -323,9 +322,9 @@ class _CalorieSummary extends StatelessWidget {
 // Macro row (protein / carbs / fat pills)
 // ---------------------------------------------------------------------------
 
-class _MacroRow extends StatelessWidget {
+class NutritionMacroRow extends StatelessWidget {
   final TodayNutrition nutrition;
-  const _MacroRow({required this.nutrition});
+  const NutritionMacroRow({super.key, required this.nutrition});
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +332,7 @@ class _MacroRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _MacroPill(
+          child: NutritionMacroPill(
             label: 'Protein',
             current: nutrition.totalProtein,
             goal: goals?.protein ?? 150,
@@ -343,7 +342,7 @@ class _MacroRow extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: _MacroPill(
+          child: NutritionMacroPill(
             label: 'Carbs',
             current: nutrition.totalCarbs,
             goal: goals?.carbs ?? 250,
@@ -353,7 +352,7 @@ class _MacroRow extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: _MacroPill(
+          child: NutritionMacroPill(
             label: 'Fat',
             current: nutrition.totalFat,
             goal: goals?.fat ?? 65,
@@ -366,14 +365,15 @@ class _MacroRow extends StatelessWidget {
   }
 }
 
-class _MacroPill extends StatelessWidget {
+class NutritionMacroPill extends StatelessWidget {
   final String label;
   final double current;
   final double goal;
   final String unit;
   final Color color;
 
-  const _MacroPill({
+  const NutritionMacroPill({
+    super.key,
     required this.label,
     required this.current,
     required this.goal,
@@ -722,3 +722,4 @@ class _FormField extends StatelessWidget {
     );
   }
 }
+

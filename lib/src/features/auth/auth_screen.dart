@@ -115,6 +115,19 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 14),
 
+              // Name (signup only)
+              if (!_isLogin) ...[
+                TextField(
+                  controller: TextEditingController(),
+                  style: AppTextStyles.bodyLarge,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    prefixIcon: Icon(Icons.person_outline, color: AppColors.khaki),
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
+
               // Password
               TextField(
                 controller: _passwordController,

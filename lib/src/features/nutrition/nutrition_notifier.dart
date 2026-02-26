@@ -65,47 +65,6 @@ class MealWithEntries {
 // Notifier
 // ---------------------------------------------------------------------------
 
-/// Manages all nutrition data and operations for today.
-/// Provides a real-time stream of today's meals, food entries, macros, and water intake.
-///
-/// Data flow:
-/// 1. NutritionScreen watches nutritionNotifierProvider
-/// 2. build() returns Stream<TodayNutrition> by combining:
-///    - meals table (breakfast, lunch, snacks logged today)
-///    - foodEntries table (individual food items in each meal)
-///    - waterLogs table (water drinks logged today)
-///    - dailyNutritionGoals table (user's daily macro/calorie targets)
-/// 3. Aggregates food entries into meals with computed totals
-/// 4. Calculates daily totals for all macros
-/// 5. Whenever database changes, stream updates automatically
-/// 6. UI widgets receive updated data and rebuild with new macros
-///
-/// Mutations (triggered by UI interactions):
-/// - addMeal() - Creates new meal (Breakfast, Lunch, etc.)
-/// - addFoodEntry() - Adds food item to a meal with macro info
-/// - addWaterLog() - Logs water drink
-/// - setGoals() - Updates daily nutrition targets
-/// - deleteMeal()/deleteFoodEntry() - Remove items from database.]
-///  // Here's how we can modify the build() method to watch both meals and food entries:
-/*
-  @override
-  Stream<TodayNutrition> build() {
-    final db = ref.watch(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1)); 
-    // Watch both meals and food entries streams
-    final mealsStream = (db.select(db.meals)..where(
-      (m) =>
-          m.userId.equals(userId) &
-          m.loggedAt.isBiggerOrEqualValue(startOfDay) &
-          m.loggedAt.isSmallerThanValue(endOfDay),
-    )).watch();
-    final entriesStream = (db.select(db.foodEntries)..where(
-      (e) => e.userId.equals(userId),
-    )).watch();
-*/
 class NutritionNotifier extends StreamNotifier<TodayNutrition> {
   @override
   Stream<TodayNutrition> build() {
@@ -273,8 +232,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
 
   Future<void> deleteMeal(String mealId) async {
     final db = ref.read(databaseProvider);
-    await db.delete(db.meals)
-      ..where((m) => m.id.equals(mealId));
+    await (db.delete(db.meals)..where((m) => m.id.equals(mealId))).go();
     try {
       await Supabase.instance.client.from('meals').delete().eq('id', mealId);
     } catch (_) {}

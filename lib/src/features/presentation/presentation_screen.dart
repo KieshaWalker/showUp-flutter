@@ -1,18 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/app_theme.dart';
 import '../../database/db.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
+import '../nutrition/nutrition_screen.dart';
 import '../pantry/pantry_notifier.dart';
+import '../profile/profile_notifier.dart';
+
+const List<String> _months = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+const List<String> _weekdays = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 class PresentationScreen extends ConsumerWidget {
   const PresentationScreen({super.key});
 
+  static String _greeting(int hour, String? name) {
+    final suffix = name != null ? ', $name.' : '.';
+    if (hour < 12) return 'Good morning$suffix';
+    if (hour < 17) return 'Good afternoon$suffix';
+    return 'Good evening$suffix';
+  }
+
+  static String _dateLabel(DateTime d) {
+    return '${_weekdays[d.weekday - 1]}, ${_months[d.month - 1]} ${d.day}';
+  }
+
+  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
+    final nutritionAsync = ref.watch(nutritionNotifierProvider);
+    final habitsAsync = ref.watch(habitsNotifierProvider);
+    final profile = ref.watch(profileProvider).value;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -23,215 +65,115 @@ class PresentationScreen extends ConsumerWidget {
       body: ListView(
         padding: AppPaddings.all,
         children: [
-          Text(_greeting(now.hour), style: AppTextStyles.headlineMedium),
+          Text(
+            _greeting(now.hour, profile?.displayName.isNotEmpty == true ? profile!.displayName : null),
+            style: AppTextStyles.headlineMedium,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(_dateLabel(now), style: AppTextStyles.bodyMedium),
+          Text(
+            TimeOfDay.now().format(context),
+            style: AppTextStyles.bodyMedium,
+          ),
           const SizedBox(height: AppSpacing.lg),
-          const _NutritionCard(),
-          const SizedBox(height: AppSpacing.md),
+          // summary widgets only available once nutrition data has loaded
+          nutritionAsync.when(
+            data:
+                (nutrition) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    NutritionCalorieSummary(nutrition: nutrition),
+                    const SizedBox(height: 12),
+                    NutritionMacroRow(nutrition: nutrition),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
           const _HabitsCard(),
           const SizedBox(height: AppSpacing.lg),
           const _QuickAddSection(),
           const SizedBox(height: 80),
           const _ShowFoodsToday(),
+          habitsAsync.when(
+            data:
+                (habits) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: AppSpacing.sm),
+                    _IncompleteHabitsList(habits: habits),
+                  ],
+                ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
-
-  static String _greeting(int hour) {
-    if (hour < 12) return 'Good morning.';
-    if (hour < 17) return 'Good afternoon.';
-    return 'Good evening.';
-  }
-
-  static String _dateLabel(DateTime d) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return '${weekdays[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}';
-  }
 }
 
-// ---------------------------------------------------------------------------
-// Nutrition at a Glance card
-// ---------------------------------------------------------------------------
-
-class _NutritionCard extends ConsumerWidget {
-  const _NutritionCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final nutritionAsync = ref.watch(nutritionNotifierProvider);
-
-    return AppGlass.card(
-      padding: AppPaddings.card,
-      borderRadius: AppRadius.xlAll,
-      child: nutritionAsync.when(
-        loading:
-            () => const SizedBox(
-              height: 120,
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.terracotta),
-              ),
-            ),
-        error: (e, _) => Text('Error: $e', style: AppTextStyles.bodyMedium),
-        data: (nutrition) {
-          final goals = nutrition.goals;
-          final calPct =
-              goals != null && goals.calories > 0
-                  ? (nutrition.totalCalories / goals.calories).clamp(0.0, 1.0)
-                  : null;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.restaurant_menu_outlined,
-                    size: 14,
-                    color: AppColors.terracotta,
-                  ),
-                  const SizedBox(width: AppSpacing.sm - 2),
-                  Text('Nutrition', style: AppTextStyles.labelSmall),
-                  const Spacer(),
-                  Text('Today', style: AppTextStyles.labelSmall),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    nutrition.totalCalories.toStringAsFixed(0),
-                    style: AppTextStyles.displayLarge.copyWith(
-                      color: AppColors.terracotta,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm - 2),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 5),
-                    child: Text(
-                      goals != null
-                          ? '/ ${goals.calories.toStringAsFixed(0)} kcal'
-                          : 'kcal',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-
-              if (calPct != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: calPct,
-                    backgroundColor: AppColors.glassBorder,
-                    color: AppColors.terracotta,
-                    minHeight: 5,
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: AppSpacing.lg - 4),
-
-              Row(
-                children: [
-                  _MacroChip(
-                    label: 'Protein',
-                    value: nutrition.totalProtein,
-                    goal: goals?.protein,
-                    color: AppColors.proteinColor,
-                  ),
-                  const SizedBox(width: 10),
-                  _MacroChip(
-                    label: 'Carbs',
-                    value: nutrition.totalCarbs,
-                    goal: goals?.carbs,
-                    color: AppColors.carbColor,
-                  ),
-                  const SizedBox(width: 10),
-                  _MacroChip(
-                    label: 'Fat',
-                    value: nutrition.totalFat,
-                    goal: goals?.fat,
-                    color: AppColors.fatColor,
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MacroChip extends StatelessWidget {
-  final String label;
-  final double value;
-  final double? goal;
-  final Color color;
-
-  const _MacroChip({
-    required this.label,
-    required this.value,
-    required this.goal,
-    required this.color,
-  });
+class _IncompleteHabitsList extends StatelessWidget {
+  final List<HabitWithStatus> habits;
+  const _IncompleteHabitsList({required this.habits});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: AppRadius.mdAll,
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+    final incomplete = habits.where((h) => !h.isDone).toList();
+    if (incomplete.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Habits', style: AppTextStyles.labelSmall),
+        const SizedBox(height: AppSpacing.sm),
+        Column(
+          children:
+              incomplete
+                  .map(
+                    (h) => GestureDetector(
+                      onTap:
+                          () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => _QuickCompleteHabit(habit: h),
+                          ),
+                      child: AppGlass.card(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.md,
+                        ),
+                        borderRadius: AppRadius.lgAll,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 14,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: AppColors.terracotta.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: AppRadius.smAll,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_outline,
+                                size: 14,
+                                color: AppColors.terracotta,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm - 2),
+                            Text(h.habit.name, style: AppTextStyles.bodyMedium),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppTextStyles.labelSmall.copyWith(color: color)),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${value.toStringAsFixed(0)}g',
-              style: AppTextStyles.titleMedium.copyWith(color: color),
-            ),
-            if (goal != null)
-              Text(
-                '/ ${goal!.toStringAsFixed(0)}g',
-                style: AppTextStyles.labelSmall,
-              ),
-          ],
-        ),
-      ),
+      ],
     );
   }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -343,7 +285,7 @@ class _QuickAddSection extends ConsumerWidget {
 
     return pantryAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
       data: (foods) {
         if (foods.isEmpty) return const SizedBox.shrink();
 
@@ -853,7 +795,6 @@ class _MealChip extends StatelessWidget {
 class _ShowFoodsToday extends ConsumerWidget {
   const _ShowFoodsToday();
 
-  // to long press for deletion add GestureDetector to the Row of each food item, and on long press show a dialog. if confirmed, call a method in the nutrition notifier to remove the food entry by its id. we will need to pass the food entry id to the _ShowFoodsToday widget, which can be done by modifying the data structure of the nutrition notifier to include the id of each food entry.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nutritionAsync = ref.watch(nutritionNotifierProvider);
@@ -939,6 +880,80 @@ class _ShowFoodsToday extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Quick complete habit bottom sheet
+// ---------------------------------------------------------------------------
+
+class _QuickCompleteHabit extends ConsumerStatefulWidget {
+  final HabitWithStatus habit;
+  const _QuickCompleteHabit({required this.habit});
+
+  @override
+  ConsumerState<_QuickCompleteHabit> createState() =>
+      _QuickCompleteHabitState();
+}
+
+class _QuickCompleteHabitState extends ConsumerState<_QuickCompleteHabit> {
+  bool _completing = false;
+
+  Future<void> _complete() async {
+    setState(() => _completing = true);
+
+    final notifier = ref.read(habitsNotifierProvider.notifier);
+    await notifier.toggleCompletion(widget.habit.habit.id);
+
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg - 4,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.glassBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // Habit name
+          Text(widget.habit.habit.name, style: AppTextStyles.titleLarge),
+          const SizedBox(height: AppSpacing.lg),
+          // Confirm button
+          FilledButton(
+            onPressed: _completing ? null : _complete,
+            child:
+                _completing
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Text('Mark Complete'),
+          ),
+        ],
+      ),
     );
   }
 }

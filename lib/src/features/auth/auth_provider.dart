@@ -11,3 +11,9 @@ final currentUserProvider = Provider<User?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.value?.session?.user;
 });
+
+// Convenience: current user ID (null if logged out)
+final currentUserIdProvider = Provider<String?>((ref) {
+  final user = ref.watch(currentUserProvider);
+  return user?.id;
+});

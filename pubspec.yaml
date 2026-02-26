@@ -47,6 +47,9 @@ dependencies:
   # Utilities
   uuid: ^4.0.0
 
+  # Image picking (profile avatars)
+  image_picker: ^1.1.2
+
   # Visuals
   fl_chart: ^1.1.1
   cupertino_icons: ^1.0.8

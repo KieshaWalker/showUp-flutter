@@ -10,7 +10,7 @@ class AppColors {
 
   static const terracotta = ui.Color.fromARGB(168, 158, 143, 138);
   static const ochre      = ui.Color.fromARGB(155, 191, 121, 0);
-  static const eucalyptus = Color(0xFF4E6E42);
+  static const eucalyptus = ui.Color.fromARGB(255, 76, 156, 47);
   static const sage       = Color(0xFF6E8260);
   static const khaki      = Color(0xFFAF9878);
   static const mahogany   = Color(0xFF72281A);
@@ -445,11 +445,11 @@ class AppGradients {
   /// Radial background — matches CSS --backgroundgradial
   static const background = RadialGradient(
     center: Alignment.center,
-    radius: 8.0,
+    radius: 2.0,
     colors: [
-      ui.Color.fromARGB(131, 128, 91, 196),
-      ui.Color.fromARGB(159, 208, 110, 110),
-      ui.Color.fromARGB(124, 44, 50, 110),
+      ui.Color.fromARGB(105, 38, 132, 240),
+      ui.Color.fromARGB(255, 123, 84, 196),
+      ui.Color.fromARGB(245, 208, 110, 110),
     ],
   );
 
