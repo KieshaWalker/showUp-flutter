@@ -35,15 +35,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    await ref.read(profileProvider.notifier).save(
-      fullName: _fullNameCtrl.text.trim(),
-      username: _usernameCtrl.text.trim().toLowerCase(),
-    );
-    if (mounted) {
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile saved')),
+    try {
+      await ref.read(profileProvider.notifier).save(
+        fullName: _fullNameCtrl.text.trim(),
+        username: _usernameCtrl.text.trim().toLowerCase(),
       );
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Saved'),
+            content: const Text('Profile updated successfully.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Save failed'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -82,10 +111,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() => _uploadingAvatar = true);
     try {
       await ref.read(profileProvider.notifier).uploadAvatar(file);
-    } catch (e) {
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[Avatar] upload error: $e\n$st');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e')),
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Upload failed'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     } finally {

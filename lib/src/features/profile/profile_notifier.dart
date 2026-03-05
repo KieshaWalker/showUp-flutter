@@ -110,6 +110,9 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     final ext = mime.split('/').last.replaceAll('jpeg', 'jpg');
     final path = '$userId/avatar.$ext';
 
+    // ignore: avoid_print
+    print('[Avatar] uploading $path (${bytes.length} bytes, $mime)');
+
     // Step 1: upload binary to storage
     final storageResponse = await Supabase.instance.client.storage
         .from('avatars')
@@ -119,7 +122,9 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
           fileOptions: FileOptions(upsert: true, contentType: mime),
         );
 
-    // storageResponse is the stored path on success
+    // ignore: avoid_print
+    print('[Avatar] storage response: $storageResponse');
+
     if (storageResponse.isEmpty) {
       throw Exception('Storage upload returned empty path');
     }
@@ -143,6 +148,9 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       'avatar_url': avatarUrl,
       'updated_at': DateTime.now().toIso8601String(),
     });
+
+    // ignore: avoid_print
+    print('[Avatar] public url: $avatarUrl');
 
     state = AsyncData(
       (state.value ?? UserProfile(id: userId)).copyWith(avatarUrl: avatarUrl),
