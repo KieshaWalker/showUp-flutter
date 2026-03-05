@@ -80,8 +80,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (file == null) return;
 
     setState(() => _uploadingAvatar = true);
-    await ref.read(profileProvider.notifier).uploadAvatar(file);
-    if (mounted) setState(() => _uploadingAvatar = false);
+    try {
+      await ref.read(profileProvider.notifier).uploadAvatar(file);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
   }
 
   @override
@@ -91,7 +100,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final initials = _initials(profile);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0x66000000),
       appBar: AppBar(
         title: Padding(
           padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0),

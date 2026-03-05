@@ -103,13 +103,15 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     if (userId == null) return;
 
     final bytes = await file.readAsBytes();
-    final ext = file.path.split('.').last.toLowerCase();
+    // On web, file.path is a blob URL — use mimeType instead.
+    final mime = file.mimeType ?? 'image/jpeg';
+    final ext = mime.split('/').last.replaceAll('jpeg', 'jpg');
     final path = '$userId/avatar.$ext';
 
     await Supabase.instance.client.storage.from('avatars').uploadBinary(
       path,
       bytes,
-      fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
+      fileOptions: FileOptions(upsert: true, contentType: mime),
     );
 
     // Append a cache-busting timestamp so the image reloads immediately.
