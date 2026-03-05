@@ -14,7 +14,9 @@
       "Bash(flutter build:*)",
       "Bash(vercel deploy:*)",
       "Bash(node:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(vercel domains:*)",
+      "Bash(vercel:*)"
     ]
   }
 }
