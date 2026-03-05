@@ -51,3 +51,4 @@ lib/src/core/env.dart
 
 .notes
 .vercel
+.env*.local
