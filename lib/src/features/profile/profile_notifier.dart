@@ -32,7 +32,7 @@ class UserProfile {
   );
 
   factory UserProfile.fromMap(Map<String, dynamic> map) => UserProfile(
-    id: map['id'] as String,
+    id: map['uuid'] as String,
     username: map['username'] as String?,
     fullName: map['full_name'] as String?,
     avatarUrl: map['avatar_url'] as String?,
@@ -63,7 +63,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       final res = await Supabase.instance.client
           .from('profiles')
           .select()
-          .eq('id', userId)
+          .eq('uuid', userId)
           .maybeSingle();
       if (res == null) return UserProfile(id: userId);
       return UserProfile.fromMap(res);
@@ -80,7 +80,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
 
     try {
       await Supabase.instance.client.from('profiles').upsert({
-        'id': userId,
+        'uuid': userId,
         if (fullName != null) 'full_name': fullName,
         if (username != null) 'username': username,
         'updated_at': DateTime.now().toIso8601String(),
@@ -100,28 +100,46 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   /// Pick an avatar, upload to Supabase Storage, and persist the public URL.
   Future<void> uploadAvatar(XFile file) async {
     final userId = ref.read(currentUserIdProvider);
-    if (userId == null) return;
+    if (userId == null) throw Exception('Not logged in');
 
     final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) throw Exception('Selected file is empty');
+
     // On web, file.path is a blob URL — use mimeType instead.
     final mime = file.mimeType ?? 'image/jpeg';
     final ext = mime.split('/').last.replaceAll('jpeg', 'jpg');
     final path = '$userId/avatar.$ext';
 
-    await Supabase.instance.client.storage.from('avatars').uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(upsert: true, contentType: mime),
-    );
-
-    // Append a cache-busting timestamp so the image reloads immediately.
-    final baseUrl = Supabase.instance.client.storage
+    // Step 1: upload binary to storage
+    final storageResponse = await Supabase.instance.client.storage
         .from('avatars')
-        .getPublicUrl(path);
-    final avatarUrl = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: mime),
+        );
 
+    // storageResponse is the stored path on success
+    if (storageResponse.isEmpty) {
+      throw Exception('Storage upload returned empty path');
+    }
+
+    // Step 2: get URL — try public first, fall back to a 1-year signed URL
+    String avatarUrl;
+    try {
+      final baseUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(path);
+      avatarUrl = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+    } catch (_) {
+      avatarUrl = await Supabase.instance.client.storage
+          .from('avatars')
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+    }
+
+    // Step 3: persist URL to profiles table
     await Supabase.instance.client.from('profiles').upsert({
-      'id': userId,
+      'uuid': userId,
       'avatar_url': avatarUrl,
       'updated_at': DateTime.now().toIso8601String(),
     });
