@@ -1,0 +1,41 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create env.dart from secrets
+        run: |
+          cat > lib/src/core/env.dart <<EOF
+          const supabaseUrl = '${{ secrets.SUPABASE_URL }}';
+          const supabaseAnonKey = '${{ secrets.SUPABASE_ANON_KEY }}';
+          EOF
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: flutter build web --release
+
+      - name: Stage vercel config for deployment
+        run: |
+          cp vercel.json build/web/vercel.json
+          mkdir -p build/web/.vercel
+          echo '{"projectId":"${{ secrets.VERCEL_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > build/web/.vercel/project.json
+
+      - name: Deploy to Vercel
+        run: |
+          npm install -g vercel@latest
+          vercel deploy ./build/web --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

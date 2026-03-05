@@ -109,6 +109,9 @@ class DailyNutritionGoals extends Table {
 
 class PantryFoods extends Table {
   TextColumn get id => text()();
+  /// NULL = global preset (admin-managed, visible to all users).
+  /// Non-null = personal food belonging to this user.
+  TextColumn get userId => text().nullable()();
   TextColumn get name => text()();
   /// Calories per serving
   RealColumn get calories => real().withDefault(const Constant(0.0))();
@@ -121,13 +124,51 @@ class PantryFoods extends Table {
   /// Human-readable serving description e.g. "1 slice (28g)", "1 egg (50g)"
   TextColumn get servingLabel =>
       text().withDefault(const Constant('1 serving'))();
-  /// True for built-in preset foods seeded on first launch
+  /// True for global preset foods managed in Supabase.
   BoolColumn get isPreset => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
 }
+
+
+// Agent memory for the indiviudal user
+class AgentMemory extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get content => text()();
+  TextColumn get type => text()(); // e.g. 'summary', 'reflection', 'plan'
+  TextColumn get source => text()(); // e.g. 'agent', 'user', 'system'
+  TextColumn get relatedHabitId => text().nullable()(); // optional link to a habit
+  TextColumn get relatedMealId => text().nullable()(); // optional link to a meal
+  TextColumn get relatedFoodEntryId => text().nullable()(); // optional link to a food entry
+  TextColumn get relatedWaterLogId => text().nullable()(); // optional link to a water log
+  // get historic habit completion status for the week this memory is related to (for habit-related memories)
+  TextColumn get relatedHabitCompletionStatus => text().nullable()();
+  TextColumn get relatedNutritionSummary => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // get most recent question
+  TextColumn get mostRecentQuestion => text().nullable()();
+  TextColumn get mostRecentAnswer => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ---------------------------------------------------------------------------
 // Database
@@ -147,7 +188,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -163,6 +204,18 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await m.createTable(pantryFoods);
+          }
+          if (from < 5) {
+            // Add user_id (nullable text — NULL = global preset)
+            await customStatement(
+                'ALTER TABLE pantry_foods ADD COLUMN user_id TEXT');
+            // Add synced flag (integer 0/1, Drift stores bools as int)
+            await customStatement(
+                'ALTER TABLE pantry_foods ADD COLUMN synced INTEGER NOT NULL DEFAULT 0');
+            // Remove locally-seeded presets; they'll be replaced by the
+            // global Supabase presets the next time syncFromRemote() runs.
+            await customStatement(
+                'DELETE FROM pantry_foods WHERE is_preset = 1');
           }
         },
       );

@@ -693,6 +693,19 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
     }
   }
 
+  Future<void> _toggle(Habit habit, int index) async {
+    // Optimistic update so the checkmark flips instantly.
+    final current = _data!.habits[index].completed;
+    setState(() {
+      final updated = List.of(_data!.habits);
+      updated[index] = (habit: habit, completed: !current);
+      _data = _DayData(nutrition: _data!.nutrition, habits: updated);
+    });
+    await ref
+        .read(habitsNotifierProvider.notifier)
+        .toggleCompletionForDate(habit.id, widget.date);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateLabel =
@@ -843,8 +856,13 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
             ],
           ),
           const SizedBox(height: 10),
-          ...habits.map((h) => _HabitRow(
-              name: h.habit.name, completed: h.completed)),
+          ...habits.asMap().entries.map(
+                (e) => _HabitRow(
+                  habit: e.value.habit,
+                  completed: e.value.completed,
+                  onToggle: () => _toggle(e.value.habit, e.key),
+                ),
+              ),
         ],
       ],
     );
@@ -905,24 +923,46 @@ class _MacroBox extends StatelessWidget {
 }
 
 class _HabitRow extends StatelessWidget {
-  final String name;
+  final Habit habit;
   final bool completed;
-  const _HabitRow({required this.name, required this.completed});
+  final VoidCallback onToggle;
+
+  const _HabitRow({
+    required this.habit,
+    required this.completed,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
-        children: [
-          Icon(
-            completed ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: 18,
-            color: completed ? AppColors.eucalyptus : AppColors.khaki,
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(name, style: AppTextStyles.bodyLarge)),
-        ],
+    return GestureDetector(
+      onTap: onToggle,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Row(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                completed ? Icons.check_circle : Icons.radio_button_unchecked,
+                key: ValueKey(completed),
+                size: 18,
+                color: completed ? AppColors.eucalyptus : AppColors.khaki,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                habit.name,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: completed
+                      ? AppColors.textOnDark
+                      : AppColors.textOnDarkTertiary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

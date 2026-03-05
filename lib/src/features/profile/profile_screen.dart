@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
 import 'profile_notifier.dart';
@@ -92,8 +93,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Profile'),
-        titleTextStyle: AppTextStyles.displayLarge,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0),
+          child: SvgPicture.asset(
+            'assets/images/logo.svg',
+            height: 100,
+            width: 150,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
       ),
       body: ListView(
         padding: AppPaddings.all,

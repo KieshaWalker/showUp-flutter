@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/app_theme.dart';
 
@@ -65,42 +66,21 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-
-              // Brand mark
-              Container(
-                width: 72,
-                height: 72,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: AppColors.terracotta,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.terracotta.withValues(alpha: 0.3),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+              // Logo
+              Center(
+                child: SvgPicture.asset(
+                  'assets/images/logo.svg',
+                  width: 333,
+                  height: 400,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
                 ),
-                child: const Icon(Icons.bolt_rounded,
-                    color: Colors.white, size: 40),
               ),
-
-              Text(
-                'Show Up',
-                style: AppTextStyles.displayLarge,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _isLogin
-                    ? 'Good to see you again.'
-                    : 'Start your journey today.',
-                style: AppTextStyles.bodyLarge
-                    .copyWith(color: AppColors.textOnDarkSecondary),
-              ),
+              const SizedBox(height: 10), // this box is for spacing between logo and text, not the top padding
 
               const SizedBox(height: 48),
-
               // Email
               TextField(
                 controller: _emailController,

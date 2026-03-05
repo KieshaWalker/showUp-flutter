@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/app_theme.dart';
+import '../../database/db.dart';
 import 'habits_notifier.dart';
 
-// Main screen for the Habits feature, showing a list of habits with their status, a weekly progress strip, and options to add new habits or view the calendar history
+// =============================================================================
+// HabitsScreen
+// =============================================================================
+//
+// Pure CRUD management screen for habits.
+// Lists all habits; tap to edit, long-press to delete.
+// FAB opens _HabitFormSheet to add a new habit.
+//
 class HabitsScreen extends ConsumerWidget {
   const HabitsScreen({super.key});
 
@@ -14,22 +23,15 @@ class HabitsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        flexibleSpace: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Align(
-            alignment: Alignment.bottomLeft,
-            child: Text('Habits', style: AppTextStyles.displayLarge),
+        title: Padding(
+          padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0),
+          child: SvgPicture.asset(
+            'assets/images/logo.svg',
+            height: 100,
+            width: 150,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.calendar_month_outlined,
-            ),
-            onPressed: () =>
-                _showCalendarSheet(context, ref, habitsAsync.value ?? []),
-          ),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddHabitSheet(context, ref),
@@ -37,237 +39,116 @@ class HabitsScreen extends ConsumerWidget {
         label: const Text('Add Habit'),
       ),
       body: habitsAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: AppColors.terracotta)),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('$e')),
         data: (habits) {
           if (habits.isEmpty) {
             return Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 64,
-                    color: AppColors.khaki.withValues(alpha: 0.5),
-                  ),
+                  Icon(Icons.check_circle_outline, size: 64, color: AppColors.glassBorder),
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'No habits yet',
-                    style: AppTextStyles.titleMedium.copyWith(color: AppColors.khaki),
-                  ),
-                  const SizedBox(height: AppSpacing.sm - 2),
-                  Text('Tap "Add Habit" to get started', style: AppTextStyles.bodyMedium),
+                  Text('No habits yet', style: AppTextStyles.titleMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text('Tap + to add your first habit', style: AppTextStyles.bodyMedium),
                 ],
               ),
             );
           }
-
-          final active = habits.where((h) => !h.isDone).toList();
-          final done = habits.where((h) => h.isDone).toList();
-
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, 28, AppSpacing.md, 28),
-                  child: GestureDetector(
-                    onTap: () => FocusScope.of(context).unfocus(),
-                    child: _WeekStrip(habits: habits),
-                  ),
-                ),
-              ),
-              if (active.isNotEmpty) ...[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.lg - 4, AppSpacing.md, AppSpacing.sm),
-                  sliver: SliverToBoxAdapter(
-                    child: Text('Active', style: AppTextStyles.titleMedium),
-                  ),
-                ),
-                SliverPadding(
-                  padding: AppPaddings.horizontal,
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _HabitCard(item: active[i]),
-                      childCount: active.length,
-                    ),
-                  ),
-                ),
-              ],
-              if (done.isNotEmpty) ...[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.lg - 4, AppSpacing.md, AppSpacing.sm),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      'Completed',
-                      style: AppTextStyles.titleMedium.copyWith(color: AppColors.khaki),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: AppPaddings.horizontal,
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _HabitCard(item: done[i]),
-                      childCount: done.length,
-                    ),
-                  ),
-                ),
-              ],
-              const SliverToBoxAdapter(child: SizedBox(height: 50)),
-            ],
+          return ListView.separated(
+            padding: AppPaddings.all,
+            itemCount: habits.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (_, i) => _HabitManageCard(item: habits[i]),
           );
         },
       ),
     );
   }
+}
 
-  void _showAddHabitSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _HabitFormSheet(
-        onSave: ({
-          required String name,
-          required String frequencyType,
-          required int targetDaysPerWeek,
-          required int skipsAllowedPerWeek,
-        }) {
+void _showAddHabitSheet(BuildContext context, WidgetRef ref, {Habit? existing}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => _HabitFormSheet(
+      initialName: existing?.name,
+      initialFrequencyType: existing?.frequencyType,
+      initialTargetDaysPerWeek: existing?.targetDaysPerWeek,
+      initialSkipsAllowedPerWeek: existing?.skipsAllowedPerWeek,
+      onSave: ({
+        required String name,
+        required String frequencyType,
+        required int targetDaysPerWeek,
+        required int skipsAllowedPerWeek,
+      }) {
+        if (existing != null) {
+          ref.read(habitsNotifierProvider.notifier).updateHabit(
+                existing.id,
+                name: name,
+                frequencyType: frequencyType,
+                targetDaysPerWeek: targetDaysPerWeek,
+                skipsAllowedPerWeek: skipsAllowedPerWeek,
+              );
+        } else {
           ref.read(habitsNotifierProvider.notifier).addHabit(
                 name,
                 frequencyType: frequencyType,
                 targetDaysPerWeek: targetDaysPerWeek,
                 skipsAllowedPerWeek: skipsAllowedPerWeek,
               );
-        },
-      ),
-    );
-  }
-
-  void _showCalendarSheet(
-    BuildContext context,
-    WidgetRef ref,
-    List<HabitWithStatus> habits,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (ctx, scrollCtrl) => HabitCalendarSheet(
-          habits: habits,
-          scrollController: scrollCtrl,
-          notifier: ref.read(habitsNotifierProvider.notifier),
-        ),
-      ),
-    );
-  }
+        }
+      },
+      onDelete: existing != null
+          ? () => ref.read(habitsNotifierProvider.notifier).deleteHabit(existing.id)
+          : null,
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Week progress strip
+// _HabitManageCard — simple list tile for CRUD management
 // ---------------------------------------------------------------------------
 
-class _WeekStrip extends StatelessWidget {
-  final List<HabitWithStatus> habits;
-  const _WeekStrip({required this.habits});
+class _HabitManageCard extends ConsumerWidget {
+  const _HabitManageCard({required this.item});
+  final HabitWithStatus item;
 
   @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    final days = List.generate(7, (i) => monday.add(Duration(days: i)));
-    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    final today = DateTime(now.year, now.month, now.day);
-
-    final totalHabits = habits.length;
-    final doneToday = habits.where((h) => h.completedToday).length;
-    final pct = totalHabits > 0 ? doneToday / totalHabits : 0.0;
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppGlass.card(
-      padding: AppPaddings.section,
-      borderRadius: AppRadius.lgAll,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('This Week', style: AppTextStyles.labelSmall),
-              Text(
-                '$doneToday / $totalHabits today',
-                style: AppTextStyles.labelSmall.copyWith(color: AppColors.terracotta),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: pct,
-              minHeight: 4,
-              backgroundColor: AppColors.glassBorder,
-              valueColor: const AlwaysStoppedAnimation(AppColors.terracotta),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(7, (i) {
-              final day = DateTime(days[i].year, days[i].month, days[i].day);
-              final isToday = day == today;
-              final isPast = day.isBefore(today);
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        title: Text(item.habit.name, style: AppTextStyles.titleMedium),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: HabitFreqChip(habit: item.habit),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.textOnDarkSecondary),
+        onTap: () => _showAddHabitSheet(context, ref, existing: item.habit),
+        onLongPress: () => _confirmDelete(context, ref, item.habit),
+      ),
+    );
+  }
 
-              return Column(
-                children: [
-                  Text(labels[i], style: AppTextStyles.labelSmall),
-                  const SizedBox(height: AppSpacing.sm - 2),
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isToday
-                          ? AppColors.terracotta
-                          : isPast
-                              ? AppColors.glassBorder
-                              : Colors.transparent,
-                      border: isToday
-                          ? null
-                          : Border.all(color: AppColors.glassBorder),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${days[i].day}',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isToday ? Colors.white : AppColors.textOnDark,
-                          fontWeight:
-                              isToday ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }),
+  void _confirmDelete(BuildContext context, WidgetRef ref, Habit habit) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete habit?'),
+        content: Text('This will permanently delete "${habit.name}" and all its history.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(habitsNotifierProvider.notifier).deleteHabit(habit.id);
+            },
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -276,220 +157,20 @@ class _WeekStrip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Habit card (2-column grid)
+// _HabitFormSheet — add or edit a habit
 // ---------------------------------------------------------------------------
-
-class _HabitCard extends ConsumerWidget {
-  final HabitWithStatus item;
-  const _HabitCard({required this.item});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final habit = item.habit;
-    final isDone = item.isDone;
-    final isWeekly = habit.frequencyType == 'weekly';
-    final hasSkipsAllowed = habit.skipsAllowedPerWeek > 0;
-    final skipsLeft = item.skipsRemaining;
-    final hasUsedSkip = item.skipsThisWeek > 0;
-
-    return Opacity(
-      opacity: isDone ? 0.6 : 1.0,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onLongPress: () => _showEditSheet(context, ref),
-          borderRadius: AppRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.all(36),
-            decoration: BoxDecoration(
-              color: isDone
-                  ? AppColors.eucalyptus.withValues(alpha: 0.15)
-                  : AppColors.glassBg,
-              borderRadius: AppRadius.circular(18),
-              border: Border.all(
-                color: isDone
-                    ? AppColors.eucalyptus.withValues(alpha: 0.4)
-                    : AppColors.glassBorder,
-              ),
-              boxShadow: AppShadows.glass,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row: name + completion circle
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        habit.name,
-                        style: AppTextStyles.titleMedium.copyWith(
-                          decoration: isDone ? TextDecoration.lineThrough : null,
-                          decorationColor: AppColors.khaki,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    GestureDetector(
-                      onTap: () => ref
-                          .read(habitsNotifierProvider.notifier)
-                          .toggleCompletion(habit.id),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDone
-                              ? AppColors.eucalyptus
-                              : Colors.transparent,
-                          border: isDone
-                              ? null
-                              : Border.all(color: AppColors.khaki, width: 2),
-                          boxShadow: isDone
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.eucalyptus
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: isDone
-                            ? const Icon(Icons.check, color: Colors.white, size: 16)
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm - 2),
-
-                // Subtitle
-                Text(
-                  isWeekly
-                      ? '${item.completionsThisWeek} / ${habit.targetDaysPerWeek}× this week'
-                      : 'Daily',
-                  style: AppTextStyles.bodyMedium,
-                ),
-
-                const Spacer(),
-
-                // Bottom row: streak + skip button
-                Row(
-                  children: [
-                    if (item.streak > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.ochre.withValues(alpha: 0.15),
-                          borderRadius: AppRadius.xlAll,
-                          border: Border.all(
-                              color: AppColors.ochre.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('🔥', style: TextStyle(fontSize: 11)),
-                            const SizedBox(width: 3),
-                            Text(
-                              '${item.streak}',
-                              style: AppTextStyles.labelSmall
-                                  .copyWith(color: AppColors.ochre),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const Spacer(),
-
-                    // Skip button
-                    if (hasSkipsAllowed && !isDone) ...[
-                      if (hasUsedSkip)
-                        GestureDetector(
-                          onTap: () => ref
-                              .read(habitsNotifierProvider.notifier)
-                              .unskipWeek(habit.id),
-                          child: Text(
-                            'Unskip',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.khaki,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.khaki,
-                            ),
-                          ),
-                        )
-                      else if (skipsLeft > 0)
-                        GestureDetector(
-                          onTap: () => ref
-                              .read(habitsNotifierProvider.notifier)
-                              .skipWeek(habit.id),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.glassBg,
-                              borderRadius: AppRadius.xlAll,
-                              border: Border.all(color: AppColors.glassBorder),
-                            ),
-                            child: Text(
-                              'Skip ($skipsLeft)',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.textOnDark,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showEditSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _HabitFormSheet(
-        initialName: item.habit.name,
-        initialFrequencyType: item.habit.frequencyType,
-        initialTargetDaysPerWeek: item.habit.targetDaysPerWeek,
-        initialSkipsAllowedPerWeek: item.habit.skipsAllowedPerWeek,
-        onSave: ({
-          required String name,
-          required String frequencyType,
-          required int targetDaysPerWeek,
-          required int skipsAllowedPerWeek,
-        }) {
-          ref.read(habitsNotifierProvider.notifier).updateHabit(
-                item.habit.id,
-                name: name,
-                frequencyType: frequencyType,
-                targetDaysPerWeek: targetDaysPerWeek,
-                skipsAllowedPerWeek: skipsAllowedPerWeek,
-              );
-        },
-        onDelete: () {
-          ref
-              .read(habitsNotifierProvider.notifier)
-              .deleteHabit(item.habit.id);
-        },
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Habit form sheet (add + edit)
-// ---------------------------------------------------------------------------
+//
+// ┌──────────────────────────────────────────────────────────────────────┐
+// │  CONFIGURABLE DEFAULTS (change here to change new-habit defaults)    │
+// │                                                                      │
+// │  frequencyType       'daily'  (see initState)                       │
+// │  targetDaysPerWeek   3 for weekly habits (slider shows 1–6)         │
+// │                      7 for daily (forced, not shown to user)        │
+// │  skipsAllowedPerWeek 0 (counter shows 0–7)                          │
+// │                                                                      │
+// │  To change slider range for weekly target: edit the Slider below.   │
+// │  To change max skips counter: edit _Counter's max: parameter.       │
+// └──────────────────────────────────────────────────────────────────────┘
 
 class _HabitFormSheet extends StatefulWidget {
   final String? initialName;
@@ -773,35 +454,43 @@ class _CounterBtn extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class HabitFreqChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final String? label;
+  final bool? selected;
+  final VoidCallback? onTap;
+  final Habit? habit;
   const HabitFreqChip({
     super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
+    this.label,
+    this.selected,
+    this.onTap,
+    this.habit,
   });
 
   @override
   Widget build(BuildContext context) {
+    // When used as a display chip (passed a habit), derive label/selected from it.
+    final effectiveLabel = label ?? (habit!.frequencyType == 'weekly'
+        ? '${habit!.targetDaysPerWeek}× / week'
+        : 'Daily');
+    final effectiveSelected = selected ?? false;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.terracotta : AppColors.glassBg,
+          color: effectiveSelected ? AppColors.terracotta : AppColors.glassBg,
           borderRadius: AppRadius.mdAll,
           border: Border.all(
-            color: selected ? AppColors.terracotta : AppColors.glassBorder,
+            color: effectiveSelected ? AppColors.terracotta : AppColors.glassBorder,
           ),
         ),
         child: Text(
-          label,
+          effectiveLabel,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: selected ? Colors.white : AppColors.textOnDark,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            color: effectiveSelected ? Colors.white : AppColors.textOnDark,
+            fontWeight: effectiveSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),

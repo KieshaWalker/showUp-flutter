@@ -5,8 +5,11 @@ import 'src/core/app_theme.dart';
 import 'src/core/env.dart';
 import 'src/features/auth/auth_provider.dart';
 import 'src/features/auth/auth_screen.dart';
+import 'src/features/habits/habits_notifier.dart';
 import 'src/features/habits/habits_screen.dart';
+import 'src/features/nutrition/nutrition_notifier.dart';
 import 'src/features/nutrition/nutrition_screen.dart';
+import 'src/features/pantry/pantry_notifier.dart';
 import 'src/features/pantry/pantry_screen.dart';
 import 'src/features/presentation/presentation_screen.dart';
 import 'src/features/settings/settings_screen.dart';
@@ -70,6 +73,18 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pull latest data from Supabase on every login / app launch.
+    // Each call is fire-and-forget (errors are swallowed in the notifiers).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(habitsNotifierProvider.notifier).syncFromRemote();
+      ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
+      ref.read(pantryNotifierProvider.notifier).syncFromRemote();
+    });
+  }
 
   static const _screens = [
     PresentationScreen(),

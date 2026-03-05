@@ -16,7 +16,6 @@ const _uuid = Uuid();
 /// Combines all meals, food entries, water logs, and goals.
 ///
 /// Widget hierarchy connection:
-/// NutritionScreen watches nutritionNotifierProvider → receives AsyncValue<TodayNutrition>
 ///   ↓
 /// _NutritionBody uses TodayNutrition to display:
 ///   - Macro progress bars (calories, protein, carbs, fat)

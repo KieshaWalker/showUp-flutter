@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../database/database_provider.dart';
 import '../../database/db.dart';
@@ -17,166 +18,34 @@ final pantryNotifierProvider =
 );
 
 // ---------------------------------------------------------------------------
-// Preset foods (seeded on first launch)
-// ---------------------------------------------------------------------------
-
-const _presets = [
-  (
-    name: 'White Bread',
-    cal: 75.0,
-    pro: 2.5,
-    carb: 14.0,
-    fat: 1.0,
-    label: '1 slice (28 g)',
-  ),
-  (
-    name: 'Egg',
-    cal: 70.0,
-    pro: 6.0,
-    carb: 0.5,
-    fat: 5.0,
-    label: '1 large (50 g)',
-  ),
-  (
-    name: 'Butter',
-    cal: 100.0,
-    pro: 0.1,
-    carb: 0.0,
-    fat: 11.0,
-    label: '1 tbsp (14 g)',
-  ),
-  (
-    name: 'Bacon',
-    cal: 85.0,
-    pro: 6.0,
-    carb: 0.0,
-    fat: 7.0,
-    label: '2 strips cooked (14 g)',
-  ),
-  (
-    name: 'Chicken Breast',
-    cal: 165.0,
-    pro: 31.0,
-    carb: 0.0,
-    fat: 3.6,
-    label: '100 g cooked',
-  ),
-  (
-    name: 'White Rice',
-    cal: 130.0,
-    pro: 2.7,
-    carb: 28.0,
-    fat: 0.3,
-    label: '100 g cooked',
-  ),
-  (
-    name: 'Rolled Oats',
-    cal: 156.0,
-    pro: 5.5,
-    carb: 27.0,
-    fat: 3.0,
-    label: '40 g dry',
-  ),
-  (
-    name: 'Banana',
-    cal: 105.0,
-    pro: 1.3,
-    carb: 27.0,
-    fat: 0.4,
-    label: '1 medium (120 g)',
-  ),
-  (
-    name: 'Whole Milk',
-    cal: 149.0,
-    pro: 8.0,
-    carb: 12.0,
-    fat: 8.0,
-    label: '1 cup (240 ml)',
-  ),
-  (
-    name: 'Broccoli',
-    cal: 34.0,
-    pro: 2.8,
-    carb: 7.0,
-    fat: 0.4,
-    label: '100 g',
-  ),
-  (
-    name: 'Olive Oil',
-    cal: 124.0,
-    pro: 0.0,
-    carb: 0.0,
-    fat: 14.0,
-    label: '1 tbsp (14 g)',
-  ),
-  (
-    name: 'Almonds',
-    cal: 174.0,
-    pro: 6.0,
-    carb: 6.0,
-    fat: 15.0,
-    label: 'small handful (30 g)',
-  ),
-  (
-    name: 'Greek Yogurt',
-    cal: 100.0,
-    pro: 17.0,
-    carb: 6.0,
-    fat: 0.7,
-    label: '1 container (170 g)',
-  ),
-  (
-    name: 'Sweet Potato',
-    cal: 112.0,
-    pro: 2.0,
-    carb: 26.0,
-    fat: 0.1,
-    label: '1 medium (130 g)',
-  ),
-  (
-    name: 'Salmon',
-    cal: 208.0,
-    pro: 20.0,
-    carb: 0.0,
-    fat: 13.0,
-    label: '100 g fillet',
-  ),
-  (
-    name: 'Cheddar Cheese',
-    cal: 120.0,
-    pro: 7.0,
-    carb: 0.4,
-    fat: 10.0,
-    label: '1 oz (30 g)',
-  ),
-  (
-    name: 'Black Coffee',
-    cal: 2.0,
-    pro: 0.3,
-    carb: 0.0,
-    fat: 0.0,
-    label: '1 cup (240 ml)',
-  ),
-  (
-    name: 'Orange Juice',
-    cal: 112.0,
-    pro: 1.7,
-    carb: 26.0,
-    fat: 0.5,
-    label: '1 cup (240 ml)',
-  ),
-];
-
-// ---------------------------------------------------------------------------
 // Notifier
 // ---------------------------------------------------------------------------
 
+/// Manages the pantry food library — a reusable catalog of foods that can be
+/// added to any meal via [createMealFromPantry].
+///
+/// ## Two kinds of pantry rows
+///
+/// | Kind            | user_id in Supabase | is_preset | Who can edit?  |
+/// |-----------------|---------------------|-----------|----------------|
+/// | Global preset   | NULL                | true      | Admin SQL only |
+/// | Personal food   | user UUID           | false     | Owner only     |
+///
+/// ## Sync strategy (local-first)
+/// 1. On login — [syncFromRemote] pulls both global rows and the user's own
+///    rows from Supabase and upserts them into the local Drift DB.
+/// 2. On write  — local Drift is updated first; Supabase is updated
+///    fire-and-forget inside a try/catch so the UI never blocks.
 class PantryNotifier extends StreamNotifier<List<PantryFood>> {
   @override
   Stream<List<PantryFood>> build() {
     final db = ref.watch(databaseProvider);
-    _seedPresetsIfEmpty(db);
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+    // Show global presets (userId IS NULL) + the current user's personal foods,
+    // sorted: presets first, then alphabetically by name.
     return (db.select(db.pantryFoods)
+          ..where((t) => t.userId.isNull() | t.userId.equals(userId))
           ..orderBy([
             (t) => OrderingTerm(expression: t.isPreset, mode: OrderingMode.desc),
             (t) => OrderingTerm(expression: t.name),
@@ -184,31 +53,9 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         .watch();
   }
 
-  Future<void> _seedPresetsIfEmpty(AppDatabase db) async {
-    final count =
-        await (db.select(db.pantryFoods)..where((t) => t.isPreset.equals(true)))
-            .get();
-    if (count.isNotEmpty) return;
+  // ── Write operations ───────────────────────────────────────────────────────
 
-    await db.batch((batch) {
-      for (final p in _presets) {
-        batch.insert(
-          db.pantryFoods,
-          PantryFoodsCompanion.insert(
-            id: _uuid.v4(),
-            name: p.name,
-            calories: Value(p.cal),
-            protein: Value(p.pro),
-            carbs: Value(p.carb),
-            fat: Value(p.fat),
-            servingLabel: Value(p.label),
-            isPreset: const Value(true),
-          ),
-        );
-      }
-    });
-  }
-
+  /// Add a personal food to the current user's pantry.
   Future<void> addFood({
     required String name,
     required double calories,
@@ -218,9 +65,14 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     required String servingLabel,
   }) async {
     final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final id = _uuid.v4();
+
+    // 1. Write locally first so the UI updates instantly.
     await db.into(db.pantryFoods).insert(
           PantryFoodsCompanion.insert(
-            id: _uuid.v4(),
+            id: id,
+            userId: Value(userId),
             name: name,
             calories: Value(calories),
             protein: Value(protein),
@@ -230,8 +82,27 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
             isPreset: const Value(false),
           ),
         );
+
+    // 2. Fire-and-forget Supabase sync.
+    try {
+      await Supabase.instance.client.from('pantry_foods').insert({
+        'id': id,
+        'user_id': userId,
+        'name': name,
+        'calories': calories,
+        'protein': protein,
+        'carbs': carbs,
+        'fat': fat,
+        'serving_label': servingLabel,
+        'is_preset': false,
+      });
+      await (db.update(db.pantryFoods)..where((t) => t.id.equals(id)))
+          .write(const PantryFoodsCompanion(synced: Value(true)));
+    } catch (_) {}
   }
 
+  /// Update an existing personal food. Global presets cannot be edited from
+  /// the app — use the Supabase SQL editor for those.
   Future<void> updateFood({
     required String id,
     required String name,
@@ -242,6 +113,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     required String servingLabel,
   }) async {
     final db = ref.read(databaseProvider);
+
     await (db.update(db.pantryFoods)..where((t) => t.id.equals(id))).write(
       PantryFoodsCompanion(
         name: Value(name),
@@ -250,16 +122,40 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         carbs: Value(carbs),
         fat: Value(fat),
         servingLabel: Value(servingLabel),
+        synced: const Value(false),
       ),
     );
+
+    try {
+      await Supabase.instance.client.from('pantry_foods').update({
+        'name': name,
+        'calories': calories,
+        'protein': protein,
+        'carbs': carbs,
+        'fat': fat,
+        'serving_label': servingLabel,
+      }).eq('id', id);
+      await (db.update(db.pantryFoods)..where((t) => t.id.equals(id)))
+          .write(const PantryFoodsCompanion(synced: Value(true)));
+    } catch (_) {}
   }
 
+  /// Delete a personal food. Global presets are protected by Supabase RLS and
+  /// cannot be deleted by regular users.
   Future<void> deleteFood(String id) async {
     final db = ref.read(databaseProvider);
     await (db.delete(db.pantryFoods)..where((t) => t.id.equals(id))).go();
+    try {
+      await Supabase.instance.client
+          .from('pantry_foods')
+          .delete()
+          .eq('id', id);
+    } catch (_) {}
   }
 
-  /// Creates a named meal in today's nutrition from a list of pantry foods
+  // ── Meal creation ──────────────────────────────────────────────────────────
+
+  /// Creates a named meal in today's nutrition log from a list of pantry foods
   /// with their serving counts.
   Future<void> createMealFromPantry({
     required String mealName,
@@ -278,5 +174,66 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         fat: s.food.fat * s.servings,
       );
     }
+  }
+
+  // ── Remote sync ────────────────────────────────────────────────────────────
+
+  /// Pull global presets and the current user's personal foods from Supabase
+  /// into the local Drift DB. Called once on login.
+  ///
+  /// Uses upsert (insertOnConflictUpdate) so existing rows are overwritten with
+  /// the latest Supabase values, and new rows are inserted.
+  Future<void> syncFromRemote() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      // ── 1. Global presets (user_id IS NULL in Supabase) ──────────────────
+      final globals = await Supabase.instance.client
+          .from('pantry_foods')
+          .select()
+          .filter('user_id', 'is', null);
+
+      for (final row in globals as List) {
+        await db.into(db.pantryFoods).insertOnConflictUpdate(
+              PantryFoodsCompanion.insert(
+                id: row['id'] as String,
+                // userId left absent (null) — marks this as a global preset locally
+                name: row['name'] as String,
+                calories: Value((row['calories'] as num).toDouble()),
+                protein: Value((row['protein'] as num).toDouble()),
+                carbs: Value((row['carbs'] as num).toDouble()),
+                fat: Value((row['fat'] as num).toDouble()),
+                servingLabel: Value(row['serving_label'] as String),
+                isPreset: const Value(true),
+                synced: const Value(true),
+              ),
+            );
+      }
+
+      // ── 2. User's personal pantry foods ───────────────────────────────────
+      final personal = await Supabase.instance.client
+          .from('pantry_foods')
+          .select()
+          .eq('user_id', userId);
+
+      for (final row in personal as List) {
+        await db.into(db.pantryFoods).insertOnConflictUpdate(
+              PantryFoodsCompanion.insert(
+                id: row['id'] as String,
+                userId: Value(userId),
+                name: row['name'] as String,
+                calories: Value((row['calories'] as num).toDouble()),
+                protein: Value((row['protein'] as num).toDouble()),
+                carbs: Value((row['carbs'] as num).toDouble()),
+                fat: Value((row['fat'] as num).toDouble()),
+                servingLabel: Value(row['serving_label'] as String),
+                isPreset: Value(row['is_preset'] as bool? ?? false),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (_) {}
   }
 }

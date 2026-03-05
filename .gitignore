@@ -47,3 +47,7 @@ app.*.map.json
 # Local environment variables (never commit)
 .env
 lib/src/core/env.dart
+
+
+.notes
+.vercel

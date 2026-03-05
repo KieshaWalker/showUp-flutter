@@ -13,7 +13,7 @@ class AppColors {
   static const eucalyptus = ui.Color.fromARGB(255, 76, 156, 47);
   static const sage       = Color(0xFF6E8260);
   static const khaki      = Color(0xFFAF9878);
-  static const mahogany   = Color(0xFF72281A);
+  static const mahogany   = ui.Color.fromARGB(135, 161, 74, 56);
   static const silhouette = Color(0xFF1C1814);
   static const olive      = Color(0xFF5A6A30);
   static const plum       = Color(0xFF4E3052);
@@ -321,6 +321,7 @@ class AppPaddings {
   static const all        = EdgeInsets.all(16);
   static const card       = EdgeInsets.all(20);
   static const section    = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  static const middle = EdgeInsets.all(50);
 }
 
 // ---------------------------------------------------------------------------

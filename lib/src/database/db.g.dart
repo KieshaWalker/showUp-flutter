@@ -2997,6 +2997,15 @@ class $PantryFoodsTable extends PantryFoods
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -3089,9 +3098,23 @@ class $PantryFoodsTable extends PantryFoods
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    userId,
     name,
     calories,
     protein,
@@ -3100,6 +3123,7 @@ class $PantryFoodsTable extends PantryFoods
     servingLabel,
     isPreset,
     createdAt,
+    synced,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3117,6 +3141,12 @@ class $PantryFoodsTable extends PantryFoods
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -3171,6 +3201,12 @@ class $PantryFoodsTable extends PantryFoods
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
     return context;
   }
 
@@ -3185,6 +3221,10 @@ class $PantryFoodsTable extends PantryFoods
             DriftSqlType.string,
             data['${effectivePrefix}id'],
           )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
       name:
           attachedDatabase.typeMapping.read(
             DriftSqlType.string,
@@ -3225,6 +3265,11 @@ class $PantryFoodsTable extends PantryFoods
             DriftSqlType.dateTime,
             data['${effectivePrefix}created_at'],
           )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
     );
   }
 
@@ -3236,6 +3281,10 @@ class $PantryFoodsTable extends PantryFoods
 
 class PantryFood extends DataClass implements Insertable<PantryFood> {
   final String id;
+
+  /// NULL = global preset (admin-managed, visible to all users).
+  /// Non-null = personal food belonging to this user.
+  final String? userId;
   final String name;
 
   /// Calories per serving
@@ -3253,11 +3302,13 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
   /// Human-readable serving description e.g. "1 slice (28g)", "1 egg (50g)"
   final String servingLabel;
 
-  /// True for built-in preset foods seeded on first launch
+  /// True for global preset foods managed in Supabase.
   final bool isPreset;
   final DateTime createdAt;
+  final bool synced;
   const PantryFood({
     required this.id,
+    this.userId,
     required this.name,
     required this.calories,
     required this.protein,
@@ -3266,11 +3317,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     required this.servingLabel,
     required this.isPreset,
     required this.createdAt,
+    required this.synced,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
     map['name'] = Variable<String>(name);
     map['calories'] = Variable<double>(calories);
     map['protein'] = Variable<double>(protein);
@@ -3279,12 +3334,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     map['serving_label'] = Variable<String>(servingLabel);
     map['is_preset'] = Variable<bool>(isPreset);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['synced'] = Variable<bool>(synced);
     return map;
   }
 
   PantryFoodsCompanion toCompanion(bool nullToAbsent) {
     return PantryFoodsCompanion(
       id: Value(id),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
       name: Value(name),
       calories: Value(calories),
       protein: Value(protein),
@@ -3293,6 +3351,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       servingLabel: Value(servingLabel),
       isPreset: Value(isPreset),
       createdAt: Value(createdAt),
+      synced: Value(synced),
     );
   }
 
@@ -3303,6 +3362,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PantryFood(
       id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String?>(json['userId']),
       name: serializer.fromJson<String>(json['name']),
       calories: serializer.fromJson<double>(json['calories']),
       protein: serializer.fromJson<double>(json['protein']),
@@ -3311,6 +3371,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       servingLabel: serializer.fromJson<String>(json['servingLabel']),
       isPreset: serializer.fromJson<bool>(json['isPreset']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      synced: serializer.fromJson<bool>(json['synced']),
     );
   }
   @override
@@ -3318,6 +3379,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String?>(userId),
       'name': serializer.toJson<String>(name),
       'calories': serializer.toJson<double>(calories),
       'protein': serializer.toJson<double>(protein),
@@ -3326,11 +3388,13 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       'servingLabel': serializer.toJson<String>(servingLabel),
       'isPreset': serializer.toJson<bool>(isPreset),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'synced': serializer.toJson<bool>(synced),
     };
   }
 
   PantryFood copyWith({
     String? id,
+    Value<String?> userId = const Value.absent(),
     String? name,
     double? calories,
     double? protein,
@@ -3339,8 +3403,10 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     String? servingLabel,
     bool? isPreset,
     DateTime? createdAt,
+    bool? synced,
   }) => PantryFood(
     id: id ?? this.id,
+    userId: userId.present ? userId.value : this.userId,
     name: name ?? this.name,
     calories: calories ?? this.calories,
     protein: protein ?? this.protein,
@@ -3349,10 +3415,12 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     servingLabel: servingLabel ?? this.servingLabel,
     isPreset: isPreset ?? this.isPreset,
     createdAt: createdAt ?? this.createdAt,
+    synced: synced ?? this.synced,
   );
   PantryFood copyWithCompanion(PantryFoodsCompanion data) {
     return PantryFood(
       id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
       name: data.name.present ? data.name.value : this.name,
       calories: data.calories.present ? data.calories.value : this.calories,
       protein: data.protein.present ? data.protein.value : this.protein,
@@ -3364,6 +3432,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
               : this.servingLabel,
       isPreset: data.isPreset.present ? data.isPreset.value : this.isPreset,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      synced: data.synced.present ? data.synced.value : this.synced,
     );
   }
 
@@ -3371,6 +3440,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
   String toString() {
     return (StringBuffer('PantryFood(')
           ..write('id: $id, ')
+          ..write('userId: $userId, ')
           ..write('name: $name, ')
           ..write('calories: $calories, ')
           ..write('protein: $protein, ')
@@ -3378,7 +3448,8 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
           ..write('fat: $fat, ')
           ..write('servingLabel: $servingLabel, ')
           ..write('isPreset: $isPreset, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced')
           ..write(')'))
         .toString();
   }
@@ -3386,6 +3457,7 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
   @override
   int get hashCode => Object.hash(
     id,
+    userId,
     name,
     calories,
     protein,
@@ -3394,12 +3466,14 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     servingLabel,
     isPreset,
     createdAt,
+    synced,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PantryFood &&
           other.id == this.id &&
+          other.userId == this.userId &&
           other.name == this.name &&
           other.calories == this.calories &&
           other.protein == this.protein &&
@@ -3407,11 +3481,13 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
           other.fat == this.fat &&
           other.servingLabel == this.servingLabel &&
           other.isPreset == this.isPreset &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.synced == this.synced);
 }
 
 class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
   final Value<String> id;
+  final Value<String?> userId;
   final Value<String> name;
   final Value<double> calories;
   final Value<double> protein;
@@ -3420,9 +3496,11 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
   final Value<String> servingLabel;
   final Value<bool> isPreset;
   final Value<DateTime> createdAt;
+  final Value<bool> synced;
   final Value<int> rowid;
   const PantryFoodsCompanion({
     this.id = const Value.absent(),
+    this.userId = const Value.absent(),
     this.name = const Value.absent(),
     this.calories = const Value.absent(),
     this.protein = const Value.absent(),
@@ -3431,10 +3509,12 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     this.servingLabel = const Value.absent(),
     this.isPreset = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PantryFoodsCompanion.insert({
     required String id,
+    this.userId = const Value.absent(),
     required String name,
     this.calories = const Value.absent(),
     this.protein = const Value.absent(),
@@ -3443,11 +3523,13 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     this.servingLabel = const Value.absent(),
     this.isPreset = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name);
   static Insertable<PantryFood> custom({
     Expression<String>? id,
+    Expression<String>? userId,
     Expression<String>? name,
     Expression<double>? calories,
     Expression<double>? protein,
@@ -3456,10 +3538,12 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     Expression<String>? servingLabel,
     Expression<bool>? isPreset,
     Expression<DateTime>? createdAt,
+    Expression<bool>? synced,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
       if (name != null) 'name': name,
       if (calories != null) 'calories': calories,
       if (protein != null) 'protein': protein,
@@ -3468,12 +3552,14 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
       if (servingLabel != null) 'serving_label': servingLabel,
       if (isPreset != null) 'is_preset': isPreset,
       if (createdAt != null) 'created_at': createdAt,
+      if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   PantryFoodsCompanion copyWith({
     Value<String>? id,
+    Value<String?>? userId,
     Value<String>? name,
     Value<double>? calories,
     Value<double>? protein,
@@ -3482,10 +3568,12 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     Value<String>? servingLabel,
     Value<bool>? isPreset,
     Value<DateTime>? createdAt,
+    Value<bool>? synced,
     Value<int>? rowid,
   }) {
     return PantryFoodsCompanion(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       calories: calories ?? this.calories,
       protein: protein ?? this.protein,
@@ -3494,6 +3582,7 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
       servingLabel: servingLabel ?? this.servingLabel,
       isPreset: isPreset ?? this.isPreset,
       createdAt: createdAt ?? this.createdAt,
+      synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3503,6 +3592,9 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -3528,6 +3620,9 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3538,6 +3633,7 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
   String toString() {
     return (StringBuffer('PantryFoodsCompanion(')
           ..write('id: $id, ')
+          ..write('userId: $userId, ')
           ..write('name: $name, ')
           ..write('calories: $calories, ')
           ..write('protein: $protein, ')
@@ -3546,6 +3642,7 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
           ..write('servingLabel: $servingLabel, ')
           ..write('isPreset: $isPreset, ')
           ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5221,6 +5318,7 @@ typedef $$DailyNutritionGoalsTableProcessedTableManager =
 typedef $$PantryFoodsTableCreateCompanionBuilder =
     PantryFoodsCompanion Function({
       required String id,
+      Value<String?> userId,
       required String name,
       Value<double> calories,
       Value<double> protein,
@@ -5229,11 +5327,13 @@ typedef $$PantryFoodsTableCreateCompanionBuilder =
       Value<String> servingLabel,
       Value<bool> isPreset,
       Value<DateTime> createdAt,
+      Value<bool> synced,
       Value<int> rowid,
     });
 typedef $$PantryFoodsTableUpdateCompanionBuilder =
     PantryFoodsCompanion Function({
       Value<String> id,
+      Value<String?> userId,
       Value<String> name,
       Value<double> calories,
       Value<double> protein,
@@ -5242,6 +5342,7 @@ typedef $$PantryFoodsTableUpdateCompanionBuilder =
       Value<String> servingLabel,
       Value<bool> isPreset,
       Value<DateTime> createdAt,
+      Value<bool> synced,
       Value<int> rowid,
     });
 
@@ -5256,6 +5357,11 @@ class $$PantryFoodsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5298,6 +5404,11 @@ class $$PantryFoodsTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$PantryFoodsTableOrderingComposer
@@ -5311,6 +5422,11 @@ class $$PantryFoodsTableOrderingComposer
   });
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5353,6 +5469,11 @@ class $$PantryFoodsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PantryFoodsTableAnnotationComposer
@@ -5366,6 +5487,9 @@ class $$PantryFoodsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
@@ -5392,6 +5516,9 @@ class $$PantryFoodsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
 }
 
 class $$PantryFoodsTableTableManager
@@ -5427,6 +5554,7 @@ class $$PantryFoodsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<double> calories = const Value.absent(),
                 Value<double> protein = const Value.absent(),
@@ -5435,9 +5563,11 @@ class $$PantryFoodsTableTableManager
                 Value<String> servingLabel = const Value.absent(),
                 Value<bool> isPreset = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PantryFoodsCompanion(
                 id: id,
+                userId: userId,
                 name: name,
                 calories: calories,
                 protein: protein,
@@ -5446,11 +5576,13 @@ class $$PantryFoodsTableTableManager
                 servingLabel: servingLabel,
                 isPreset: isPreset,
                 createdAt: createdAt,
+                synced: synced,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
+                Value<String?> userId = const Value.absent(),
                 required String name,
                 Value<double> calories = const Value.absent(),
                 Value<double> protein = const Value.absent(),
@@ -5459,9 +5591,11 @@ class $$PantryFoodsTableTableManager
                 Value<String> servingLabel = const Value.absent(),
                 Value<bool> isPreset = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PantryFoodsCompanion.insert(
                 id: id,
+                userId: userId,
                 name: name,
                 calories: calories,
                 protein: protein,
@@ -5470,6 +5604,7 @@ class $$PantryFoodsTableTableManager
                 servingLabel: servingLabel,
                 isPreset: isPreset,
                 createdAt: createdAt,
+                synced: synced,
                 rowid: rowid,
               ),
           withReferenceMapper:
