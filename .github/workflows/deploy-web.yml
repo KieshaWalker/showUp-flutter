@@ -26,18 +26,15 @@ jobs:
 
       - run: flutter build web --release
 
-      - name: Stage vercel config and drift web assets
+      - name: Stage vercel config
         run: |
           cp vercel.json build/web/vercel.json
-          # sqlite3.wasm and drift_worker.js are committed to web/ and copied by the Flutter build
-          mkdir -p build/web/.vercel
-          echo '{"projectId":"${{ secrets.VERCEL_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > build/web/.vercel/project.json
 
       - name: Deploy to Vercel
-        run: |
-          npm install -g vercel@latest
-          vercel deploy ./build/web --prod --yes
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./build/web
