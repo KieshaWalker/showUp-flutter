@@ -26,9 +26,10 @@ jobs:
 
       - run: flutter build web --release
 
-      - name: Stage vercel config for deployment
+      - name: Stage vercel config and drift web assets
         run: |
           cp vercel.json build/web/vercel.json
+          # sqlite3.wasm and drift_worker.js are committed to web/ and copied by the Flutter build
           mkdir -p build/web/.vercel
           echo '{"projectId":"${{ secrets.VERCEL_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > build/web/.vercel/project.json
 

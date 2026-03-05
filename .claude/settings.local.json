@@ -16,7 +16,9 @@
       "Bash(node:*)",
       "Bash(gh run:*)",
       "Bash(vercel domains:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)"
     ]
   }
 }
