@@ -35,21 +35,33 @@ class NutritionScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.terracotta)),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (nutrition) {
-          final goals = nutrition?.goals;
+          final goals = nutrition.goals;
+          final weightKg = goals?.currentWeightKg;
+          final proteinSubtitle = (weightKg != null && weightKg > 0)
+              ? '${((goals!.protein) / weightKg).toStringAsFixed(1)}g / kg body weight'
+              : null;
           return ListView(
             padding: AppPaddings.all,
             children: [
               Text('Daily Goals', style: AppTextStyles.headlineMedium),
               const SizedBox(height: AppSpacing.md),
-              _GoalCard(label: 'Calories', value: goals?.calories.toInt() ?? 2000, unit: 'kcal'),
+              _GoalCard(label: 'Calories', value: goals?.calories ?? 2000, unit: 'kcal'),
               const SizedBox(height: AppSpacing.sm),
-              _GoalCard(label: 'Protein',  value: goals?.protein.toInt()  ?? 150,  unit: 'g'),
+              _GoalCard(label: 'Protein',  value: goals?.protein  ?? 150,  unit: 'g', subtitle: proteinSubtitle),
               const SizedBox(height: AppSpacing.sm),
-              _GoalCard(label: 'Carbs',    value: goals?.carbs.toInt()    ?? 250,  unit: 'g'),
+              _GoalCard(label: 'Carbs',    value: goals?.carbs    ?? 250,  unit: 'g'),
               const SizedBox(height: AppSpacing.sm),
-              _GoalCard(label: 'Fat',      value: goals?.fat.toInt()      ?? 65,   unit: 'g'),
+              _GoalCard(label: 'Fat',      value: goals?.fat      ?? 65,   unit: 'g'),
               const SizedBox(height: AppSpacing.sm),
-              _GoalCard(label: 'Water',    value: goals?.waterMl.toInt()  ?? 2500, unit: 'ml'),
+              _GoalCard(label: 'Water',    value: goals?.waterMl  ?? 2500, unit: 'ml'),
+              if (goals?.currentWeightKg != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _GoalCard(label: 'Current Weight', value: goals!.currentWeightKg!, unit: 'kg'),
+              ],
+              if (goals?.targetWeightKg != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _GoalCard(label: 'Target Weight', value: goals!.targetWeightKg!, unit: 'kg'),
+              ],
               const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
                 onPressed: () => _showGoalsSheet(context, ref, nutrition),
@@ -69,11 +81,13 @@ class NutritionScreen extends ConsumerWidget {
     TodayNutrition? nutrition,
   ) {
     final goals = nutrition?.goals;
-    final calCtrl   = TextEditingController(text: '${goals?.calories.toInt() ?? 2000}');
-    final proCtrl   = TextEditingController(text: '${goals?.protein.toInt()  ?? 150}');
-    final carbCtrl  = TextEditingController(text: '${goals?.carbs.toInt()    ?? 250}');
-    final fatCtrl   = TextEditingController(text: '${goals?.fat.toInt()      ?? 65}');
-    final waterCtrl = TextEditingController(text: '${goals?.waterMl.toInt()  ?? 2500}');
+    final calCtrl        = TextEditingController(text: '${goals?.calories.toInt() ?? 2000}');
+    final proCtrl        = TextEditingController(text: '${goals?.protein.toInt()  ?? 150}');
+    final carbCtrl       = TextEditingController(text: '${goals?.carbs.toInt()    ?? 250}');
+    final fatCtrl        = TextEditingController(text: '${goals?.fat.toInt()      ?? 65}');
+    final waterCtrl      = TextEditingController(text: '${goals?.waterMl.toInt()  ?? 2500}');
+    final curWeightCtrl  = TextEditingController(text: goals?.currentWeightKg?.toStringAsFixed(1) ?? '');
+    final tgtWeightCtrl  = TextEditingController(text: goals?.targetWeightKg?.toStringAsFixed(1) ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -94,20 +108,24 @@ class NutritionScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm - 2),
               Text('Set your daily nutrition targets', style: AppTextStyles.bodyMedium),
               const SizedBox(height: AppSpacing.lg - 4),
-              _FormField(ctrl: calCtrl,   label: 'Calories', unit: 'kcal'),
-              _FormField(ctrl: proCtrl,   label: 'Protein',  unit: 'g'),
-              _FormField(ctrl: carbCtrl,  label: 'Carbs',    unit: 'g'),
-              _FormField(ctrl: fatCtrl,   label: 'Fat',      unit: 'g'),
-              _FormField(ctrl: waterCtrl, label: 'Water',    unit: 'ml'),
+              _FormField(ctrl: calCtrl,       label: 'Calories',       unit: 'kcal'),
+              _FormField(ctrl: proCtrl,        label: 'Protein',        unit: 'g'),
+              _FormField(ctrl: carbCtrl,       label: 'Carbs',          unit: 'g'),
+              _FormField(ctrl: fatCtrl,        label: 'Fat',            unit: 'g'),
+              _FormField(ctrl: waterCtrl,      label: 'Water',          unit: 'ml'),
+              _FormField(ctrl: curWeightCtrl,  label: 'Current Weight', unit: 'kg', decimal: true),
+              _FormField(ctrl: tgtWeightCtrl,  label: 'Target Weight',  unit: 'kg', decimal: true),
               const SizedBox(height: AppSpacing.lg - 4),
               FilledButton(
                 onPressed: () {
                   ref.read(nutritionNotifierProvider.notifier).updateGoals(
-                    calories: double.tryParse(calCtrl.text)   ?? 2000,
-                    protein:  double.tryParse(proCtrl.text)   ?? 150,
-                    carbs:    double.tryParse(carbCtrl.text)  ?? 250,
-                    fat:      double.tryParse(fatCtrl.text)   ?? 65,
-                    waterMl:  double.tryParse(waterCtrl.text) ?? 2500,
+                    calories:        double.tryParse(calCtrl.text)       ?? 2000,
+                    protein:         double.tryParse(proCtrl.text)       ?? 150,
+                    carbs:           double.tryParse(carbCtrl.text)      ?? 250,
+                    fat:             double.tryParse(fatCtrl.text)       ?? 65,
+                    waterMl:         double.tryParse(waterCtrl.text)     ?? 2500,
+                    currentWeightKg: double.tryParse(curWeightCtrl.text),
+                    targetWeightKg:  double.tryParse(tgtWeightCtrl.text),
                   );
                   Navigator.pop(ctx);
                 },
@@ -127,9 +145,15 @@ class NutritionScreen extends ConsumerWidget {
 
 class _GoalCard extends StatelessWidget {
   final String label;
-  final int value;
+  final double value;
   final String unit;
-  const _GoalCard({required this.label, required this.value, required this.unit});
+  final String? subtitle;
+  const _GoalCard({required this.label, required this.value, required this.unit, this.subtitle});
+
+  String get _displayValue {
+    if (value == value.truncateToDouble()) return value.toInt().toString();
+    return value.toStringAsFixed(1);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,8 +163,17 @@ class _GoalCard extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: AppTextStyles.titleMedium),
-            Text('$value $unit', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.khaki)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.titleMedium),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle!, style: AppTextStyles.labelSmall.copyWith(color: AppColors.khaki.withValues(alpha: 0.7))),
+                ],
+              ],
+            ),
+            Text('$_displayValue $unit', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.khaki)),
           ],
         ),
       ),
@@ -156,8 +189,9 @@ class _FormField extends StatelessWidget {
   final TextEditingController ctrl;
   final String label;
   final String? unit;
+  final bool decimal;
 
-  const _FormField({required this.ctrl, required this.label, this.unit});
+  const _FormField({required this.ctrl, required this.label, this.unit, this.decimal = false});
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +200,9 @@ class _FormField extends StatelessWidget {
       child: TextField(
         controller: ctrl,
         style: AppTextStyles.bodyLarge,
-        keyboardType: TextInputType.number,
+        keyboardType: decimal
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.number,
         decoration: InputDecoration(
           labelText: unit != null ? '$label ($unit)' : label,
         ),

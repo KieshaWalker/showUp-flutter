@@ -32,7 +32,7 @@ class UserProfile {
   );
 
   factory UserProfile.fromMap(Map<String, dynamic> map) => UserProfile(
-    id: map['uuid'] as String,
+    id: map['id'] as String,
     username: map['username'] as String?,
     fullName: map['full_name'] as String?,
     avatarUrl: map['avatar_url'] as String?,
@@ -63,7 +63,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       final res = await Supabase.instance.client
           .from('profiles')
           .select()
-          .eq('uuid', userId)
+          .eq('id', userId)
           .maybeSingle();
       if (res == null) return UserProfile(id: userId);
       return UserProfile.fromMap(res);
@@ -80,7 +80,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
 
     try {
       await Supabase.instance.client.from('profiles').upsert({
-        'uuid': userId,
+        'id': userId,
         if (fullName != null) 'full_name': fullName,
         if (username != null) 'username': username,
         'updated_at': DateTime.now().toIso8601String(),
@@ -144,7 +144,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
 
     // Step 3: persist URL to profiles table
     await Supabase.instance.client.from('profiles').upsert({
-      'uuid': userId,
+      'id': userId,
       'avatar_url': avatarUrl,
       'updated_at': DateTime.now().toIso8601String(),
     });

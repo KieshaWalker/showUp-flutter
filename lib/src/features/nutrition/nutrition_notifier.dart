@@ -302,6 +302,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     required double carbs,
     required double fat,
     required double waterMl,
+    double? currentWeightKg,
+    double? targetWeightKg,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser!.id;
@@ -316,6 +318,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
             carbs: Value(carbs),
             fat: Value(fat),
             waterMl: Value(waterMl),
+            currentWeightKg: Value(currentWeightKg),
+            targetWeightKg: Value(targetWeightKg),
           ),
         );
 
@@ -327,6 +331,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'carbs': carbs,
         'fat': fat,
         'water_ml': waterMl,
+        'current_weight_kg': currentWeightKg,
+        'target_weight_kg': targetWeightKg,
       });
     } catch (_) {}
   }
@@ -517,6 +523,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 carbs: Value((goals['carbs'] as num).toDouble()),
                 fat: Value((goals['fat'] as num).toDouble()),
                 waterMl: Value((goals['water_ml'] as num).toDouble()),
+                currentWeightKg: Value((goals['current_weight_kg'] as num?)?.toDouble()),
+                targetWeightKg: Value((goals['target_weight_kg'] as num?)?.toDouble()),
                 synced: const Value(true),
               ),
             );

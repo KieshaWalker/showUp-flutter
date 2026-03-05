@@ -2600,6 +2600,28 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
     requiredDuringInsert: false,
     defaultValue: const Constant(2500.0),
   );
+  static const VerificationMeta _currentWeightKgMeta = const VerificationMeta(
+    'currentWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> currentWeightKg = GeneratedColumn<double>(
+    'current_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetWeightKgMeta = const VerificationMeta(
+    'targetWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> targetWeightKg = GeneratedColumn<double>(
+    'target_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
   @override
   late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
@@ -2621,6 +2643,8 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
     carbs,
     fat,
     waterMl,
+    currentWeightKg,
+    targetWeightKg,
     synced,
   ];
   @override
@@ -2673,6 +2697,24 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
         waterMl.isAcceptableOrUnknown(data['water_ml']!, _waterMlMeta),
       );
     }
+    if (data.containsKey('current_weight_kg')) {
+      context.handle(
+        _currentWeightKgMeta,
+        currentWeightKg.isAcceptableOrUnknown(
+          data['current_weight_kg']!,
+          _currentWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_weight_kg')) {
+      context.handle(
+        _targetWeightKgMeta,
+        targetWeightKg.isAcceptableOrUnknown(
+          data['target_weight_kg']!,
+          _targetWeightKgMeta,
+        ),
+      );
+    }
     if (data.containsKey('synced')) {
       context.handle(
         _syncedMeta,
@@ -2718,6 +2760,14 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
             DriftSqlType.double,
             data['${effectivePrefix}water_ml'],
           )!,
+      currentWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}current_weight_kg'],
+      ),
+      targetWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_weight_kg'],
+      ),
       synced:
           attachedDatabase.typeMapping.read(
             DriftSqlType.bool,
@@ -2740,6 +2790,8 @@ class DailyNutritionGoal extends DataClass
   final double carbs;
   final double fat;
   final double waterMl;
+  final double? currentWeightKg;
+  final double? targetWeightKg;
   final bool synced;
   const DailyNutritionGoal({
     required this.userId,
@@ -2748,6 +2800,8 @@ class DailyNutritionGoal extends DataClass
     required this.carbs,
     required this.fat,
     required this.waterMl,
+    this.currentWeightKg,
+    this.targetWeightKg,
     required this.synced,
   });
   @override
@@ -2759,6 +2813,12 @@ class DailyNutritionGoal extends DataClass
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
     map['water_ml'] = Variable<double>(waterMl);
+    if (!nullToAbsent || currentWeightKg != null) {
+      map['current_weight_kg'] = Variable<double>(currentWeightKg);
+    }
+    if (!nullToAbsent || targetWeightKg != null) {
+      map['target_weight_kg'] = Variable<double>(targetWeightKg);
+    }
     map['synced'] = Variable<bool>(synced);
     return map;
   }
@@ -2771,6 +2831,14 @@ class DailyNutritionGoal extends DataClass
       carbs: Value(carbs),
       fat: Value(fat),
       waterMl: Value(waterMl),
+      currentWeightKg:
+          currentWeightKg == null && nullToAbsent
+              ? const Value.absent()
+              : Value(currentWeightKg),
+      targetWeightKg:
+          targetWeightKg == null && nullToAbsent
+              ? const Value.absent()
+              : Value(targetWeightKg),
       synced: Value(synced),
     );
   }
@@ -2787,6 +2855,8 @@ class DailyNutritionGoal extends DataClass
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
       waterMl: serializer.fromJson<double>(json['waterMl']),
+      currentWeightKg: serializer.fromJson<double?>(json['currentWeightKg']),
+      targetWeightKg: serializer.fromJson<double?>(json['targetWeightKg']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
   }
@@ -2800,6 +2870,8 @@ class DailyNutritionGoal extends DataClass
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
       'waterMl': serializer.toJson<double>(waterMl),
+      'currentWeightKg': serializer.toJson<double?>(currentWeightKg),
+      'targetWeightKg': serializer.toJson<double?>(targetWeightKg),
       'synced': serializer.toJson<bool>(synced),
     };
   }
@@ -2811,6 +2883,8 @@ class DailyNutritionGoal extends DataClass
     double? carbs,
     double? fat,
     double? waterMl,
+    Value<double?> currentWeightKg = const Value.absent(),
+    Value<double?> targetWeightKg = const Value.absent(),
     bool? synced,
   }) => DailyNutritionGoal(
     userId: userId ?? this.userId,
@@ -2819,6 +2893,10 @@ class DailyNutritionGoal extends DataClass
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
     waterMl: waterMl ?? this.waterMl,
+    currentWeightKg:
+        currentWeightKg.present ? currentWeightKg.value : this.currentWeightKg,
+    targetWeightKg:
+        targetWeightKg.present ? targetWeightKg.value : this.targetWeightKg,
     synced: synced ?? this.synced,
   );
   DailyNutritionGoal copyWithCompanion(DailyNutritionGoalsCompanion data) {
@@ -2829,6 +2907,14 @@ class DailyNutritionGoal extends DataClass
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
       waterMl: data.waterMl.present ? data.waterMl.value : this.waterMl,
+      currentWeightKg:
+          data.currentWeightKg.present
+              ? data.currentWeightKg.value
+              : this.currentWeightKg,
+      targetWeightKg:
+          data.targetWeightKg.present
+              ? data.targetWeightKg.value
+              : this.targetWeightKg,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
   }
@@ -2842,14 +2928,25 @@ class DailyNutritionGoal extends DataClass
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('waterMl: $waterMl, ')
+          ..write('currentWeightKg: $currentWeightKg, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
           ..write('synced: $synced')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(userId, calories, protein, carbs, fat, waterMl, synced);
+  int get hashCode => Object.hash(
+    userId,
+    calories,
+    protein,
+    carbs,
+    fat,
+    waterMl,
+    currentWeightKg,
+    targetWeightKg,
+    synced,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2860,6 +2957,8 @@ class DailyNutritionGoal extends DataClass
           other.carbs == this.carbs &&
           other.fat == this.fat &&
           other.waterMl == this.waterMl &&
+          other.currentWeightKg == this.currentWeightKg &&
+          other.targetWeightKg == this.targetWeightKg &&
           other.synced == this.synced);
 }
 
@@ -2870,6 +2969,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
   final Value<double> carbs;
   final Value<double> fat;
   final Value<double> waterMl;
+  final Value<double?> currentWeightKg;
+  final Value<double?> targetWeightKg;
   final Value<bool> synced;
   final Value<int> rowid;
   const DailyNutritionGoalsCompanion({
@@ -2879,6 +2980,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.waterMl = const Value.absent(),
+    this.currentWeightKg = const Value.absent(),
+    this.targetWeightKg = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2889,6 +2992,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.waterMl = const Value.absent(),
+    this.currentWeightKg = const Value.absent(),
+    this.targetWeightKg = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : userId = Value(userId);
@@ -2899,6 +3004,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     Expression<double>? carbs,
     Expression<double>? fat,
     Expression<double>? waterMl,
+    Expression<double>? currentWeightKg,
+    Expression<double>? targetWeightKg,
     Expression<bool>? synced,
     Expression<int>? rowid,
   }) {
@@ -2909,6 +3016,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
       if (waterMl != null) 'water_ml': waterMl,
+      if (currentWeightKg != null) 'current_weight_kg': currentWeightKg,
+      if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
       if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2921,6 +3030,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     Value<double>? carbs,
     Value<double>? fat,
     Value<double>? waterMl,
+    Value<double?>? currentWeightKg,
+    Value<double?>? targetWeightKg,
     Value<bool>? synced,
     Value<int>? rowid,
   }) {
@@ -2931,6 +3042,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
       waterMl: waterMl ?? this.waterMl,
+      currentWeightKg: currentWeightKg ?? this.currentWeightKg,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
     );
@@ -2957,6 +3070,12 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     if (waterMl.present) {
       map['water_ml'] = Variable<double>(waterMl.value);
     }
+    if (currentWeightKg.present) {
+      map['current_weight_kg'] = Variable<double>(currentWeightKg.value);
+    }
+    if (targetWeightKg.present) {
+      map['target_weight_kg'] = Variable<double>(targetWeightKg.value);
+    }
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
@@ -2975,6 +3094,8 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('waterMl: $waterMl, ')
+          ..write('currentWeightKg: $currentWeightKg, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5059,6 +5180,8 @@ typedef $$DailyNutritionGoalsTableCreateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> waterMl,
+      Value<double?> currentWeightKg,
+      Value<double?> targetWeightKg,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -5070,6 +5193,8 @@ typedef $$DailyNutritionGoalsTableUpdateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> waterMl,
+      Value<double?> currentWeightKg,
+      Value<double?> targetWeightKg,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -5110,6 +5235,16 @@ class $$DailyNutritionGoalsTableFilterComposer
 
   ColumnFilters<double> get waterMl => $composableBuilder(
     column: $table.waterMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get currentWeightKg => $composableBuilder(
+    column: $table.currentWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5158,6 +5293,16 @@ class $$DailyNutritionGoalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get currentWeightKg => $composableBuilder(
+    column: $table.currentWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get synced => $composableBuilder(
     column: $table.synced,
     builder: (column) => ColumnOrderings(column),
@@ -5190,6 +5335,16 @@ class $$DailyNutritionGoalsTableAnnotationComposer
 
   GeneratedColumn<double> get waterMl =>
       $composableBuilder(column: $table.waterMl, builder: (column) => column);
+
+  GeneratedColumn<double> get currentWeightKg => $composableBuilder(
+    column: $table.currentWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
@@ -5247,6 +5402,8 @@ class $$DailyNutritionGoalsTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> waterMl = const Value.absent(),
+                Value<double?> currentWeightKg = const Value.absent(),
+                Value<double?> targetWeightKg = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyNutritionGoalsCompanion(
@@ -5256,6 +5413,8 @@ class $$DailyNutritionGoalsTableTableManager
                 carbs: carbs,
                 fat: fat,
                 waterMl: waterMl,
+                currentWeightKg: currentWeightKg,
+                targetWeightKg: targetWeightKg,
                 synced: synced,
                 rowid: rowid,
               ),
@@ -5267,6 +5426,8 @@ class $$DailyNutritionGoalsTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> waterMl = const Value.absent(),
+                Value<double?> currentWeightKg = const Value.absent(),
+                Value<double?> targetWeightKg = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyNutritionGoalsCompanion.insert(
@@ -5276,6 +5437,8 @@ class $$DailyNutritionGoalsTableTableManager
                 carbs: carbs,
                 fat: fat,
                 waterMl: waterMl,
+                currentWeightKg: currentWeightKg,
+                targetWeightKg: targetWeightKg,
                 synced: synced,
                 rowid: rowid,
               ),

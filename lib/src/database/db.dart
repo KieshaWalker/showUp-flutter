@@ -97,6 +97,8 @@ class DailyNutritionGoals extends Table {
   RealColumn get carbs => real().withDefault(const Constant(250.0))();
   RealColumn get fat => real().withDefault(const Constant(65.0))();
   RealColumn get waterMl => real().withDefault(const Constant(2500.0))();
+  RealColumn get currentWeightKg => real().nullable()();
+  RealColumn get targetWeightKg => real().nullable()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
   @override
@@ -188,7 +190,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -206,16 +208,18 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(pantryFoods);
           }
           if (from < 5) {
-            // Add user_id (nullable text — NULL = global preset)
             await customStatement(
                 'ALTER TABLE pantry_foods ADD COLUMN user_id TEXT');
-            // Add synced flag (integer 0/1, Drift stores bools as int)
             await customStatement(
                 'ALTER TABLE pantry_foods ADD COLUMN synced INTEGER NOT NULL DEFAULT 0');
-            // Remove locally-seeded presets; they'll be replaced by the
-            // global Supabase presets the next time syncFromRemote() runs.
             await customStatement(
                 'DELETE FROM pantry_foods WHERE is_preset = 1');
+          }
+          if (from < 6) {
+            await customStatement(
+                'ALTER TABLE daily_nutrition_goals ADD COLUMN current_weight_kg REAL');
+            await customStatement(
+                'ALTER TABLE daily_nutrition_goals ADD COLUMN target_weight_kg REAL');
           }
         },
       );
