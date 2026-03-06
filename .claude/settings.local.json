@@ -21,7 +21,8 @@
       "Bash(find:*)",
       "Bash(gh auth:*)",
       "Bash(npx vercel:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git:*)"
     ]
   }
 }
