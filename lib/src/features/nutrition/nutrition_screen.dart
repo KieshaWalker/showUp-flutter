@@ -33,7 +33,7 @@ class NutritionScreen extends ConsumerWidget {
       ),
       body: nutritionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.terracotta)),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => const Center(child: Text("Couldn't load nutrition info. Pull down to try again.")),
         data: (nutrition) {
           final goals = nutrition.goals;
           final weightKg = goals?.currentWeightKg;

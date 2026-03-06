@@ -47,7 +47,9 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } on AuthException catch (e) {
       setState(() => _error = _friendlyAuthError(e.message));
-    } catch (_) {
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Auth] unexpected error: $e');
       setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);

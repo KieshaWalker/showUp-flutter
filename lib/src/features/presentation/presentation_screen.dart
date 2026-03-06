@@ -182,7 +182,7 @@ class _HabitsCard extends ConsumerWidget {
                 child: CircularProgressIndicator(color: AppColors.terracotta),
               ),
             ),
-        error: (e, _) => Text('Error: $e', style: AppTextStyles.bodyMedium),
+        error: (e, _) => Text("Couldn't load habits right now.", style: AppTextStyles.bodyMedium),
         data: (habits) {
           // Counts habits completed today (resets daily).
           // See comment block above to switch to isDone-based counting.
@@ -866,7 +866,7 @@ class _ShowFoodsToday extends ConsumerWidget {
 
     return nutritionAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (e, _) => Text('Error: $e', style: AppTextStyles.bodyMedium),
+      error: (e, _) => Text("Couldn't load nutrition data.", style: AppTextStyles.bodyMedium),
       data: (nutrition) {
         final foods = nutrition.meals.expand((m) => m.entries).toList();
         if (foods.isEmpty) return const SizedBox.shrink();
@@ -961,7 +961,7 @@ class _HabitsCompletedToday extends ConsumerWidget {
 
     return habitsAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (e, _) => Text('Error: $e', style: AppTextStyles.bodyMedium),
+      error: (e, _) => Text("Couldn't load today's habits.", style: AppTextStyles.bodyMedium),
       data: (habits) {
         final completedToday =
             habits.where((h) => h.completedToday).toList();

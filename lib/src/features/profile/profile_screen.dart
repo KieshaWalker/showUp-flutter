@@ -60,8 +60,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Save failed'),
-            content: Text(e.toString()),
+            title: const Text('Oops, we couldn\'t save that'),
+            content: const Text('Something went wrong saving your profile. Check your connection and try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -118,8 +118,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Upload failed'),
-            content: Text(e.toString()),
+            title: const Text('Photo didn\'t upload'),
+            content: const Text('We couldn\'t save your photo. Make sure you have a connection and try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),

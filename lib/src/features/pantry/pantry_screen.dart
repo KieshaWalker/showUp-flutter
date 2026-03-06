@@ -54,7 +54,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.terracotta),
         ),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => const Center(child: Text("Couldn't load your pantry. Pull down to try again.")),
         data: (foods) {
           final filtered = _query.isEmpty
               ? foods
