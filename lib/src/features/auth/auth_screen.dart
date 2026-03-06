@@ -46,12 +46,41 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = _friendlyAuthError(e.message));
     } catch (_) {
       setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _friendlyAuthError(String message) {
+    final m = message.toLowerCase();
+    if (m.contains('invalid login credentials') || m.contains('invalid email or password')) {
+      return 'Incorrect email or password.';
+    }
+    if (m.contains('email not confirmed')) {
+      return 'Please check your email and confirm your account first.';
+    }
+    if (m.contains('user already registered') || m.contains('already been registered')) {
+      return 'An account with this email already exists.';
+    }
+    if (m.contains('password should be at least')) {
+      return 'Password must be at least 6 characters.';
+    }
+    if (m.contains('unable to validate email') || m.contains('invalid format')) {
+      return 'Please enter a valid email address.';
+    }
+    if (m.contains('signup_disabled') || m.contains('signups not allowed')) {
+      return 'Sign ups are currently disabled.';
+    }
+    if (m.contains('for security purposes') || m.contains('after')) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (m.contains('network') || m.contains('connection')) {
+      return 'Network error. Check your connection and try again.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   @override
