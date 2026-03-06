@@ -1246,11 +1246,12 @@ class _EditWeekCompletionsSheetState
     final dates = await ref
         .read(habitsNotifierProvider.notifier)
         .getCompletionDatesForWeek(widget.h.habit.id, _weekStart);
-    if (mounted)
+    if (mounted) {
       setState(() {
         _completedDates = dates;
         _loading = false;
       });
+    }
   }
 
   Future<void> _toggle(DateTime day) async {
