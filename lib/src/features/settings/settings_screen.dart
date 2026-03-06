@@ -1,3 +1,25 @@
+// settings_screen.dart — The Settings tab: profile, habits list, and logout.
+//
+// Shows:
+//   • Profile header with avatar (ProfileAvatar), display name, and username
+//   • "Edit Profile" button → opens ProfileScreen as a modal route
+//   • Full list of the user's habits (read-only view with freq chips + calendar)
+//   • Log Out button → calls supabase.auth.signOut(), which triggers
+//     authStateProvider to emit a null session → _AuthGate routes back to AuthScreen
+//
+// Reused widgets imported from other feature files:
+//   ProfileAvatar      — from profile_screen.dart (avatar circle with initials fallback)
+//   HabitFreqChip      — from habits_screen.dart (shows "Daily" / "3x/week")
+//   HabitCalendarSheet — from habits_screen.dart (monthly completion calendar)
+//
+// Connections:
+//   profile_notifier.dart / profile_screen.dart — ProfileAvatar + edit profile
+//   habits_notifier.dart / habits_screen.dart   — habit list display
+//   auth_provider.dart                          — sign-out clears session
+//   main.dart (_AuthGate)                       — responds to sign-out by
+//                                                 showing AuthScreen
+//   app_theme.dart                              — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';

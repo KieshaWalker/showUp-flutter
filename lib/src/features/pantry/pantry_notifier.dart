@@ -1,3 +1,34 @@
+// pantry_notifier.dart — Food library: global presets + user's personal foods.
+//
+// The pantry is a searchable list of foods with macro info. There are two kinds:
+//   Global presets — userId IS NULL in the DB; shared across all users;
+//                    seeded by admins in Supabase SQL editor; read-only for users.
+//   Personal foods — userId = logged-in user's UUID; created/edited by the user.
+//
+// pantryNotifierProvider (StreamNotifierProvider<List<PantryFood>>):
+//   build()          — streams all pantry foods visible to the current user
+//                      (their personal foods + global presets) from local SQLite
+//   addFood()        — creates a personal food locally, then syncs to Supabase
+//   updateFood()     — updates a personal food locally, then syncs to Supabase
+//   deleteFood()     — deletes a personal food locally, then from Supabase
+//   syncFromRemote() — pulls global presets + user's personal foods from Supabase
+//                      and upserts into local SQLite (called on login in main.dart)
+//
+// Why local cache for global presets?
+//   Caching presets locally means the pantry works offline and search is instant
+//   without a network round-trip on every keystroke.
+//
+// Write strategy (local-first):
+//   Personal food writes hit SQLite first, then Supabase fire-and-forget.
+//   Global presets are never written from the app — admin-only via Supabase.
+//
+// Connections:
+//   database_provider.dart  — ref.watch(databaseProvider) for SQLite access
+//   auth_provider.dart      — currentUserIdProvider to scope personal foods
+//   pantry_screen.dart      — search/browse UI, calls addFood/updateFood/deleteFood
+//   nutrition_screen.dart   — "add from pantry" flow calls pantryNotifierProvider
+//   agent_notifier.dart     — reads pantry list for food search by the assistant
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

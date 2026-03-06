@@ -1,3 +1,37 @@
+// db.dart — The local SQLite database schema for Show Up.
+//
+// This file uses Drift (a type-safe SQLite library for Flutter) to define
+// every table the app stores locally on the device. Data is written here
+// FIRST (offline-first), then synced to Supabase in the background.
+//
+// Tables overview:
+//   Habits               — user's recurring habits (daily or weekly)
+//   HabitCompletions     — one row per habit per day it was marked done
+//   HabitSkips           — tracks allowed skips for weekly habits
+//   Meals                — named meal containers (e.g. "Breakfast")
+//   FoodEntries          — individual foods logged inside a meal
+//   WaterLogs            — water intake entries (in ml)
+//   DailyNutritionGoals  — calorie/macro/water targets + weight info
+//   PantryFoods          — food library (global presets + personal foods)
+//   AgentMemory          — AI assistant's per-user memory/chat log
+//
+// The `synced` boolean column on each table tracks whether a row has been
+// pushed to Supabase yet. The notifiers read this to know what to sync.
+//
+// Schema version history (schemaVersion in AppDatabase):
+//   v1 — initial
+//   v2 — full recreate
+//   v3 — added skipsAllowedPerWeek + HabitSkips table
+//   v4 — added PantryFoods table
+//   v5 — added userId + synced to pantry_foods, removed local presets
+//   v6 — added currentWeightKg + targetWeightKg to DailyNutritionGoals
+//
+// Connections:
+//   database_provider.dart — wraps AppDatabase in a Riverpod provider
+//   db.g.dart              — auto-generated Drift code (do not edit)
+//   habits_notifier, nutrition_notifier, pantry_notifier
+//                          — read/write tables via ref.watch(databaseProvider)
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -176,6 +210,10 @@ class AgentMemory extends Table {
 // Database
 // ---------------------------------------------------------------------------
 
+// AppDatabase registers all tables with Drift. The @DriftDatabase annotation
+// tells the code generator (db.g.dart) which tables to include.
+// Note: AgentMemory is stored in Supabase only (not listed here) — the
+// agent_notifier writes directly to Supabase rather than local SQLite.
 @DriftDatabase(tables: [
   Habits,
   HabitCompletions,
@@ -192,6 +230,10 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 6;
 
+  // Migration runs automatically when the app detects the on-device schema
+  // version is older than schemaVersion. Each `if (from < N)` block applies
+  // changes incrementally so users upgrading from any version get the right
+  // columns without losing their data.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
@@ -224,6 +266,10 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
+  // Opens the correct SQLite connection depending on the platform.
+  // On mobile/desktop: uses the native file system (application support dir).
+  // On web (Vercel deployment): uses sqlite3.wasm + drift_worker.js which
+  //   are copied into build/web/ during `flutter build web`.
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'show_up',

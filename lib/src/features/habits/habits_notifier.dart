@@ -1,3 +1,37 @@
+// habits_notifier.dart — All habit logic: create, complete, skip, delete, sync.
+//
+// Data model:
+//   HabitWithStatus — pairs a Habit row with computed today/week status
+//     habit            — the raw Drift Habit row
+//     completedToday   — true if there's a HabitCompletion for today
+//     isDone           — for daily habits = completedToday;
+//                        for weekly habits = completed enough days this week
+//     completionsThisWeek — count of days completed in the current Mon–Sun week
+//     skippedThisWeek     — true if a HabitSkip exists for this week
+//
+// habitsNotifierProvider (StreamNotifierProvider<List<HabitWithStatus>>):
+//   build()             — streams the full habit list from local SQLite,
+//                         joining completions + skips to compute status
+//   addHabit()          — inserts locally, then syncs to Supabase
+//   updateHabit()       — updates locally, then syncs to Supabase
+//   deleteHabit()       — deletes locally + all completions/skips, then Supabase
+//   toggleCompletion()  — marks a habit done or undone for today
+//   toggleSkip()        — adds/removes a weekly skip for a habit
+//   syncFromRemote()    — pulls all habits/completions/skips from Supabase
+//                         and upserts into local SQLite (called on login)
+//
+// Write strategy (local-first):
+//   Every write hits SQLite first so the UI updates instantly.
+//   The Supabase sync is fire-and-forget inside try/catch — if it fails,
+//   the data stays local and will sync next time.
+//
+// Connections:
+//   database_provider.dart  — ref.watch(databaseProvider) for SQLite access
+//   auth_provider.dart      — reads currentUserIdProvider to scope queries
+//   habits_screen.dart      — the UI that shows this data and triggers actions
+//   agent_notifier.dart     — reads habitsNotifierProvider + calls toggleCompletion
+//   calendar_screen.dart    — reads habitsNotifierProvider for history view
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,3 +1,27 @@
+// nutrition_screen.dart — The Nutrition tab for logging meals, food, and water.
+//
+// Shows:
+//   • Daily calorie + macro summary at the top (calories, protein, carbs, fat)
+//   • Water intake progress bar
+//   • List of today's meals, each expandable to show food entries
+//   • FAB to add a meal; each meal has an "add food" button
+//   • Tapping a food entry allows deletion
+//   • Goals card: tap to set daily calorie/macro/water targets and weight
+//
+// Reused widgets (exported for use in presentation_screen.dart):
+//   NutritionCalorieSummary — large calorie ring/summary card
+//   NutritionMacroRow       — row of macro pills (P / C / F)
+//   NutritionMacroPill      — individual macro badge (e.g. "32g Protein")
+//
+// Connections:
+//   nutrition_notifier.dart  — nutritionNotifierProvider drives all data;
+//                              addMeal, deleteMeal, addFoodEntry, deleteFoodEntry,
+//                              logWater, deleteWaterLog, saveGoals
+//   pantry_notifier.dart     — pantryNotifierProvider used in the food picker
+//                              so users can add from their pantry
+//   presentation_screen.dart — imports the reusable nutrition widgets above
+//   app_theme.dart           — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';

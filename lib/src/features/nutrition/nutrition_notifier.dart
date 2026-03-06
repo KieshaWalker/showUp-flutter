@@ -1,3 +1,37 @@
+// nutrition_notifier.dart — All nutrition logic: meals, food entries, water, goals, sync.
+//
+// Data model:
+//   NutritionState — a snapshot of everything nutrition-related for today
+//     meals          — list of Meal rows, each containing its FoodEntry rows
+//     waterLogs      — all WaterLog rows for today
+//     goals          — the user's DailyNutritionGoal row (targets)
+//     totalCalories/protein/carbs/fat — computed from all food entries today
+//     totalWaterMl   — computed from all water logs today
+//
+// nutritionNotifierProvider (StreamNotifierProvider<NutritionState>):
+//   build()          — streams meals + food entries + water + goals from SQLite,
+//                      rebuilds NutritionState whenever any row changes
+//   addMeal()        — creates a new named meal locally, then Supabase
+//   deleteMeal()     — deletes a meal and all its food entries locally, then Supabase
+//   addFoodEntry()   — adds a food item to an existing meal locally, then Supabase
+//   deleteFoodEntry()— removes a food item locally, then Supabase
+//   logWater()       — adds a water intake record locally, then Supabase
+//   deleteWaterLog() — removes a water record locally, then Supabase
+//   saveGoals()      — upserts the user's calorie/macro/weight targets locally + Supabase
+//   syncFromRemote() — pulls all nutrition data from Supabase on login,
+//                      upserts into local SQLite
+//
+// Write strategy (local-first):
+//   SQLite is written first so the UI is instant. Supabase sync is
+//   fire-and-forget in try/catch — failures are silent, data stays local.
+//
+// Connections:
+//   database_provider.dart  — ref.watch(databaseProvider) for SQLite access
+//   auth_provider.dart      — currentUserIdProvider to scope to logged-in user
+//   nutrition_screen.dart   — the UI for logging meals and viewing macros
+//   presentation_screen.dart— reads totals for the overview dashboard
+//   agent_notifier.dart     — reads totals + calls logWater()
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

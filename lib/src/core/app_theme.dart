@@ -1,3 +1,21 @@
+// app_theme.dart — Every shared design token, style, and UI helper for Show Up.
+//
+// Imported by every screen file. Changing something here affects the whole app.
+//
+// What's in here:
+//   AppColors       — the full colour palette (terracotta, ochre, glass tones, macros)
+//   AppTextStyles   — all text styles (displayLarge → labelSmall) on dark glass
+//   AppTheme.glass  — the full MaterialApp ThemeData (used in main.dart)
+//   AppPaddings     — EdgeInsets presets (horizontal, vertical, card, section…)
+//   AppSpacing      — numeric spacing scale (xs=4, sm=8, md=16, lg=24, xl=32…)
+//   AppRadius       — border radius scale + BorderRadius presets (smAll…xlAll)
+//   AppShadows      — BoxShadow presets (sm, md, lg, xl, glass)
+//   AppGlass        — glass card helper: AppGlass.card() wraps any widget in a
+//                     frosted-glass container with blur + border
+//   AppGradients    — background + accent gradient definitions
+//   AppBackground   — the root widget every screen wraps in: dark base colour
+//                     + radial gradient overlay that creates the glass-app look
+
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

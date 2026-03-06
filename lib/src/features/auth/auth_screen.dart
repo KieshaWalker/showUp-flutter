@@ -1,3 +1,28 @@
+// auth_screen.dart — Login and sign-up screen shown when no user is logged in.
+//
+// Shown by: main.dart → _AuthGate when authStateProvider has no session.
+// Dismissed automatically: when Supabase fires a successful auth event,
+//   authStateProvider updates → _AuthGate rebuilds → AppShell replaces this.
+//
+// The screen toggles between Login and Sign Up mode via _isLogin.
+//
+// _submit():
+//   Login mode  → calls supabase.auth.signInWithPassword()
+//   Sign-up mode → calls supabase.auth.signUp()
+//   On AuthException (bad credentials, email not confirmed, etc.)
+//     → _friendlyAuthError() converts raw Supabase messages to plain English
+//   On any other exception (network failure, etc.)
+//     → shows a generic "something went wrong" message and prints to console
+//
+// _friendlyAuthError():
+//   Maps Supabase's technical error strings to human-readable messages so
+//   users never see things like "invalid_credentials" or status codes.
+//
+// Connections:
+//   supabase_client.dart — Supabase.instance.client used for auth calls
+//   main.dart            — _AuthGate shows/hides this screen based on session
+//   app_theme.dart       — AppBackground, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

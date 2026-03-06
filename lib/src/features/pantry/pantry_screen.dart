@@ -1,3 +1,23 @@
+// pantry_screen.dart — The Pantry tab: browse and manage the food library.
+//
+// Shows:
+//   • A searchable list of all pantry foods (global presets + personal foods)
+//   • Each row shows the food name, serving size, and calorie count
+//   • FAB to add a personal food (opens a form bottom sheet)
+//   • Long-press or swipe a personal food to edit or delete it
+//   • Global preset foods (isPreset = true) are read-only — no edit/delete
+//
+// Search:
+//   Filters the list client-side by name as the user types — no network call
+//   needed since the full pantry is cached locally in SQLite.
+//
+// Connections:
+//   pantry_notifier.dart    — pantryNotifierProvider drives the list;
+//                             addFood, updateFood, deleteFood called from here
+//   nutrition_screen.dart   — links to PantryScreen (or reuses the picker)
+//                             when the user taps "add from pantry" in a meal
+//   app_theme.dart          — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';

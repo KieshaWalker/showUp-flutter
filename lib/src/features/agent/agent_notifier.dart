@@ -1,3 +1,39 @@
+// agent_notifier.dart — The AI assistant that understands plain-English messages.
+//
+// The agent does NOT call an external AI API. Instead it uses local rule-based
+// intent matching (keyword detection + fuzzy string matching) to understand
+// what the user wants and takes action directly using the app's own notifiers.
+//
+// AgentState holds:
+//   messages — the chat history (user + agent bubbles) for the current session
+//   loading  — true while the agent is "thinking" (500ms delay)
+//
+// sendMessage() flow:
+//   1. Adds the user's message to the chat
+//   2. Waits 500ms (feels more natural)
+//   3. Calls _handle() to route the message to the right handler
+//   4. Adds the agent's response to the chat
+//   5. Saves the interaction to Supabase (agent_memories table) for recall
+//
+// Intent routing in _handle():
+//   Greetings      → personalised hello, optionally recalls last session
+//   Water logging  → parses ml/cups/litres, calls nutritionNotifier.logWater()
+//   Habit toggle   → fuzzy-matches habit name, calls habitsNotifier.toggleCompletion()
+//   Nutrition info → reads today's totals from nutritionNotifier
+//   Pantry search  → filters pantry list by keyword
+//   Summaries      → combines habit progress + nutrition into one message
+//
+// Memory:
+//   _saveMemory()      — writes each interaction to Supabase `agent_memories`
+//   _recallLastContext()— reads the most recent answer from previous sessions
+//
+// Connections:
+//   habits_notifier.dart    — read habit list + call toggleCompletion()
+//   nutrition_notifier.dart — read totals + call logWater()
+//   pantry_notifier.dart    — read pantry food list for search
+//   supabase_client.dart    — writes memory to Supabase `agent_memories` table
+//   presentation_screen.dart— hosts the chat UI that calls sendMessage()
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../habits/habits_notifier.dart';

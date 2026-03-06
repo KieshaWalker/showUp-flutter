@@ -1,3 +1,18 @@
+// calendar_screen.dart — The Calendar tab: week-by-week habit + nutrition history.
+//
+// Shows a month view broken into weeks (Mon–Sun). For each day the user can see:
+//   • Which habits were completed (coloured dots or checkmarks)
+//   • A summary of calories logged that day
+//
+// Navigation:
+//   Swipe left/right (or use arrow buttons) to move between weeks.
+//   Tapping a day expands a detail panel for that day.
+//
+// Connections:
+//   habits_notifier.dart    — habitsNotifierProvider for per-day completion data
+//   nutrition_notifier.dart — nutritionNotifierProvider for per-day calorie totals
+//   app_theme.dart          — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_theme.dart';

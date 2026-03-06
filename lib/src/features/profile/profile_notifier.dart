@@ -1,3 +1,27 @@
+// profile_notifier.dart — Loads and saves the logged-in user's profile.
+//
+// The `profiles` table lives in Supabase (not local SQLite). It stores
+// display info like full name, username, and avatar URL.
+//
+// UserProfile model:
+//   id          — matches the Supabase auth user UUID
+//   username    — optional @handle chosen by the user
+//   fullName    — optional display name
+//   avatarUrl   — public URL to the user's photo in Supabase Storage
+//
+// profileProvider (AsyncNotifierProvider):
+//   build()       — fetches the profile for the current user on startup
+//                   and whenever the logged-in user changes
+//   save()        — upserts fullName + username to Supabase
+//   uploadAvatar()— uploads a photo to the `avatars` storage bucket,
+//                   then saves the public URL back to the profiles table
+//
+// Connections:
+//   auth_provider.dart  — watches currentUserIdProvider to know whose
+//                         profile to load; returns null if not logged in
+//   profile_screen.dart — the UI that calls save() and uploadAvatar()
+//   settings_screen.dart— reads profileProvider to show the user's name
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

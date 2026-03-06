@@ -1,3 +1,27 @@
+// presentation_screen.dart — The Overview (home) dashboard tab.
+//
+// This is the first screen the user sees after logging in. It brings together
+// data from habits and nutrition into a single at-a-glance summary.
+//
+// Shows:
+//   • Today's habit completion ring / count
+//   • Nutrition calorie + macro summary for today
+//   • Habits completed today (cards)
+//   • AI assistant chat panel (uses agentProvider from agent_notifier.dart)
+//
+// Reused nutrition widgets (defined here, imported by nutrition_screen.dart):
+//   NutritionCalorieSummary — calorie ring summary card
+//   NutritionMacroRow       — row of macro badges
+//   NutritionMacroPill      — single macro badge (e.g. "32g Protein")
+//
+// Connections:
+//   habits_notifier.dart    — habitsNotifierProvider for today's habit status
+//   nutrition_notifier.dart — nutritionNotifierProvider for today's calorie/macro totals
+//   agent_notifier.dart     — agentProvider for the AI assistant chat
+//   nutrition_screen.dart   — imports NutritionCalorieSummary, NutritionMacroRow,
+//                             NutritionMacroPill for reuse in the nutrition tab
+//   app_theme.dart          — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';

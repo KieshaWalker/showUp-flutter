@@ -1,3 +1,23 @@
+// habits_screen.dart — The Habits tab where users manage and complete their habits.
+//
+// Shows:
+//   • A list of all habits with completion status for today/this week
+//   • Tap a habit to toggle it done/undone
+//   • FAB to add a new habit (opens a bottom sheet)
+//   • Each habit has a menu: edit, view calendar history, delete
+//   • HabitFreqChip — shows "Daily" or "3x/week" style frequency badge
+//   • HabitCalendarSheet — a monthly calendar showing a habit's completion history
+//
+// Reused widgets (exported for use elsewhere):
+//   HabitFreqChip       — used in settings_screen.dart to show habit frequency
+//   HabitCalendarSheet  — used in settings_screen.dart for habit history view
+//
+// Connections:
+//   habits_notifier.dart    — habitsNotifierProvider drives the list;
+//                             addHabit, updateHabit, deleteHabit, toggleCompletion
+//   settings_screen.dart    — imports HabitFreqChip + HabitCalendarSheet
+//   app_theme.dart          — AppGlass, AppColors, AppTextStyles
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';

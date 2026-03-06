@@ -15,6 +15,31 @@ import 'src/features/presentation/presentation_screen.dart';
 import 'src/features/settings/settings_screen.dart';
 import 'src/features/features_ui/calendar/calendar_screen.dart';
 
+// main.dart — App entry point and top-level routing.
+//
+// Startup sequence:
+//   1. main() initializes Supabase with the URL + key from env.dart
+//   2. ShowUpApp builds the MaterialApp with our glass theme (app_theme.dart)
+//   3. _AuthGate watches authStateProvider (auth_provider.dart) to decide:
+//        • session exists  → show AppShell (the main tabbed UI)
+//        • no session      → show AuthScreen (login / sign-up)
+//
+// AppShell:
+//   Renders the bottom nav bar and swaps between the 6 main screens.
+//   On first mount it calls syncFromRemote() on all three notifiers so the
+//   app catches up with any data added on other devices.
+//
+// Connections:
+//   env.dart              — provides SUPABASE_URL and SUPABASE_ANON_KEY
+//   auth_provider.dart    — authStateProvider drives the auth gate
+//   auth_screen.dart      — shown when logged out
+//   presentation_screen   — Overview tab (index 0)
+//   calendar_screen       — Calendar tab (index 1)
+//   nutrition_screen      — Nutrition tab (index 2)
+//   pantry_screen         — Pantry tab (index 3)
+//   habits_screen         — Habits tab (index 4)
+//   settings_screen       — Settings tab (index 5)
+
 /// Entry point for the Show Up application.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

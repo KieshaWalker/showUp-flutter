@@ -1,3 +1,21 @@
+// profile_screen.dart — Screen where the user edits their profile.
+//
+// Shows:
+//   • Avatar circle — tap to pick a photo from camera or gallery
+//   • Full Name field
+//   • Username field (auto-lowercased, shown with @ prefix)
+//   • Save button — calls profileProvider.notifier.save()
+//
+// Also exports two reusable avatar widgets used elsewhere in the app:
+//   ProfileAvatar  — small circular avatar shown in the Settings header
+//   _AvatarCircle  — larger version used on this screen itself
+//
+// Connections:
+//   profile_notifier.dart — provides profileProvider; save() and
+//                           uploadAvatar() are called from here
+//   settings_screen.dart  — imports ProfileAvatar for the header row
+//   app_theme.dart        — AppGlass, AppColors, AppTextStyles, AppSpacing
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
