@@ -100,6 +100,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  // 0=Overview, 1=Readiness, 2=Nutrition, 3=Pantry, 4=Habits, 5=Calendar, 6=Settings
   int _currentIndex = 0;
 
   @override
@@ -117,13 +118,26 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   static const _screens = [
     PresentationScreen(),
-    CalendarScreen(),
+    ReadinessScreen(),
     NutritionScreen(),
     PantryScreen(),
     HabitsScreen(),
-    ReadinessScreen(),
+    CalendarScreen(),
     SettingsScreen(),
   ];
+
+  void _openMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MenuSheet(
+        onSelect: (index) {
+          setState(() => _currentIndex = index);
+        },
+        currentIndex: _currentIndex,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +146,14 @@ class _AppShellState extends ConsumerState<AppShell> {
         backgroundColor: Colors.transparent,
         body: _screens[_currentIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          selectedIndex: _currentIndex < 2 ? _currentIndex : 2,
+          onDestinationSelected: (i) {
+            if (i == 2) {
+              _openMenu();
+            } else {
+              setState(() => _currentIndex = i);
+            }
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.bar_chart_outlined),
@@ -141,37 +161,81 @@ class _AppShellState extends ConsumerState<AppShell> {
               label: 'Overview',
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month),
-              label: 'Calendar',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.restaurant_menu_outlined),
-              selectedIcon: Icon(Icons.restaurant_menu),
-              label: 'Nutrition',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.kitchen_outlined),
-              selectedIcon: Icon(Icons.kitchen),
-              label: 'Pantry',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.check_circle_outline),
-              selectedIcon: Icon(Icons.check_circle),
-              label: 'Habits',
-            ),
-            NavigationDestination(
               icon: Icon(Icons.bolt_outlined),
               selectedIcon: Icon(Icons.bolt),
               label: 'Readiness',
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: Icon(Icons.menu),
+              selectedIcon: Icon(Icons.menu),
+              label: 'More',
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MenuSheet extends StatelessWidget {
+  final void Function(int) onSelect;
+  final int currentIndex;
+
+  const _MenuSheet({required this.onSelect, required this.currentIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      (index: 4, icon: Icons.check_circle_outline, label: 'Habits'),
+      (index: 2, icon: Icons.restaurant_menu_outlined, label: 'Nutrition'),
+      (index: 3, icon: Icons.kitchen_outlined, label: 'Pantry'),
+      (index: 5, icon: Icons.calendar_month_outlined, label: 'Calendar'),
+      (index: 6, icon: Icons.settings_outlined, label: 'Settings'),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.glassModal,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.glassBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          ...items.map(
+            (item) => ListTile(
+              leading: Icon(item.icon,
+                  color: currentIndex == item.index
+                      ? AppColors.terracotta
+                      : AppColors.khaki),
+              title: Text(
+                item.label,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: currentIndex == item.index
+                      ? AppColors.terracotta
+                      : AppColors.textOnDark,
+                  fontWeight: currentIndex == item.index
+                      ? FontWeight.w700
+                      : FontWeight.normal,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                onSelect(item.index);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

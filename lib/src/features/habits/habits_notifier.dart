@@ -33,6 +33,7 @@
 //   calendar_screen.dart    — reads habitsNotifierProvider for history view
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -309,7 +310,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
       await (db.update(db.habits)..where(
         (h) => h.id.equals(id),
       )).write(const HabitsCompanion(synced: Value(true)));
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] addHabit sync error: $e'); }
   }
 
   // Only the supplied fields are updated; omitted fields are left unchanged.
@@ -354,7 +355,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
       await (db.update(db.habits)..where(
         (h) => h.id.equals(id),
       )).write(const HabitsCompanion(synced: Value(true)));
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] updateHabit sync error: $e'); }
   }
 
   // ---------------------------------------------------------------------------
@@ -387,7 +388,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
             .from('habit_completions')
             .delete()
             .eq('id', existing.id);
-      } catch (_) {}
+      } catch (e) { debugPrint('[Habits] toggleCompletion delete error: $e'); }
     } else {
       // Not completed yet → insert.
       final id = _uuid.v4();
@@ -411,7 +412,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         await (db.update(db.habitCompletions)..where(
           (c) => c.id.equals(id),
         )).write(const HabitCompletionsCompanion(synced: Value(true)));
-      } catch (_) {}
+      } catch (e) { debugPrint('[Habits] toggleCompletion insert error: $e'); }
     }
   }
 
@@ -439,7 +440,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
             .from('habit_completions')
             .delete()
             .eq('id', existing.id);
-      } catch (_) {}
+      } catch (e) { debugPrint('[Habits] toggleCompletionForDate delete error: $e'); }
     } else {
       final id = _uuid.v4();
       await db.into(db.habitCompletions).insert(
@@ -460,7 +461,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         await (db.update(db.habitCompletions)..where(
           (c) => c.id.equals(id),
         )).write(const HabitCompletionsCompanion(synced: Value(true)));
-      } catch (_) {}
+      } catch (e) { debugPrint('[Habits] toggleCompletionForDate insert error: $e'); }
     }
   }
 
@@ -542,7 +543,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
       await (db.update(db.habitSkips)..where(
         (s) => s.id.equals(id),
       )).write(const HabitSkipsCompanion(synced: Value(true)));
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] skipWeek sync error: $e'); }
   }
 
   /// Remove the most-recently-inserted skip for the current week (undo skip).
@@ -564,7 +565,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
           .from('habit_skips')
           .delete()
           .eq('id', last.id);
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] unskipWeek sync error: $e'); }
   }
 
   /// Delete a habit and all its completion + skip history.
@@ -577,7 +578,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
       ..where((s) => s.habitId.equals(habitId))).go();
     try {
       await Supabase.instance.client.from('habits').delete().eq('id', habitId);
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] deleteHabit sync error: $e'); }
   }
 
   // ---------------------------------------------------------------------------
@@ -653,7 +654,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
               ),
             );
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('[Habits] syncFromRemote error: $e'); }
   }
 
   // ===========================================================================
