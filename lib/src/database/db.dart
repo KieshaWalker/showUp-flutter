@@ -14,6 +14,10 @@
 //   DailyNutritionGoals  — calorie/macro/water targets + weight info
 //   PantryFoods          — food library (global presets + personal foods)
 //   AgentMemory          — AI assistant's per-user memory/chat log
+//   UserSubstances       — personal substance library with stated + learned impact
+//   SubstanceLogs        — each individual substance use event
+//   ReadinessCheckIns    — morning / afternoon / evening check-in data
+//   DailyReadiness       — final computed score + user self-rating per day
 //
 // The `synced` boolean column on each table tracks whether a row has been
 // pushed to Supabase yet. The notifiers read this to know what to sync.
@@ -25,12 +29,14 @@
 //   v4 — added PantryFoods table
 //   v5 — added userId + synced to pantry_foods, removed local presets
 //   v6 — added currentWeightKg + targetWeightKg to DailyNutritionGoals
+//   v7 — added readiness system: UserSubstances, SubstanceLogs,
+//         ReadinessCheckIns, DailyReadiness
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
 //   db.g.dart              — auto-generated Drift code (do not edit)
-//   habits_notifier, nutrition_notifier, pantry_notifier
-//                          — read/write tables via ref.watch(databaseProvider)
+//   habits_notifier, nutrition_notifier, pantry_notifier,
+//   readiness_notifier     — read/write tables via ref.watch(databaseProvider)
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -170,7 +176,109 @@ class PantryFoods extends Table {
 }
 
 
-// Agent memory for the indiviudal user
+// ---------------------------------------------------------------------------
+// Readiness tables
+// ---------------------------------------------------------------------------
+
+/// Personal substance library. One row per substance per user.
+/// defaultImpact = user's stated 1–10 rating.
+/// learnedImpact = null until enough data, then Bayesian blend of stated + observed.
+class UserSubstances extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get name => text()(); // e.g. "alcohol", "weed", "shrooms"
+  // 'positive' or 'negative' — user decides which way it affects readiness
+  TextColumn get direction => text().withDefault(const Constant('negative'))();
+  // User's self-assessed impact 1–10
+  RealColumn get defaultImpact => real().withDefault(const Constant(5.0))();
+  // Learned from observed next-day readiness deltas; null until n >= 3
+  RealColumn get learnedImpact => real().nullable()();
+  // How many times this substance has been logged (drives Bayesian weight)
+  IntColumn get occurrenceCount => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One row per substance use event.
+/// Links back to UserSubstances by name (not FK, for flexibility).
+class SubstanceLogs extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  // Stored date only as midnight UTC
+  DateTimeColumn get date => dateTime()();
+  TextColumn get substanceName => text()();
+  // Snapshot of direction at time of logging
+  TextColumn get direction => text()();
+  // Snapshot of impact rating at time of logging (1–10)
+  RealColumn get impactSnapshot => real()();
+  // Optional: how much (e.g. "2 drinks", "1 joint") — free text
+  TextColumn get quantity => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Time-gated check-in: one row per user per window ('morning','afternoon','evening') per day.
+/// Nullable columns only apply to the window where they're asked.
+class ReadinessCheckIns extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  // Date only — stored as midnight UTC
+  DateTimeColumn get date => dateTime()();
+  // 'morning' | 'afternoon' | 'evening'
+  TextColumn get checkInWindow => text()();
+
+  // --- morning only ---
+  RealColumn get sleepHours => real().nullable()();
+  IntColumn get sleepQuality => integer().nullable()(); // 1–5
+
+  // --- all windows ---
+  IntColumn get stressLevel => integer().nullable()(); // 1–5
+  IntColumn get energyLevel => integer().nullable()(); // 1–5
+  IntColumn get mood => integer().nullable()(); // 1–5
+
+  // --- afternoon only ---
+  IntColumn get caffeineCount => integer().nullable()(); // cups
+
+  // --- afternoon + evening ---
+  IntColumn get focusLevel => integer().nullable()(); // 1–5
+
+  TextColumn get notes => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One row per user per day. Holds computed score, user self-rating, and
+/// the carryover delta applied from the previous day's data.
+class DailyReadiness extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  // Date only — stored as midnight UTC
+  DateTimeColumn get date => dateTime()();
+  // Algorithm output 0–100
+  RealColumn get computedScore => real().withDefault(const Constant(70.0))();
+  // User's honest self-rating (0–10); null until they submit it
+  RealColumn get userRatedScore => real().nullable()();
+  // How many points yesterday's data shifted today's baseline (can be negative)
+  RealColumn get previousDayInfluence => real().withDefault(const Constant(0.0))();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Agent memory
+// ---------------------------------------------------------------------------
+
+// Agent memory for the individual user
 class AgentMemory extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
@@ -223,12 +331,16 @@ class AgentMemory extends Table {
   WaterLogs,
   DailyNutritionGoals,
   PantryFoods,
+  UserSubstances,
+  SubstanceLogs,
+  ReadinessCheckIns,
+  DailyReadiness,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -262,6 +374,12 @@ class AppDatabase extends _$AppDatabase {
                 'ALTER TABLE daily_nutrition_goals ADD COLUMN current_weight_kg REAL');
             await customStatement(
                 'ALTER TABLE daily_nutrition_goals ADD COLUMN target_weight_kg REAL');
+          }
+          if (from < 7) {
+            await m.createTable(userSubstances);
+            await m.createTable(substanceLogs);
+            await m.createTable(readinessCheckIns);
+            await m.createTable(dailyReadiness);
           }
         },
       );

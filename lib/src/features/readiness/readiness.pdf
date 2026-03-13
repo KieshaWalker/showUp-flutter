@@ -1,0 +1,130 @@
+ What the Science Actually Says                                                                                                                                                                  
+                                                                                                                                                                                                  
+  Alcohol — Worse Than People Think                                                                                                                                                               
+                                                                                                                                                                                                  
+  The 2024 Sleep Medicine Reviews meta-analysis (27 studies) is definitive:                                                                                                                       
+  - 2 drinks delays REM onset by +18 minutes and cuts REM duration by −11 minutes                                                                                                                 
+  - 4+ drinks: REM severely fragmented; rebound insomnia in second half of night                                                                                                                  
+  - The cruel trick: total sleep time is barely affected — so drinkers genuinely believe they slept fine, while their brain never properly recovered
+  - Cortisol is elevated all morning even after BAC hits zero — that's the "fog"                                                                                                                  
+  - Women are measurably more affected than men on objective metrics                                                                                                                              
+  - Hangover cognitive deficits (reaction time, recall, multitasking) persist 12–24 hours for moderate drinking                                                                                   
+                                                                                                                                                                                                  
+  App default: −7/10, carryover 60%
+
+  ---
+  Cannabis — More Individual Than Expected
+
+  The 2023 University of Sydney systematic review (16 studies, 209 tests): only 3.5% of tests showed significant next-day impairment. Cannabis hangover is not comparable to alcohol.
+
+  The real damage is chronic and architectural:
+  - Acute REM suppression (similar direction to alcohol, different mechanism)
+  - On withdrawal: REM rebound — vivid dreams, disrupted sleep for 1–4 weeks
+  - Heavy chronic use: working memory and processing speed deficits persist days into abstinence
+  - CBD appears to buffer most negative cognitive and anxiogenic effects of THC
+
+  App default: −3/10, low carryover — but user's personal learnedImpact matters most here
+
+  ---
+  Sugar — The Crash Is Real, the Rush Is a Myth
+
+  The 2019 Neuroscience & Biobehavioral Reviews meta-analysis (31 studies) found: zero evidence for a sugar rush in healthy adults. Strong evidence for a crash:
+  - Fatigue and reduced alertness within 30–60 minutes
+  - Crash trough at 60–120 minutes
+  - Individual glucose response varies 10-fold for the same meal (Weizmann Institute, 2015)
+  - Rate of glucose change is as important as peak level
+
+  App default: −3/10, acute same-day only — no carryover
+
+  ---
+  Caffeine — Half-Life Is the Key Variable
+
+  The 2024 randomized crossover trial (SLEEP journal):
+  - 400mg consumed 4 hours before bed: −20+ minutes total sleep time
+  - 400mg consumed 8 hours before bed: small but present effect
+  - 100mg at any timing: no significant disruption
+  - Total: −34.67 minutes sleep, −4.74% efficiency across all conditions
+
+  The CYP1A2 gene splits people into fast metabolizers (half-life 3–4h) and slow (7–10h). For slow metabolizers, a 3pm coffee is still 50% active at midnight. This is why the caffeine count
+  field in the afternoon check-in is valuable data — timing matters as much as dose.
+
+  Handled by check-in caffeine count field — score deducted above 3 cups
+
+  ---
+  Psilocybin Microdosing — Placebo Problem is Real
+
+  The 2025 double-blind RCTs (Szigeti/Erritzoe, three trials) are the most rigorous data yet:
+  - One genuine finding: increased originality in divergent thinking tasks
+  - Everything else (mood, energy, focus, cognitive performance): largely disappears in blinded conditions
+  - Observational studies show large effects — but expectancy accounts for most of it
+
+  The honest summary: if a user believes microdosing helps them, it probably does through expectancy. The app should honor their personal rating rather than fight it.
+
+  App default: +2/10 — low, lets user's own data take over quickly
+
+  ---
+  Sleep Deprivation — The Most Underrated Variable
+
+  Van Dongen & Dinges (UPenn, SLEEP, 2003) — still the defining dataset:
+
+  ┌───────────────┬──────────────────────────┬─────────────────────────┐
+  │ Nightly sleep │   After 2 weeks equals   │  Aware of impairment?   │
+  ├───────────────┼──────────────────────────┼─────────────────────────┤
+  │ 8h            │ Baseline                 │ Accurate                │
+  ├───────────────┼──────────────────────────┼─────────────────────────┤
+  │ 7h            │ Mild deficit             │ Slightly underestimates │
+  ├───────────────┼──────────────────────────┼─────────────────────────┤
+  │ 6h            │ ~2 nights of zero sleep  │ Substantially wrong     │
+  ├───────────────┼──────────────────────────┼─────────────────────────┤
+  │ 5h            │ ~3+ nights of zero sleep │ Severely wrong          │
+  ├───────────────┼──────────────────────────┼─────────────────────────┤
+  │ 4h            │ Near-total deprivation   │ Barely aware            │
+  └───────────────┴──────────────────────────┴─────────────────────────┘
+
+  The 2025 Frontiers study found chronic partial sleep restriction produces 17ms longer reaction times than acute total deprivation — because chronic loss feels normal. This is the most
+  dangerous pattern.
+
+  Non-linear accumulation: 7 nights at 5h/night requires 3+ recovery nights to restore performance. Not one. The app's carryover model reflects this correctly.
+
+  ---
+  Revised App Defaults Based on Science
+
+  alcohol           → negative, default 7/10, carryover 65%
+  cannabis (THC)    → negative, default 3/10, carryover 30%
+  cannabis (CBD)    → positive, default 2/10, carryover 0%
+  sugar spike       → negative, default 3/10, same-day only
+  nicotine          → negative, default 4/10 (withdrawal cycle)
+  caffeine          → handled by check-in field (count > 3 = penalty)
+  psilocybin (md)   → positive, default 2/10, carryover 0%
+
+  Sleep remains the single biggest lever in the entire model. A user who logs 6h sleep is already at -9 points before anything else is factored in — and likely doesn't know it.
+
+  The "Day After" Inflammation
+One of the most significant delayed effects of a high-sugar binge is systemic inflammation.
+
+The Cytokine Surge: Studies show that a single high-glycemic meal can cause a temporary spike in pro-inflammatory markers (like CRP and cytokines).
+
+The "Day After" Feeling: This low-grade inflammation can last for a day or two, leading to joint stiffness, puffiness (water retention), and a general sense of "malaise" or feeling physically "off" long after the sugar has left your bloodstream.
+
+2. Dopamine "Withdrawal" and Mood
+The brain’s reward system doesn't reset instantly.
+
+The Dopamine Deficit: Because sugar triggers a massive release of dopamine, the brain often responds the following day by "down-regulating" its dopamine receptors to protect itself.
+
+The Result: This can lead to a "dopamine dip" 24–48 hours later, manifesting as low motivation, increased irritability, or a lack of enjoyment in activities you usually like (anhedonia).
+
+Cravings: This dip is also why you might feel intense cravings for more sugar the next day; your brain is essentially looking for a "fix" to return to that heightened state.
+
+3. Disrupted Sleep Architecture
+Even if you ate the sugar earlier in the day, it can affect your energy levels the next morning through sleep disruption.
+
+Reduced Deep Sleep: High sugar intake is associated with lighter, more fragmented sleep and less time spent in deep, restorative Slow Wave Sleep (SWS).
+
+Morning Grogginess: Research suggests that even if you slept 8 hours, the quality of that sleep may have been poor due to the metabolic work your body was doing overnight, leaving you feeling unrefreshed the next day.
+
+4. Gut Microbiome Shifts
+Research into the "gut-brain axis" shows that sugar can rapidly alter your gut bacteria.
+
+Rapid Shifts: Changes in gut flora can begin within 24 hours of a high-sugar diet.
+
+Brain Fog: An overgrowth of certain sugar-loving bacteria can produce byproducts that contribute to "brain fog" and cognitive sluggishness that persists for several days until the microbiome stabilizes with more fibrous foods.

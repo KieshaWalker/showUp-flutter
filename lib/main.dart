@@ -12,6 +12,8 @@ import 'src/features/nutrition/nutrition_screen.dart';
 import 'src/features/pantry/pantry_notifier.dart';
 import 'src/features/pantry/pantry_screen.dart';
 import 'src/features/presentation/presentation_screen.dart';
+import 'src/features/readiness/readiness_notifier.dart';
+import 'src/features/readiness/readiness_screen.dart';
 import 'src/features/settings/settings_screen.dart';
 import 'src/features/features_ui/calendar/calendar_screen.dart';
 
@@ -25,7 +27,7 @@ import 'src/features/features_ui/calendar/calendar_screen.dart';
 //        • no session      → show AuthScreen (login / sign-up)
 //
 // AppShell:
-//   Renders the bottom nav bar and swaps between the 6 main screens.
+//   Renders the bottom nav bar and swaps between the 7 main screens.
 //   On first mount it calls syncFromRemote() on all three notifiers so the
 //   app catches up with any data added on other devices.
 //
@@ -38,7 +40,8 @@ import 'src/features/features_ui/calendar/calendar_screen.dart';
 //   nutrition_screen      — Nutrition tab (index 2)
 //   pantry_screen         — Pantry tab (index 3)
 //   habits_screen         — Habits tab (index 4)
-//   settings_screen       — Settings tab (index 5)
+//   readiness_screen      — Readiness tab (index 5)
+//   settings_screen       — Settings tab (index 6)
 
 /// Entry point for the Show Up application.
 Future<void> main() async {
@@ -108,6 +111,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
+      ref.read(userSubstancesProvider.notifier).seedDefaultsIfEmpty();
     });
   }
 
@@ -117,6 +121,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     NutritionScreen(),
     PantryScreen(),
     HabitsScreen(),
+    ReadinessScreen(),
     SettingsScreen(),
   ];
 
@@ -154,6 +159,11 @@ class _AppShellState extends ConsumerState<AppShell> {
               icon: Icon(Icons.check_circle_outline),
               selectedIcon: Icon(Icons.check_circle),
               label: 'Habits',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bolt_outlined),
+              selectedIcon: Icon(Icons.bolt),
+              label: 'Readiness',
             ),
             NavigationDestination(
               icon: Icon(Icons.settings_outlined),

@@ -3770,6 +3770,2433 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
   }
 }
 
+class $UserSubstancesTable extends UserSubstances
+    with TableInfo<$UserSubstancesTable, UserSubstance> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserSubstancesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _directionMeta = const VerificationMeta(
+    'direction',
+  );
+  @override
+  late final GeneratedColumn<String> direction = GeneratedColumn<String>(
+    'direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('negative'),
+  );
+  static const VerificationMeta _defaultImpactMeta = const VerificationMeta(
+    'defaultImpact',
+  );
+  @override
+  late final GeneratedColumn<double> defaultImpact = GeneratedColumn<double>(
+    'default_impact',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(5.0),
+  );
+  static const VerificationMeta _learnedImpactMeta = const VerificationMeta(
+    'learnedImpact',
+  );
+  @override
+  late final GeneratedColumn<double> learnedImpact = GeneratedColumn<double>(
+    'learned_impact',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occurrenceCountMeta = const VerificationMeta(
+    'occurrenceCount',
+  );
+  @override
+  late final GeneratedColumn<int> occurrenceCount = GeneratedColumn<int>(
+    'occurrence_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    name,
+    direction,
+    defaultImpact,
+    learnedImpact,
+    occurrenceCount,
+    createdAt,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_substances';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserSubstance> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('direction')) {
+      context.handle(
+        _directionMeta,
+        direction.isAcceptableOrUnknown(data['direction']!, _directionMeta),
+      );
+    }
+    if (data.containsKey('default_impact')) {
+      context.handle(
+        _defaultImpactMeta,
+        defaultImpact.isAcceptableOrUnknown(
+          data['default_impact']!,
+          _defaultImpactMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learned_impact')) {
+      context.handle(
+        _learnedImpactMeta,
+        learnedImpact.isAcceptableOrUnknown(
+          data['learned_impact']!,
+          _learnedImpactMeta,
+        ),
+      );
+    }
+    if (data.containsKey('occurrence_count')) {
+      context.handle(
+        _occurrenceCountMeta,
+        occurrenceCount.isAcceptableOrUnknown(
+          data['occurrence_count']!,
+          _occurrenceCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserSubstance map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserSubstance(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      direction:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}direction'],
+          )!,
+      defaultImpact:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}default_impact'],
+          )!,
+      learnedImpact: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}learned_impact'],
+      ),
+      occurrenceCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}occurrence_count'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $UserSubstancesTable createAlias(String alias) {
+    return $UserSubstancesTable(attachedDatabase, alias);
+  }
+}
+
+class UserSubstance extends DataClass implements Insertable<UserSubstance> {
+  final String id;
+  final String userId;
+  final String name;
+  final String direction;
+  final double defaultImpact;
+  final double? learnedImpact;
+  final int occurrenceCount;
+  final DateTime createdAt;
+  final bool synced;
+  const UserSubstance({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.direction,
+    required this.defaultImpact,
+    this.learnedImpact,
+    required this.occurrenceCount,
+    required this.createdAt,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['name'] = Variable<String>(name);
+    map['direction'] = Variable<String>(direction);
+    map['default_impact'] = Variable<double>(defaultImpact);
+    if (!nullToAbsent || learnedImpact != null) {
+      map['learned_impact'] = Variable<double>(learnedImpact);
+    }
+    map['occurrence_count'] = Variable<int>(occurrenceCount);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  UserSubstancesCompanion toCompanion(bool nullToAbsent) {
+    return UserSubstancesCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      name: Value(name),
+      direction: Value(direction),
+      defaultImpact: Value(defaultImpact),
+      learnedImpact:
+          learnedImpact == null && nullToAbsent
+              ? const Value.absent()
+              : Value(learnedImpact),
+      occurrenceCount: Value(occurrenceCount),
+      createdAt: Value(createdAt),
+      synced: Value(synced),
+    );
+  }
+
+  factory UserSubstance.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserSubstance(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      direction: serializer.fromJson<String>(json['direction']),
+      defaultImpact: serializer.fromJson<double>(json['defaultImpact']),
+      learnedImpact: serializer.fromJson<double?>(json['learnedImpact']),
+      occurrenceCount: serializer.fromJson<int>(json['occurrenceCount']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'name': serializer.toJson<String>(name),
+      'direction': serializer.toJson<String>(direction),
+      'defaultImpact': serializer.toJson<double>(defaultImpact),
+      'learnedImpact': serializer.toJson<double?>(learnedImpact),
+      'occurrenceCount': serializer.toJson<int>(occurrenceCount),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  UserSubstance copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? direction,
+    double? defaultImpact,
+    Value<double?> learnedImpact = const Value.absent(),
+    int? occurrenceCount,
+    DateTime? createdAt,
+    bool? synced,
+  }) => UserSubstance(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    direction: direction ?? this.direction,
+    defaultImpact: defaultImpact ?? this.defaultImpact,
+    learnedImpact:
+        learnedImpact.present ? learnedImpact.value : this.learnedImpact,
+    occurrenceCount: occurrenceCount ?? this.occurrenceCount,
+    createdAt: createdAt ?? this.createdAt,
+    synced: synced ?? this.synced,
+  );
+  UserSubstance copyWithCompanion(UserSubstancesCompanion data) {
+    return UserSubstance(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      direction: data.direction.present ? data.direction.value : this.direction,
+      defaultImpact:
+          data.defaultImpact.present
+              ? data.defaultImpact.value
+              : this.defaultImpact,
+      learnedImpact:
+          data.learnedImpact.present
+              ? data.learnedImpact.value
+              : this.learnedImpact,
+      occurrenceCount:
+          data.occurrenceCount.present
+              ? data.occurrenceCount.value
+              : this.occurrenceCount,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserSubstance(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('direction: $direction, ')
+          ..write('defaultImpact: $defaultImpact, ')
+          ..write('learnedImpact: $learnedImpact, ')
+          ..write('occurrenceCount: $occurrenceCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    name,
+    direction,
+    defaultImpact,
+    learnedImpact,
+    occurrenceCount,
+    createdAt,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserSubstance &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.direction == this.direction &&
+          other.defaultImpact == this.defaultImpact &&
+          other.learnedImpact == this.learnedImpact &&
+          other.occurrenceCount == this.occurrenceCount &&
+          other.createdAt == this.createdAt &&
+          other.synced == this.synced);
+}
+
+class UserSubstancesCompanion extends UpdateCompanion<UserSubstance> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> name;
+  final Value<String> direction;
+  final Value<double> defaultImpact;
+  final Value<double?> learnedImpact;
+  final Value<int> occurrenceCount;
+  final Value<DateTime> createdAt;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const UserSubstancesCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.direction = const Value.absent(),
+    this.defaultImpact = const Value.absent(),
+    this.learnedImpact = const Value.absent(),
+    this.occurrenceCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserSubstancesCompanion.insert({
+    required String id,
+    required String userId,
+    required String name,
+    this.direction = const Value.absent(),
+    this.defaultImpact = const Value.absent(),
+    this.learnedImpact = const Value.absent(),
+    this.occurrenceCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       name = Value(name);
+  static Insertable<UserSubstance> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? direction,
+    Expression<double>? defaultImpact,
+    Expression<double>? learnedImpact,
+    Expression<int>? occurrenceCount,
+    Expression<DateTime>? createdAt,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (direction != null) 'direction': direction,
+      if (defaultImpact != null) 'default_impact': defaultImpact,
+      if (learnedImpact != null) 'learned_impact': learnedImpact,
+      if (occurrenceCount != null) 'occurrence_count': occurrenceCount,
+      if (createdAt != null) 'created_at': createdAt,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserSubstancesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? name,
+    Value<String>? direction,
+    Value<double>? defaultImpact,
+    Value<double?>? learnedImpact,
+    Value<int>? occurrenceCount,
+    Value<DateTime>? createdAt,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return UserSubstancesCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      direction: direction ?? this.direction,
+      defaultImpact: defaultImpact ?? this.defaultImpact,
+      learnedImpact: learnedImpact ?? this.learnedImpact,
+      occurrenceCount: occurrenceCount ?? this.occurrenceCount,
+      createdAt: createdAt ?? this.createdAt,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (direction.present) {
+      map['direction'] = Variable<String>(direction.value);
+    }
+    if (defaultImpact.present) {
+      map['default_impact'] = Variable<double>(defaultImpact.value);
+    }
+    if (learnedImpact.present) {
+      map['learned_impact'] = Variable<double>(learnedImpact.value);
+    }
+    if (occurrenceCount.present) {
+      map['occurrence_count'] = Variable<int>(occurrenceCount.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserSubstancesCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('direction: $direction, ')
+          ..write('defaultImpact: $defaultImpact, ')
+          ..write('learnedImpact: $learnedImpact, ')
+          ..write('occurrenceCount: $occurrenceCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SubstanceLogsTable extends SubstanceLogs
+    with TableInfo<$SubstanceLogsTable, SubstanceLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SubstanceLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _substanceNameMeta = const VerificationMeta(
+    'substanceName',
+  );
+  @override
+  late final GeneratedColumn<String> substanceName = GeneratedColumn<String>(
+    'substance_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _directionMeta = const VerificationMeta(
+    'direction',
+  );
+  @override
+  late final GeneratedColumn<String> direction = GeneratedColumn<String>(
+    'direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _impactSnapshotMeta = const VerificationMeta(
+    'impactSnapshot',
+  );
+  @override
+  late final GeneratedColumn<double> impactSnapshot = GeneratedColumn<double>(
+    'impact_snapshot',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<String> quantity = GeneratedColumn<String>(
+    'quantity',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    date,
+    substanceName,
+    direction,
+    impactSnapshot,
+    quantity,
+    notes,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'substance_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SubstanceLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('substance_name')) {
+      context.handle(
+        _substanceNameMeta,
+        substanceName.isAcceptableOrUnknown(
+          data['substance_name']!,
+          _substanceNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_substanceNameMeta);
+    }
+    if (data.containsKey('direction')) {
+      context.handle(
+        _directionMeta,
+        direction.isAcceptableOrUnknown(data['direction']!, _directionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_directionMeta);
+    }
+    if (data.containsKey('impact_snapshot')) {
+      context.handle(
+        _impactSnapshotMeta,
+        impactSnapshot.isAcceptableOrUnknown(
+          data['impact_snapshot']!,
+          _impactSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_impactSnapshotMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SubstanceLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SubstanceLog(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      date:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}date'],
+          )!,
+      substanceName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}substance_name'],
+          )!,
+      direction:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}direction'],
+          )!,
+      impactSnapshot:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}impact_snapshot'],
+          )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quantity'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $SubstanceLogsTable createAlias(String alias) {
+    return $SubstanceLogsTable(attachedDatabase, alias);
+  }
+}
+
+class SubstanceLog extends DataClass implements Insertable<SubstanceLog> {
+  final String id;
+  final String userId;
+  final DateTime date;
+  final String substanceName;
+  final String direction;
+  final double impactSnapshot;
+  final String? quantity;
+  final String? notes;
+  final bool synced;
+  const SubstanceLog({
+    required this.id,
+    required this.userId,
+    required this.date,
+    required this.substanceName,
+    required this.direction,
+    required this.impactSnapshot,
+    this.quantity,
+    this.notes,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['date'] = Variable<DateTime>(date);
+    map['substance_name'] = Variable<String>(substanceName);
+    map['direction'] = Variable<String>(direction);
+    map['impact_snapshot'] = Variable<double>(impactSnapshot);
+    if (!nullToAbsent || quantity != null) {
+      map['quantity'] = Variable<String>(quantity);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  SubstanceLogsCompanion toCompanion(bool nullToAbsent) {
+    return SubstanceLogsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      date: Value(date),
+      substanceName: Value(substanceName),
+      direction: Value(direction),
+      impactSnapshot: Value(impactSnapshot),
+      quantity:
+          quantity == null && nullToAbsent
+              ? const Value.absent()
+              : Value(quantity),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      synced: Value(synced),
+    );
+  }
+
+  factory SubstanceLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SubstanceLog(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      substanceName: serializer.fromJson<String>(json['substanceName']),
+      direction: serializer.fromJson<String>(json['direction']),
+      impactSnapshot: serializer.fromJson<double>(json['impactSnapshot']),
+      quantity: serializer.fromJson<String?>(json['quantity']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'date': serializer.toJson<DateTime>(date),
+      'substanceName': serializer.toJson<String>(substanceName),
+      'direction': serializer.toJson<String>(direction),
+      'impactSnapshot': serializer.toJson<double>(impactSnapshot),
+      'quantity': serializer.toJson<String?>(quantity),
+      'notes': serializer.toJson<String?>(notes),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  SubstanceLog copyWith({
+    String? id,
+    String? userId,
+    DateTime? date,
+    String? substanceName,
+    String? direction,
+    double? impactSnapshot,
+    Value<String?> quantity = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    bool? synced,
+  }) => SubstanceLog(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    date: date ?? this.date,
+    substanceName: substanceName ?? this.substanceName,
+    direction: direction ?? this.direction,
+    impactSnapshot: impactSnapshot ?? this.impactSnapshot,
+    quantity: quantity.present ? quantity.value : this.quantity,
+    notes: notes.present ? notes.value : this.notes,
+    synced: synced ?? this.synced,
+  );
+  SubstanceLog copyWithCompanion(SubstanceLogsCompanion data) {
+    return SubstanceLog(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      date: data.date.present ? data.date.value : this.date,
+      substanceName:
+          data.substanceName.present
+              ? data.substanceName.value
+              : this.substanceName,
+      direction: data.direction.present ? data.direction.value : this.direction,
+      impactSnapshot:
+          data.impactSnapshot.present
+              ? data.impactSnapshot.value
+              : this.impactSnapshot,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubstanceLog(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('substanceName: $substanceName, ')
+          ..write('direction: $direction, ')
+          ..write('impactSnapshot: $impactSnapshot, ')
+          ..write('quantity: $quantity, ')
+          ..write('notes: $notes, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    date,
+    substanceName,
+    direction,
+    impactSnapshot,
+    quantity,
+    notes,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SubstanceLog &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.date == this.date &&
+          other.substanceName == this.substanceName &&
+          other.direction == this.direction &&
+          other.impactSnapshot == this.impactSnapshot &&
+          other.quantity == this.quantity &&
+          other.notes == this.notes &&
+          other.synced == this.synced);
+}
+
+class SubstanceLogsCompanion extends UpdateCompanion<SubstanceLog> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> date;
+  final Value<String> substanceName;
+  final Value<String> direction;
+  final Value<double> impactSnapshot;
+  final Value<String?> quantity;
+  final Value<String?> notes;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const SubstanceLogsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.substanceName = const Value.absent(),
+    this.direction = const Value.absent(),
+    this.impactSnapshot = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SubstanceLogsCompanion.insert({
+    required String id,
+    required String userId,
+    required DateTime date,
+    required String substanceName,
+    required String direction,
+    required double impactSnapshot,
+    this.quantity = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       date = Value(date),
+       substanceName = Value(substanceName),
+       direction = Value(direction),
+       impactSnapshot = Value(impactSnapshot);
+  static Insertable<SubstanceLog> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? date,
+    Expression<String>? substanceName,
+    Expression<String>? direction,
+    Expression<double>? impactSnapshot,
+    Expression<String>? quantity,
+    Expression<String>? notes,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (date != null) 'date': date,
+      if (substanceName != null) 'substance_name': substanceName,
+      if (direction != null) 'direction': direction,
+      if (impactSnapshot != null) 'impact_snapshot': impactSnapshot,
+      if (quantity != null) 'quantity': quantity,
+      if (notes != null) 'notes': notes,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SubstanceLogsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<DateTime>? date,
+    Value<String>? substanceName,
+    Value<String>? direction,
+    Value<double>? impactSnapshot,
+    Value<String?>? quantity,
+    Value<String?>? notes,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return SubstanceLogsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      substanceName: substanceName ?? this.substanceName,
+      direction: direction ?? this.direction,
+      impactSnapshot: impactSnapshot ?? this.impactSnapshot,
+      quantity: quantity ?? this.quantity,
+      notes: notes ?? this.notes,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (substanceName.present) {
+      map['substance_name'] = Variable<String>(substanceName.value);
+    }
+    if (direction.present) {
+      map['direction'] = Variable<String>(direction.value);
+    }
+    if (impactSnapshot.present) {
+      map['impact_snapshot'] = Variable<double>(impactSnapshot.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<String>(quantity.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubstanceLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('substanceName: $substanceName, ')
+          ..write('direction: $direction, ')
+          ..write('impactSnapshot: $impactSnapshot, ')
+          ..write('quantity: $quantity, ')
+          ..write('notes: $notes, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ReadinessCheckInsTable extends ReadinessCheckIns
+    with TableInfo<$ReadinessCheckInsTable, ReadinessCheckIn> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReadinessCheckInsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _checkInWindowMeta = const VerificationMeta(
+    'checkInWindow',
+  );
+  @override
+  late final GeneratedColumn<String> checkInWindow = GeneratedColumn<String>(
+    'check_in_window',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sleepHoursMeta = const VerificationMeta(
+    'sleepHours',
+  );
+  @override
+  late final GeneratedColumn<double> sleepHours = GeneratedColumn<double>(
+    'sleep_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sleepQualityMeta = const VerificationMeta(
+    'sleepQuality',
+  );
+  @override
+  late final GeneratedColumn<int> sleepQuality = GeneratedColumn<int>(
+    'sleep_quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stressLevelMeta = const VerificationMeta(
+    'stressLevel',
+  );
+  @override
+  late final GeneratedColumn<int> stressLevel = GeneratedColumn<int>(
+    'stress_level',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _energyLevelMeta = const VerificationMeta(
+    'energyLevel',
+  );
+  @override
+  late final GeneratedColumn<int> energyLevel = GeneratedColumn<int>(
+    'energy_level',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _moodMeta = const VerificationMeta('mood');
+  @override
+  late final GeneratedColumn<int> mood = GeneratedColumn<int>(
+    'mood',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caffeineCountMeta = const VerificationMeta(
+    'caffeineCount',
+  );
+  @override
+  late final GeneratedColumn<int> caffeineCount = GeneratedColumn<int>(
+    'caffeine_count',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _focusLevelMeta = const VerificationMeta(
+    'focusLevel',
+  );
+  @override
+  late final GeneratedColumn<int> focusLevel = GeneratedColumn<int>(
+    'focus_level',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    date,
+    checkInWindow,
+    sleepHours,
+    sleepQuality,
+    stressLevel,
+    energyLevel,
+    mood,
+    caffeineCount,
+    focusLevel,
+    notes,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'readiness_check_ins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReadinessCheckIn> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('check_in_window')) {
+      context.handle(
+        _checkInWindowMeta,
+        checkInWindow.isAcceptableOrUnknown(
+          data['check_in_window']!,
+          _checkInWindowMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_checkInWindowMeta);
+    }
+    if (data.containsKey('sleep_hours')) {
+      context.handle(
+        _sleepHoursMeta,
+        sleepHours.isAcceptableOrUnknown(data['sleep_hours']!, _sleepHoursMeta),
+      );
+    }
+    if (data.containsKey('sleep_quality')) {
+      context.handle(
+        _sleepQualityMeta,
+        sleepQuality.isAcceptableOrUnknown(
+          data['sleep_quality']!,
+          _sleepQualityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stress_level')) {
+      context.handle(
+        _stressLevelMeta,
+        stressLevel.isAcceptableOrUnknown(
+          data['stress_level']!,
+          _stressLevelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('energy_level')) {
+      context.handle(
+        _energyLevelMeta,
+        energyLevel.isAcceptableOrUnknown(
+          data['energy_level']!,
+          _energyLevelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mood')) {
+      context.handle(
+        _moodMeta,
+        mood.isAcceptableOrUnknown(data['mood']!, _moodMeta),
+      );
+    }
+    if (data.containsKey('caffeine_count')) {
+      context.handle(
+        _caffeineCountMeta,
+        caffeineCount.isAcceptableOrUnknown(
+          data['caffeine_count']!,
+          _caffeineCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_level')) {
+      context.handle(
+        _focusLevelMeta,
+        focusLevel.isAcceptableOrUnknown(data['focus_level']!, _focusLevelMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReadinessCheckIn map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReadinessCheckIn(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      date:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}date'],
+          )!,
+      checkInWindow:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}check_in_window'],
+          )!,
+      sleepHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sleep_hours'],
+      ),
+      sleepQuality: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sleep_quality'],
+      ),
+      stressLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stress_level'],
+      ),
+      energyLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}energy_level'],
+      ),
+      mood: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mood'],
+      ),
+      caffeineCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}caffeine_count'],
+      ),
+      focusLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}focus_level'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $ReadinessCheckInsTable createAlias(String alias) {
+    return $ReadinessCheckInsTable(attachedDatabase, alias);
+  }
+}
+
+class ReadinessCheckIn extends DataClass
+    implements Insertable<ReadinessCheckIn> {
+  final String id;
+  final String userId;
+  final DateTime date;
+  final String checkInWindow;
+  final double? sleepHours;
+  final int? sleepQuality;
+  final int? stressLevel;
+  final int? energyLevel;
+  final int? mood;
+  final int? caffeineCount;
+  final int? focusLevel;
+  final String? notes;
+  final bool synced;
+  const ReadinessCheckIn({
+    required this.id,
+    required this.userId,
+    required this.date,
+    required this.checkInWindow,
+    this.sleepHours,
+    this.sleepQuality,
+    this.stressLevel,
+    this.energyLevel,
+    this.mood,
+    this.caffeineCount,
+    this.focusLevel,
+    this.notes,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['date'] = Variable<DateTime>(date);
+    map['check_in_window'] = Variable<String>(checkInWindow);
+    if (!nullToAbsent || sleepHours != null) {
+      map['sleep_hours'] = Variable<double>(sleepHours);
+    }
+    if (!nullToAbsent || sleepQuality != null) {
+      map['sleep_quality'] = Variable<int>(sleepQuality);
+    }
+    if (!nullToAbsent || stressLevel != null) {
+      map['stress_level'] = Variable<int>(stressLevel);
+    }
+    if (!nullToAbsent || energyLevel != null) {
+      map['energy_level'] = Variable<int>(energyLevel);
+    }
+    if (!nullToAbsent || mood != null) {
+      map['mood'] = Variable<int>(mood);
+    }
+    if (!nullToAbsent || caffeineCount != null) {
+      map['caffeine_count'] = Variable<int>(caffeineCount);
+    }
+    if (!nullToAbsent || focusLevel != null) {
+      map['focus_level'] = Variable<int>(focusLevel);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  ReadinessCheckInsCompanion toCompanion(bool nullToAbsent) {
+    return ReadinessCheckInsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      date: Value(date),
+      checkInWindow: Value(checkInWindow),
+      sleepHours:
+          sleepHours == null && nullToAbsent
+              ? const Value.absent()
+              : Value(sleepHours),
+      sleepQuality:
+          sleepQuality == null && nullToAbsent
+              ? const Value.absent()
+              : Value(sleepQuality),
+      stressLevel:
+          stressLevel == null && nullToAbsent
+              ? const Value.absent()
+              : Value(stressLevel),
+      energyLevel:
+          energyLevel == null && nullToAbsent
+              ? const Value.absent()
+              : Value(energyLevel),
+      mood: mood == null && nullToAbsent ? const Value.absent() : Value(mood),
+      caffeineCount:
+          caffeineCount == null && nullToAbsent
+              ? const Value.absent()
+              : Value(caffeineCount),
+      focusLevel:
+          focusLevel == null && nullToAbsent
+              ? const Value.absent()
+              : Value(focusLevel),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      synced: Value(synced),
+    );
+  }
+
+  factory ReadinessCheckIn.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReadinessCheckIn(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      checkInWindow: serializer.fromJson<String>(json['checkInWindow']),
+      sleepHours: serializer.fromJson<double?>(json['sleepHours']),
+      sleepQuality: serializer.fromJson<int?>(json['sleepQuality']),
+      stressLevel: serializer.fromJson<int?>(json['stressLevel']),
+      energyLevel: serializer.fromJson<int?>(json['energyLevel']),
+      mood: serializer.fromJson<int?>(json['mood']),
+      caffeineCount: serializer.fromJson<int?>(json['caffeineCount']),
+      focusLevel: serializer.fromJson<int?>(json['focusLevel']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'date': serializer.toJson<DateTime>(date),
+      'checkInWindow': serializer.toJson<String>(checkInWindow),
+      'sleepHours': serializer.toJson<double?>(sleepHours),
+      'sleepQuality': serializer.toJson<int?>(sleepQuality),
+      'stressLevel': serializer.toJson<int?>(stressLevel),
+      'energyLevel': serializer.toJson<int?>(energyLevel),
+      'mood': serializer.toJson<int?>(mood),
+      'caffeineCount': serializer.toJson<int?>(caffeineCount),
+      'focusLevel': serializer.toJson<int?>(focusLevel),
+      'notes': serializer.toJson<String?>(notes),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  ReadinessCheckIn copyWith({
+    String? id,
+    String? userId,
+    DateTime? date,
+    String? checkInWindow,
+    Value<double?> sleepHours = const Value.absent(),
+    Value<int?> sleepQuality = const Value.absent(),
+    Value<int?> stressLevel = const Value.absent(),
+    Value<int?> energyLevel = const Value.absent(),
+    Value<int?> mood = const Value.absent(),
+    Value<int?> caffeineCount = const Value.absent(),
+    Value<int?> focusLevel = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    bool? synced,
+  }) => ReadinessCheckIn(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    date: date ?? this.date,
+    checkInWindow: checkInWindow ?? this.checkInWindow,
+    sleepHours: sleepHours.present ? sleepHours.value : this.sleepHours,
+    sleepQuality: sleepQuality.present ? sleepQuality.value : this.sleepQuality,
+    stressLevel: stressLevel.present ? stressLevel.value : this.stressLevel,
+    energyLevel: energyLevel.present ? energyLevel.value : this.energyLevel,
+    mood: mood.present ? mood.value : this.mood,
+    caffeineCount:
+        caffeineCount.present ? caffeineCount.value : this.caffeineCount,
+    focusLevel: focusLevel.present ? focusLevel.value : this.focusLevel,
+    notes: notes.present ? notes.value : this.notes,
+    synced: synced ?? this.synced,
+  );
+  ReadinessCheckIn copyWithCompanion(ReadinessCheckInsCompanion data) {
+    return ReadinessCheckIn(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      date: data.date.present ? data.date.value : this.date,
+      checkInWindow:
+          data.checkInWindow.present
+              ? data.checkInWindow.value
+              : this.checkInWindow,
+      sleepHours:
+          data.sleepHours.present ? data.sleepHours.value : this.sleepHours,
+      sleepQuality:
+          data.sleepQuality.present
+              ? data.sleepQuality.value
+              : this.sleepQuality,
+      stressLevel:
+          data.stressLevel.present ? data.stressLevel.value : this.stressLevel,
+      energyLevel:
+          data.energyLevel.present ? data.energyLevel.value : this.energyLevel,
+      mood: data.mood.present ? data.mood.value : this.mood,
+      caffeineCount:
+          data.caffeineCount.present
+              ? data.caffeineCount.value
+              : this.caffeineCount,
+      focusLevel:
+          data.focusLevel.present ? data.focusLevel.value : this.focusLevel,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadinessCheckIn(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('checkInWindow: $checkInWindow, ')
+          ..write('sleepHours: $sleepHours, ')
+          ..write('sleepQuality: $sleepQuality, ')
+          ..write('stressLevel: $stressLevel, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('mood: $mood, ')
+          ..write('caffeineCount: $caffeineCount, ')
+          ..write('focusLevel: $focusLevel, ')
+          ..write('notes: $notes, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    date,
+    checkInWindow,
+    sleepHours,
+    sleepQuality,
+    stressLevel,
+    energyLevel,
+    mood,
+    caffeineCount,
+    focusLevel,
+    notes,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReadinessCheckIn &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.date == this.date &&
+          other.checkInWindow == this.checkInWindow &&
+          other.sleepHours == this.sleepHours &&
+          other.sleepQuality == this.sleepQuality &&
+          other.stressLevel == this.stressLevel &&
+          other.energyLevel == this.energyLevel &&
+          other.mood == this.mood &&
+          other.caffeineCount == this.caffeineCount &&
+          other.focusLevel == this.focusLevel &&
+          other.notes == this.notes &&
+          other.synced == this.synced);
+}
+
+class ReadinessCheckInsCompanion extends UpdateCompanion<ReadinessCheckIn> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> date;
+  final Value<String> checkInWindow;
+  final Value<double?> sleepHours;
+  final Value<int?> sleepQuality;
+  final Value<int?> stressLevel;
+  final Value<int?> energyLevel;
+  final Value<int?> mood;
+  final Value<int?> caffeineCount;
+  final Value<int?> focusLevel;
+  final Value<String?> notes;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const ReadinessCheckInsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.checkInWindow = const Value.absent(),
+    this.sleepHours = const Value.absent(),
+    this.sleepQuality = const Value.absent(),
+    this.stressLevel = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.caffeineCount = const Value.absent(),
+    this.focusLevel = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReadinessCheckInsCompanion.insert({
+    required String id,
+    required String userId,
+    required DateTime date,
+    required String checkInWindow,
+    this.sleepHours = const Value.absent(),
+    this.sleepQuality = const Value.absent(),
+    this.stressLevel = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.caffeineCount = const Value.absent(),
+    this.focusLevel = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       date = Value(date),
+       checkInWindow = Value(checkInWindow);
+  static Insertable<ReadinessCheckIn> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? date,
+    Expression<String>? checkInWindow,
+    Expression<double>? sleepHours,
+    Expression<int>? sleepQuality,
+    Expression<int>? stressLevel,
+    Expression<int>? energyLevel,
+    Expression<int>? mood,
+    Expression<int>? caffeineCount,
+    Expression<int>? focusLevel,
+    Expression<String>? notes,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (date != null) 'date': date,
+      if (checkInWindow != null) 'check_in_window': checkInWindow,
+      if (sleepHours != null) 'sleep_hours': sleepHours,
+      if (sleepQuality != null) 'sleep_quality': sleepQuality,
+      if (stressLevel != null) 'stress_level': stressLevel,
+      if (energyLevel != null) 'energy_level': energyLevel,
+      if (mood != null) 'mood': mood,
+      if (caffeineCount != null) 'caffeine_count': caffeineCount,
+      if (focusLevel != null) 'focus_level': focusLevel,
+      if (notes != null) 'notes': notes,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReadinessCheckInsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<DateTime>? date,
+    Value<String>? checkInWindow,
+    Value<double?>? sleepHours,
+    Value<int?>? sleepQuality,
+    Value<int?>? stressLevel,
+    Value<int?>? energyLevel,
+    Value<int?>? mood,
+    Value<int?>? caffeineCount,
+    Value<int?>? focusLevel,
+    Value<String?>? notes,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return ReadinessCheckInsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      checkInWindow: checkInWindow ?? this.checkInWindow,
+      sleepHours: sleepHours ?? this.sleepHours,
+      sleepQuality: sleepQuality ?? this.sleepQuality,
+      stressLevel: stressLevel ?? this.stressLevel,
+      energyLevel: energyLevel ?? this.energyLevel,
+      mood: mood ?? this.mood,
+      caffeineCount: caffeineCount ?? this.caffeineCount,
+      focusLevel: focusLevel ?? this.focusLevel,
+      notes: notes ?? this.notes,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (checkInWindow.present) {
+      map['check_in_window'] = Variable<String>(checkInWindow.value);
+    }
+    if (sleepHours.present) {
+      map['sleep_hours'] = Variable<double>(sleepHours.value);
+    }
+    if (sleepQuality.present) {
+      map['sleep_quality'] = Variable<int>(sleepQuality.value);
+    }
+    if (stressLevel.present) {
+      map['stress_level'] = Variable<int>(stressLevel.value);
+    }
+    if (energyLevel.present) {
+      map['energy_level'] = Variable<int>(energyLevel.value);
+    }
+    if (mood.present) {
+      map['mood'] = Variable<int>(mood.value);
+    }
+    if (caffeineCount.present) {
+      map['caffeine_count'] = Variable<int>(caffeineCount.value);
+    }
+    if (focusLevel.present) {
+      map['focus_level'] = Variable<int>(focusLevel.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadinessCheckInsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('checkInWindow: $checkInWindow, ')
+          ..write('sleepHours: $sleepHours, ')
+          ..write('sleepQuality: $sleepQuality, ')
+          ..write('stressLevel: $stressLevel, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('mood: $mood, ')
+          ..write('caffeineCount: $caffeineCount, ')
+          ..write('focusLevel: $focusLevel, ')
+          ..write('notes: $notes, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DailyReadinessTable extends DailyReadiness
+    with TableInfo<$DailyReadinessTable, DailyReadinessData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyReadinessTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _computedScoreMeta = const VerificationMeta(
+    'computedScore',
+  );
+  @override
+  late final GeneratedColumn<double> computedScore = GeneratedColumn<double>(
+    'computed_score',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(70.0),
+  );
+  static const VerificationMeta _userRatedScoreMeta = const VerificationMeta(
+    'userRatedScore',
+  );
+  @override
+  late final GeneratedColumn<double> userRatedScore = GeneratedColumn<double>(
+    'user_rated_score',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _previousDayInfluenceMeta =
+      const VerificationMeta('previousDayInfluence');
+  @override
+  late final GeneratedColumn<double> previousDayInfluence =
+      GeneratedColumn<double>(
+        'previous_day_influence',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.0),
+      );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    date,
+    computedScore,
+    userRatedScore,
+    previousDayInfluence,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_readiness';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyReadinessData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('computed_score')) {
+      context.handle(
+        _computedScoreMeta,
+        computedScore.isAcceptableOrUnknown(
+          data['computed_score']!,
+          _computedScoreMeta,
+        ),
+      );
+    }
+    if (data.containsKey('user_rated_score')) {
+      context.handle(
+        _userRatedScoreMeta,
+        userRatedScore.isAcceptableOrUnknown(
+          data['user_rated_score']!,
+          _userRatedScoreMeta,
+        ),
+      );
+    }
+    if (data.containsKey('previous_day_influence')) {
+      context.handle(
+        _previousDayInfluenceMeta,
+        previousDayInfluence.isAcceptableOrUnknown(
+          data['previous_day_influence']!,
+          _previousDayInfluenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DailyReadinessData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyReadinessData(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      date:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}date'],
+          )!,
+      computedScore:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}computed_score'],
+          )!,
+      userRatedScore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}user_rated_score'],
+      ),
+      previousDayInfluence:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}previous_day_influence'],
+          )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $DailyReadinessTable createAlias(String alias) {
+    return $DailyReadinessTable(attachedDatabase, alias);
+  }
+}
+
+class DailyReadinessData extends DataClass
+    implements Insertable<DailyReadinessData> {
+  final String id;
+  final String userId;
+  final DateTime date;
+  final double computedScore;
+  final double? userRatedScore;
+  final double previousDayInfluence;
+  final bool synced;
+  const DailyReadinessData({
+    required this.id,
+    required this.userId,
+    required this.date,
+    required this.computedScore,
+    this.userRatedScore,
+    required this.previousDayInfluence,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['date'] = Variable<DateTime>(date);
+    map['computed_score'] = Variable<double>(computedScore);
+    if (!nullToAbsent || userRatedScore != null) {
+      map['user_rated_score'] = Variable<double>(userRatedScore);
+    }
+    map['previous_day_influence'] = Variable<double>(previousDayInfluence);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  DailyReadinessCompanion toCompanion(bool nullToAbsent) {
+    return DailyReadinessCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      date: Value(date),
+      computedScore: Value(computedScore),
+      userRatedScore:
+          userRatedScore == null && nullToAbsent
+              ? const Value.absent()
+              : Value(userRatedScore),
+      previousDayInfluence: Value(previousDayInfluence),
+      synced: Value(synced),
+    );
+  }
+
+  factory DailyReadinessData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyReadinessData(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      computedScore: serializer.fromJson<double>(json['computedScore']),
+      userRatedScore: serializer.fromJson<double?>(json['userRatedScore']),
+      previousDayInfluence: serializer.fromJson<double>(
+        json['previousDayInfluence'],
+      ),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'date': serializer.toJson<DateTime>(date),
+      'computedScore': serializer.toJson<double>(computedScore),
+      'userRatedScore': serializer.toJson<double?>(userRatedScore),
+      'previousDayInfluence': serializer.toJson<double>(previousDayInfluence),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  DailyReadinessData copyWith({
+    String? id,
+    String? userId,
+    DateTime? date,
+    double? computedScore,
+    Value<double?> userRatedScore = const Value.absent(),
+    double? previousDayInfluence,
+    bool? synced,
+  }) => DailyReadinessData(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    date: date ?? this.date,
+    computedScore: computedScore ?? this.computedScore,
+    userRatedScore:
+        userRatedScore.present ? userRatedScore.value : this.userRatedScore,
+    previousDayInfluence: previousDayInfluence ?? this.previousDayInfluence,
+    synced: synced ?? this.synced,
+  );
+  DailyReadinessData copyWithCompanion(DailyReadinessCompanion data) {
+    return DailyReadinessData(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      date: data.date.present ? data.date.value : this.date,
+      computedScore:
+          data.computedScore.present
+              ? data.computedScore.value
+              : this.computedScore,
+      userRatedScore:
+          data.userRatedScore.present
+              ? data.userRatedScore.value
+              : this.userRatedScore,
+      previousDayInfluence:
+          data.previousDayInfluence.present
+              ? data.previousDayInfluence.value
+              : this.previousDayInfluence,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReadinessData(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('computedScore: $computedScore, ')
+          ..write('userRatedScore: $userRatedScore, ')
+          ..write('previousDayInfluence: $previousDayInfluence, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    date,
+    computedScore,
+    userRatedScore,
+    previousDayInfluence,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyReadinessData &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.date == this.date &&
+          other.computedScore == this.computedScore &&
+          other.userRatedScore == this.userRatedScore &&
+          other.previousDayInfluence == this.previousDayInfluence &&
+          other.synced == this.synced);
+}
+
+class DailyReadinessCompanion extends UpdateCompanion<DailyReadinessData> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> date;
+  final Value<double> computedScore;
+  final Value<double?> userRatedScore;
+  final Value<double> previousDayInfluence;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const DailyReadinessCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.computedScore = const Value.absent(),
+    this.userRatedScore = const Value.absent(),
+    this.previousDayInfluence = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyReadinessCompanion.insert({
+    required String id,
+    required String userId,
+    required DateTime date,
+    this.computedScore = const Value.absent(),
+    this.userRatedScore = const Value.absent(),
+    this.previousDayInfluence = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       date = Value(date);
+  static Insertable<DailyReadinessData> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? date,
+    Expression<double>? computedScore,
+    Expression<double>? userRatedScore,
+    Expression<double>? previousDayInfluence,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (date != null) 'date': date,
+      if (computedScore != null) 'computed_score': computedScore,
+      if (userRatedScore != null) 'user_rated_score': userRatedScore,
+      if (previousDayInfluence != null)
+        'previous_day_influence': previousDayInfluence,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyReadinessCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<DateTime>? date,
+    Value<double>? computedScore,
+    Value<double?>? userRatedScore,
+    Value<double>? previousDayInfluence,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return DailyReadinessCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      computedScore: computedScore ?? this.computedScore,
+      userRatedScore: userRatedScore ?? this.userRatedScore,
+      previousDayInfluence: previousDayInfluence ?? this.previousDayInfluence,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (computedScore.present) {
+      map['computed_score'] = Variable<double>(computedScore.value);
+    }
+    if (userRatedScore.present) {
+      map['user_rated_score'] = Variable<double>(userRatedScore.value);
+    }
+    if (previousDayInfluence.present) {
+      map['previous_day_influence'] = Variable<double>(
+        previousDayInfluence.value,
+      );
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReadinessCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('date: $date, ')
+          ..write('computedScore: $computedScore, ')
+          ..write('userRatedScore: $userRatedScore, ')
+          ..write('previousDayInfluence: $previousDayInfluence, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3784,6 +6211,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DailyNutritionGoalsTable dailyNutritionGoals =
       $DailyNutritionGoalsTable(this);
   late final $PantryFoodsTable pantryFoods = $PantryFoodsTable(this);
+  late final $UserSubstancesTable userSubstances = $UserSubstancesTable(this);
+  late final $SubstanceLogsTable substanceLogs = $SubstanceLogsTable(this);
+  late final $ReadinessCheckInsTable readinessCheckIns =
+      $ReadinessCheckInsTable(this);
+  late final $DailyReadinessTable dailyReadiness = $DailyReadinessTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3797,6 +6229,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     waterLogs,
     dailyNutritionGoals,
     pantryFoods,
+    userSubstances,
+    substanceLogs,
+    readinessCheckIns,
+    dailyReadiness,
   ];
 }
 
@@ -5802,6 +8238,1245 @@ typedef $$PantryFoodsTableProcessedTableManager =
       PantryFood,
       PrefetchHooks Function()
     >;
+typedef $$UserSubstancesTableCreateCompanionBuilder =
+    UserSubstancesCompanion Function({
+      required String id,
+      required String userId,
+      required String name,
+      Value<String> direction,
+      Value<double> defaultImpact,
+      Value<double?> learnedImpact,
+      Value<int> occurrenceCount,
+      Value<DateTime> createdAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$UserSubstancesTableUpdateCompanionBuilder =
+    UserSubstancesCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> name,
+      Value<String> direction,
+      Value<double> defaultImpact,
+      Value<double?> learnedImpact,
+      Value<int> occurrenceCount,
+      Value<DateTime> createdAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$UserSubstancesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserSubstancesTable> {
+  $$UserSubstancesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get defaultImpact => $composableBuilder(
+    column: $table.defaultImpact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get learnedImpact => $composableBuilder(
+    column: $table.learnedImpact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occurrenceCount => $composableBuilder(
+    column: $table.occurrenceCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserSubstancesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserSubstancesTable> {
+  $$UserSubstancesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get defaultImpact => $composableBuilder(
+    column: $table.defaultImpact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get learnedImpact => $composableBuilder(
+    column: $table.learnedImpact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occurrenceCount => $composableBuilder(
+    column: $table.occurrenceCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserSubstancesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserSubstancesTable> {
+  $$UserSubstancesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
+
+  GeneratedColumn<double> get defaultImpact => $composableBuilder(
+    column: $table.defaultImpact,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get learnedImpact => $composableBuilder(
+    column: $table.learnedImpact,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get occurrenceCount => $composableBuilder(
+    column: $table.occurrenceCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$UserSubstancesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserSubstancesTable,
+          UserSubstance,
+          $$UserSubstancesTableFilterComposer,
+          $$UserSubstancesTableOrderingComposer,
+          $$UserSubstancesTableAnnotationComposer,
+          $$UserSubstancesTableCreateCompanionBuilder,
+          $$UserSubstancesTableUpdateCompanionBuilder,
+          (
+            UserSubstance,
+            BaseReferences<_$AppDatabase, $UserSubstancesTable, UserSubstance>,
+          ),
+          UserSubstance,
+          PrefetchHooks Function()
+        > {
+  $$UserSubstancesTableTableManager(
+    _$AppDatabase db,
+    $UserSubstancesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$UserSubstancesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$UserSubstancesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$UserSubstancesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> direction = const Value.absent(),
+                Value<double> defaultImpact = const Value.absent(),
+                Value<double?> learnedImpact = const Value.absent(),
+                Value<int> occurrenceCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserSubstancesCompanion(
+                id: id,
+                userId: userId,
+                name: name,
+                direction: direction,
+                defaultImpact: defaultImpact,
+                learnedImpact: learnedImpact,
+                occurrenceCount: occurrenceCount,
+                createdAt: createdAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required String name,
+                Value<String> direction = const Value.absent(),
+                Value<double> defaultImpact = const Value.absent(),
+                Value<double?> learnedImpact = const Value.absent(),
+                Value<int> occurrenceCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserSubstancesCompanion.insert(
+                id: id,
+                userId: userId,
+                name: name,
+                direction: direction,
+                defaultImpact: defaultImpact,
+                learnedImpact: learnedImpact,
+                occurrenceCount: occurrenceCount,
+                createdAt: createdAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserSubstancesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserSubstancesTable,
+      UserSubstance,
+      $$UserSubstancesTableFilterComposer,
+      $$UserSubstancesTableOrderingComposer,
+      $$UserSubstancesTableAnnotationComposer,
+      $$UserSubstancesTableCreateCompanionBuilder,
+      $$UserSubstancesTableUpdateCompanionBuilder,
+      (
+        UserSubstance,
+        BaseReferences<_$AppDatabase, $UserSubstancesTable, UserSubstance>,
+      ),
+      UserSubstance,
+      PrefetchHooks Function()
+    >;
+typedef $$SubstanceLogsTableCreateCompanionBuilder =
+    SubstanceLogsCompanion Function({
+      required String id,
+      required String userId,
+      required DateTime date,
+      required String substanceName,
+      required String direction,
+      required double impactSnapshot,
+      Value<String?> quantity,
+      Value<String?> notes,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$SubstanceLogsTableUpdateCompanionBuilder =
+    SubstanceLogsCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<DateTime> date,
+      Value<String> substanceName,
+      Value<String> direction,
+      Value<double> impactSnapshot,
+      Value<String?> quantity,
+      Value<String?> notes,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$SubstanceLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get substanceName => $composableBuilder(
+    column: $table.substanceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get impactSnapshot => $composableBuilder(
+    column: $table.impactSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SubstanceLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get substanceName => $composableBuilder(
+    column: $table.substanceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get impactSnapshot => $composableBuilder(
+    column: $table.impactSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SubstanceLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get substanceName => $composableBuilder(
+    column: $table.substanceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
+
+  GeneratedColumn<double> get impactSnapshot => $composableBuilder(
+    column: $table.impactSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$SubstanceLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SubstanceLogsTable,
+          SubstanceLog,
+          $$SubstanceLogsTableFilterComposer,
+          $$SubstanceLogsTableOrderingComposer,
+          $$SubstanceLogsTableAnnotationComposer,
+          $$SubstanceLogsTableCreateCompanionBuilder,
+          $$SubstanceLogsTableUpdateCompanionBuilder,
+          (
+            SubstanceLog,
+            BaseReferences<_$AppDatabase, $SubstanceLogsTable, SubstanceLog>,
+          ),
+          SubstanceLog,
+          PrefetchHooks Function()
+        > {
+  $$SubstanceLogsTableTableManager(_$AppDatabase db, $SubstanceLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$SubstanceLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$SubstanceLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$SubstanceLogsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<String> substanceName = const Value.absent(),
+                Value<String> direction = const Value.absent(),
+                Value<double> impactSnapshot = const Value.absent(),
+                Value<String?> quantity = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubstanceLogsCompanion(
+                id: id,
+                userId: userId,
+                date: date,
+                substanceName: substanceName,
+                direction: direction,
+                impactSnapshot: impactSnapshot,
+                quantity: quantity,
+                notes: notes,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required DateTime date,
+                required String substanceName,
+                required String direction,
+                required double impactSnapshot,
+                Value<String?> quantity = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubstanceLogsCompanion.insert(
+                id: id,
+                userId: userId,
+                date: date,
+                substanceName: substanceName,
+                direction: direction,
+                impactSnapshot: impactSnapshot,
+                quantity: quantity,
+                notes: notes,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SubstanceLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SubstanceLogsTable,
+      SubstanceLog,
+      $$SubstanceLogsTableFilterComposer,
+      $$SubstanceLogsTableOrderingComposer,
+      $$SubstanceLogsTableAnnotationComposer,
+      $$SubstanceLogsTableCreateCompanionBuilder,
+      $$SubstanceLogsTableUpdateCompanionBuilder,
+      (
+        SubstanceLog,
+        BaseReferences<_$AppDatabase, $SubstanceLogsTable, SubstanceLog>,
+      ),
+      SubstanceLog,
+      PrefetchHooks Function()
+    >;
+typedef $$ReadinessCheckInsTableCreateCompanionBuilder =
+    ReadinessCheckInsCompanion Function({
+      required String id,
+      required String userId,
+      required DateTime date,
+      required String checkInWindow,
+      Value<double?> sleepHours,
+      Value<int?> sleepQuality,
+      Value<int?> stressLevel,
+      Value<int?> energyLevel,
+      Value<int?> mood,
+      Value<int?> caffeineCount,
+      Value<int?> focusLevel,
+      Value<String?> notes,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$ReadinessCheckInsTableUpdateCompanionBuilder =
+    ReadinessCheckInsCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<DateTime> date,
+      Value<String> checkInWindow,
+      Value<double?> sleepHours,
+      Value<int?> sleepQuality,
+      Value<int?> stressLevel,
+      Value<int?> energyLevel,
+      Value<int?> mood,
+      Value<int?> caffeineCount,
+      Value<int?> focusLevel,
+      Value<String?> notes,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$ReadinessCheckInsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReadinessCheckInsTable> {
+  $$ReadinessCheckInsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get checkInWindow => $composableBuilder(
+    column: $table.checkInWindow,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sleepQuality => $composableBuilder(
+    column: $table.sleepQuality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stressLevel => $composableBuilder(
+    column: $table.stressLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get caffeineCount => $composableBuilder(
+    column: $table.caffeineCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get focusLevel => $composableBuilder(
+    column: $table.focusLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReadinessCheckInsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReadinessCheckInsTable> {
+  $$ReadinessCheckInsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checkInWindow => $composableBuilder(
+    column: $table.checkInWindow,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sleepQuality => $composableBuilder(
+    column: $table.sleepQuality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stressLevel => $composableBuilder(
+    column: $table.stressLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get caffeineCount => $composableBuilder(
+    column: $table.caffeineCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get focusLevel => $composableBuilder(
+    column: $table.focusLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReadinessCheckInsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReadinessCheckInsTable> {
+  $$ReadinessCheckInsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get checkInWindow => $composableBuilder(
+    column: $table.checkInWindow,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sleepQuality => $composableBuilder(
+    column: $table.sleepQuality,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get stressLevel => $composableBuilder(
+    column: $table.stressLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mood =>
+      $composableBuilder(column: $table.mood, builder: (column) => column);
+
+  GeneratedColumn<int> get caffeineCount => $composableBuilder(
+    column: $table.caffeineCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get focusLevel => $composableBuilder(
+    column: $table.focusLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$ReadinessCheckInsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReadinessCheckInsTable,
+          ReadinessCheckIn,
+          $$ReadinessCheckInsTableFilterComposer,
+          $$ReadinessCheckInsTableOrderingComposer,
+          $$ReadinessCheckInsTableAnnotationComposer,
+          $$ReadinessCheckInsTableCreateCompanionBuilder,
+          $$ReadinessCheckInsTableUpdateCompanionBuilder,
+          (
+            ReadinessCheckIn,
+            BaseReferences<
+              _$AppDatabase,
+              $ReadinessCheckInsTable,
+              ReadinessCheckIn
+            >,
+          ),
+          ReadinessCheckIn,
+          PrefetchHooks Function()
+        > {
+  $$ReadinessCheckInsTableTableManager(
+    _$AppDatabase db,
+    $ReadinessCheckInsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$ReadinessCheckInsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$ReadinessCheckInsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$ReadinessCheckInsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<String> checkInWindow = const Value.absent(),
+                Value<double?> sleepHours = const Value.absent(),
+                Value<int?> sleepQuality = const Value.absent(),
+                Value<int?> stressLevel = const Value.absent(),
+                Value<int?> energyLevel = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<int?> caffeineCount = const Value.absent(),
+                Value<int?> focusLevel = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadinessCheckInsCompanion(
+                id: id,
+                userId: userId,
+                date: date,
+                checkInWindow: checkInWindow,
+                sleepHours: sleepHours,
+                sleepQuality: sleepQuality,
+                stressLevel: stressLevel,
+                energyLevel: energyLevel,
+                mood: mood,
+                caffeineCount: caffeineCount,
+                focusLevel: focusLevel,
+                notes: notes,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required DateTime date,
+                required String checkInWindow,
+                Value<double?> sleepHours = const Value.absent(),
+                Value<int?> sleepQuality = const Value.absent(),
+                Value<int?> stressLevel = const Value.absent(),
+                Value<int?> energyLevel = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<int?> caffeineCount = const Value.absent(),
+                Value<int?> focusLevel = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadinessCheckInsCompanion.insert(
+                id: id,
+                userId: userId,
+                date: date,
+                checkInWindow: checkInWindow,
+                sleepHours: sleepHours,
+                sleepQuality: sleepQuality,
+                stressLevel: stressLevel,
+                energyLevel: energyLevel,
+                mood: mood,
+                caffeineCount: caffeineCount,
+                focusLevel: focusLevel,
+                notes: notes,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReadinessCheckInsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReadinessCheckInsTable,
+      ReadinessCheckIn,
+      $$ReadinessCheckInsTableFilterComposer,
+      $$ReadinessCheckInsTableOrderingComposer,
+      $$ReadinessCheckInsTableAnnotationComposer,
+      $$ReadinessCheckInsTableCreateCompanionBuilder,
+      $$ReadinessCheckInsTableUpdateCompanionBuilder,
+      (
+        ReadinessCheckIn,
+        BaseReferences<
+          _$AppDatabase,
+          $ReadinessCheckInsTable,
+          ReadinessCheckIn
+        >,
+      ),
+      ReadinessCheckIn,
+      PrefetchHooks Function()
+    >;
+typedef $$DailyReadinessTableCreateCompanionBuilder =
+    DailyReadinessCompanion Function({
+      required String id,
+      required String userId,
+      required DateTime date,
+      Value<double> computedScore,
+      Value<double?> userRatedScore,
+      Value<double> previousDayInfluence,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$DailyReadinessTableUpdateCompanionBuilder =
+    DailyReadinessCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<DateTime> date,
+      Value<double> computedScore,
+      Value<double?> userRatedScore,
+      Value<double> previousDayInfluence,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$DailyReadinessTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyReadinessTable> {
+  $$DailyReadinessTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get computedScore => $composableBuilder(
+    column: $table.computedScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get userRatedScore => $composableBuilder(
+    column: $table.userRatedScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get previousDayInfluence => $composableBuilder(
+    column: $table.previousDayInfluence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyReadinessTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyReadinessTable> {
+  $$DailyReadinessTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get computedScore => $composableBuilder(
+    column: $table.computedScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get userRatedScore => $composableBuilder(
+    column: $table.userRatedScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get previousDayInfluence => $composableBuilder(
+    column: $table.previousDayInfluence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyReadinessTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyReadinessTable> {
+  $$DailyReadinessTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<double> get computedScore => $composableBuilder(
+    column: $table.computedScore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get userRatedScore => $composableBuilder(
+    column: $table.userRatedScore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get previousDayInfluence => $composableBuilder(
+    column: $table.previousDayInfluence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$DailyReadinessTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyReadinessTable,
+          DailyReadinessData,
+          $$DailyReadinessTableFilterComposer,
+          $$DailyReadinessTableOrderingComposer,
+          $$DailyReadinessTableAnnotationComposer,
+          $$DailyReadinessTableCreateCompanionBuilder,
+          $$DailyReadinessTableUpdateCompanionBuilder,
+          (
+            DailyReadinessData,
+            BaseReferences<
+              _$AppDatabase,
+              $DailyReadinessTable,
+              DailyReadinessData
+            >,
+          ),
+          DailyReadinessData,
+          PrefetchHooks Function()
+        > {
+  $$DailyReadinessTableTableManager(
+    _$AppDatabase db,
+    $DailyReadinessTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$DailyReadinessTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$DailyReadinessTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$DailyReadinessTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<double> computedScore = const Value.absent(),
+                Value<double?> userRatedScore = const Value.absent(),
+                Value<double> previousDayInfluence = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyReadinessCompanion(
+                id: id,
+                userId: userId,
+                date: date,
+                computedScore: computedScore,
+                userRatedScore: userRatedScore,
+                previousDayInfluence: previousDayInfluence,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required DateTime date,
+                Value<double> computedScore = const Value.absent(),
+                Value<double?> userRatedScore = const Value.absent(),
+                Value<double> previousDayInfluence = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyReadinessCompanion.insert(
+                id: id,
+                userId: userId,
+                date: date,
+                computedScore: computedScore,
+                userRatedScore: userRatedScore,
+                previousDayInfluence: previousDayInfluence,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyReadinessTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyReadinessTable,
+      DailyReadinessData,
+      $$DailyReadinessTableFilterComposer,
+      $$DailyReadinessTableOrderingComposer,
+      $$DailyReadinessTableAnnotationComposer,
+      $$DailyReadinessTableCreateCompanionBuilder,
+      $$DailyReadinessTableUpdateCompanionBuilder,
+      (
+        DailyReadinessData,
+        BaseReferences<_$AppDatabase, $DailyReadinessTable, DailyReadinessData>,
+      ),
+      DailyReadinessData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5822,4 +9497,12 @@ class $AppDatabaseManager {
       $$DailyNutritionGoalsTableTableManager(_db, _db.dailyNutritionGoals);
   $$PantryFoodsTableTableManager get pantryFoods =>
       $$PantryFoodsTableTableManager(_db, _db.pantryFoods);
+  $$UserSubstancesTableTableManager get userSubstances =>
+      $$UserSubstancesTableTableManager(_db, _db.userSubstances);
+  $$SubstanceLogsTableTableManager get substanceLogs =>
+      $$SubstanceLogsTableTableManager(_db, _db.substanceLogs);
+  $$ReadinessCheckInsTableTableManager get readinessCheckIns =>
+      $$ReadinessCheckInsTableTableManager(_db, _db.readinessCheckIns);
+  $$DailyReadinessTableTableManager get dailyReadiness =>
+      $$DailyReadinessTableTableManager(_db, _db.dailyReadiness);
 }
