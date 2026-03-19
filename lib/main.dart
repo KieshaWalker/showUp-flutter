@@ -112,7 +112,10 @@ class _AppShellState extends ConsumerState<AppShell> {
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
-      ref.read(userSubstancesProvider.notifier).seedDefaultsIfEmpty();
+      ref.read(userSubstancesProvider.notifier).syncFromRemote();
+      ref.read(substanceLogsProvider.notifier).syncFromRemote();
+      ref.read(checkInsProvider.notifier).syncFromRemote();
+      ref.read(readinessProvider.notifier).syncFromRemote();
     });
   }
 

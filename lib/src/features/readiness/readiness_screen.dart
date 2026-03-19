@@ -45,7 +45,11 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
   }
 
   Future<void> _ensureToday() async {
+    debugPrint('[ReadinessScreen] _ensureToday — fetching');
     final row = await ref.read(readinessProvider.notifier).todaysReadiness();
+    debugPrint(
+      '[ReadinessScreen] _ensureToday — score=${row.computedScore.toStringAsFixed(1)} rated=${row.userRatedScore}',
+    );
     if (mounted) setState(() => _todaysRow = row);
   }
 
@@ -116,6 +120,7 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
           _SelfRatingCard(
             current: _todaysRow?.userRatedScore,
             onRate: (v) async {
+              debugPrint('[ReadinessScreen] submitSelfRating — value=$v');
               await ref.read(readinessProvider.notifier).submitSelfRating(v);
               _ensureToday();
             },
@@ -126,6 +131,7 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
   }
 
   void _showCheckIn(BuildContext context, CheckInWindow window) {
+    debugPrint('[ReadinessScreen] _showCheckIn — window=${window.name}');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -135,6 +141,9 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
   }
 
   void _showSubstanceSheet(BuildContext context, DateTime? date) {
+    debugPrint(
+      '[ReadinessScreen] _showSubstanceSheet — date=${date ?? 'today'}',
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -178,7 +187,7 @@ class _ReadinessSummaryCardState extends ConsumerState<ReadinessSummaryCard> {
     );
 
     return AppGlass.card(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(50),
       child: Row(
         children: [
           // Mini ring
@@ -366,7 +375,6 @@ class _CheckInPromptCard extends ConsumerWidget {
                       _windowLabel(window),
                       style: AppTextStyles.titleMedium,
                     ),
-                    Text('Check-in pending', style: AppTextStyles.bodyMedium),
                   ],
                 ),
               ),
@@ -511,10 +519,12 @@ class _SubstanceLogCard extends ConsumerWidget {
             ...logs.map(
               (log) => _SubstanceLogRow(
                 log: log,
-                onDelete:
-                    () => ref
-                        .read(substanceLogsProvider.notifier)
-                        .deleteLog(log.id),
+                onDelete: () {
+                  debugPrint(
+                    '[ReadinessScreen] deleteLog — id=${log.id} substance=${log.substanceName}',
+                  );
+                  ref.read(substanceLogsProvider.notifier).deleteLog(log.id);
+                },
               ),
             ),
           ],
@@ -642,9 +652,13 @@ class _PatternRowState extends ConsumerState<_PatternRow> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      debugPrint(
+        '[ReadinessScreen] getSubstancePattern — substance=${widget.substanceName}',
+      );
       final p = await ref
           .read(readinessProvider.notifier)
           .getSubstancePattern(widget.substanceName);
+      debugPrint('[ReadinessScreen] getSubstancePattern — ${p.summaryText}');
       if (mounted) setState(() => _pattern = p);
     });
   }
@@ -980,6 +994,9 @@ class _CheckInSheetState extends ConsumerState<_CheckInSheet> {
   }
 
   Future<void> _submit() async {
+    debugPrint(
+      '[ReadinessScreen:CheckInSheet] _submit — window=${widget.window.name} sleep=$_sleepHours quality=$_sleepQuality stress=$_stressLevel energy=$_energyLevel mood=$_mood caffeine=$_caffeineCount focus=$_focusLevel',
+    );
     await ref
         .read(checkInsProvider.notifier)
         .submitCheckIn(
@@ -1200,6 +1217,9 @@ class _SubstanceLogSheetState extends ConsumerState<_SubstanceLogSheet> {
   Future<void> _log() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    debugPrint(
+      '[ReadinessScreen:SubstanceSheet] _log — name=$name direction=$_direction impact=$_impact date=${widget.date ?? 'today'} isNew=${_selected == null}',
+    );
 
     // Save to library if new
     if (_selected == null) {

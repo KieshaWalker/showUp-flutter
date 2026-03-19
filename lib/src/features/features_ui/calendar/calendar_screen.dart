@@ -177,6 +177,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(habitsNotifierProvider, (_, _) => _loadMonthSummaries());
+    ref.listen(nutritionNotifierProvider, (_, _) => _loadMonthSummaries());
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(

@@ -265,8 +265,10 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
 
   Future<void> deleteMeal(String mealId) async {
     final db = ref.read(databaseProvider);
+    await (db.delete(db.foodEntries)..where((e) => e.mealId.equals(mealId))).go();
     await (db.delete(db.meals)..where((m) => m.id.equals(mealId))).go();
     try {
+      await Supabase.instance.client.from('food_entries').delete().eq('meal_id', mealId);
       await Supabase.instance.client.from('meals').delete().eq('id', mealId);
     } catch (_) {}
   }

@@ -52,3 +52,5 @@ lib/src/core/env.dart
 .notes
 .vercel
 .env*.local
+
+lib/src/features/readiness/readiness.md

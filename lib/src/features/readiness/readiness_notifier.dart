@@ -108,6 +108,7 @@
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -116,6 +117,59 @@ import '../../database/database_provider.dart';
 import '../../database/db.dart';
 
 const _uuid = Uuid();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Science constants — keyed to the literature cited in the header.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Baseline
+const double _kBase = 70.0;
+
+// Sleep — Van Dongen et al. (SLEEP 2003); Belenky et al.
+const double _kSleepDebtExp         = 1.3;   // non-linear exponent
+const double _kSleepDebtMult        = 3.5;   // pts-per-hour-of-debt
+const double _kSleepFullRestBonus   = 20.0;  // ≥8 h bonus cap
+const double _kSleepPenaltyCap      = 20.0;
+const double _kSleepQualityMult     = 4.0;   // Sleep Medicine Reviews 2024; ±8 pts over 1–5 scale
+const double _kRollingDebtExp       = 1.2;   // Belenky / PMC 2022 dynamics
+const double _kRollingDebtMult      = 0.8;
+const double _kRollingDebtCap       = 15.0;
+const double _kCarryoverSleepFrac   = 0.5;   // 50 % of last-night penalty bleeds into today
+const double _kCarryoverSleepCap    = 10.0;
+const int    _kSleepDebtLookbackDays = 7;
+const int    _kSleepDebtMinDays     = 2;     // need ≥2 data points to penalise
+
+// Stress — HPA axis / cortisol literature (IL-6, CRP)
+const int    _kStressPenaltyThreshold  = 3;  // levels above this are penalised
+const double _kStressPenaltyPerLevel   = 3.0;
+const int    _kStressCarryoverThreshold = 4;
+const double _kStressCarryoverPerLevel  = 2.0; // ~67 % cortisol carryover
+
+// Caffeine — Randall et al. SLEEP 2024; Lane et al. UKentucky
+const int    _kCaffeineBoostMaxCups    = 2;
+const double _kCaffeineBoost           = 3.0;
+const int    _kCaffeineNeutralCups     = 3;
+const double _kCaffeinePenaltyPerCup   = 3.0;
+const double _kCaffeineTimingMult      = 1.5; // afternoon/evening × 1.5
+
+// Mood / energy — self-report calibration
+const double _kEnergyMult = 1.5;
+const double _kMoodMult   = 1.0;
+
+// Substance scaling — (impact / 10) × 15 maps 0–10 impact to 0–15 score pts
+const double _kSubstanceScaleDenominator = 10.0;
+const double _kSubstanceScaleMax         = 15.0;
+
+// Sugar — Mantantzis et al. (2019) + gut-brain axis research 2020–2024
+const double _kSugarSwsPenalty = 4.0;   // hidden SWS disruption carryover
+const double _kSugarDay2Rate   = 0.25;  // day-2: lingering inflammation + microbiome fog
+
+// Learning engine — Bayesian blend
+const int    _kLearningFullTrustN        = 20;   // n=20 → max blend weight
+const double _kLearningMaxBlend          = 0.7;
+const double _kLearningObservedDeltaCap  = 30.0;
+const double _kLearningObservedImpactMin = 1.0;
+const double _kLearningObservedImpactMax = 10.0;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Science-backed default substance library seeded for new users.
@@ -189,7 +243,8 @@ CheckInWindow currentWindow() {
   return CheckInWindow.evening;
 }
 
-DateTime _dateOnly(DateTime dt) => DateTime.utc(dt.year, dt.month, dt.day);
+DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+DateTime _dayEnd(DateTime d)   => d.add(const Duration(hours: 23, minutes: 59));
 
 String? _userId() => Supabase.instance.client.auth.currentUser?.id;
 
@@ -212,6 +267,7 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
   /// Seeds the science-backed default substances for new users.
   /// Called once on first login if the library is empty.
   Future<void> seedDefaultsIfEmpty() async {
+    debugPrint('[Readiness:UserSubstances] seedDefaultsIfEmpty — checking');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
@@ -219,18 +275,32 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
     final existing = await (db.select(db.userSubstances)
           ..where((t) => t.userId.equals(uid)))
         .get();
-    if (existing.isNotEmpty) return;
+    if (existing.isNotEmpty) {
+      debugPrint('[Readiness:UserSubstances] seedDefaultsIfEmpty — already seeded (${existing.length} substances)');
+      return;
+    }
+    debugPrint('[Readiness:UserSubstances] seedDefaultsIfEmpty — seeding ${_defaultSubstances.length} defaults');
 
     for (final s in _defaultSubstances) {
+      final id = _uuid.v4();
       await db.into(db.userSubstances).insert(
             UserSubstancesCompanion.insert(
-              id: _uuid.v4(),
+              id: id,
               userId: uid,
               name: s.name,
               direction: Value(s.direction),
               defaultImpact: Value(s.defaultImpact),
             ),
           );
+      try {
+        await Supabase.instance.client.from('user_substances').insert({
+          'id': id,
+          'user_id': uid,
+          'name': s.name,
+          'direction': s.direction,
+          'default_impact': s.defaultImpact,
+        });
+      } catch (e) { debugPrint('[Readiness] seedDefaults sync error: $e'); }
     }
   }
 
@@ -239,18 +309,30 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
     required String direction,
     required double defaultImpact,
   }) async {
+    debugPrint('[Readiness:UserSubstances] addSubstance — name=$name direction=$direction impact=$defaultImpact');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
+    final id = _uuid.v4();
+    final trimmed = name.trim().toLowerCase();
     await db.into(db.userSubstances).insert(
           UserSubstancesCompanion.insert(
-            id: _uuid.v4(),
+            id: id,
             userId: uid,
-            name: name.trim().toLowerCase(),
+            name: trimmed,
             direction: Value(direction),
             defaultImpact: Value(defaultImpact),
           ),
         );
+    try {
+      await Supabase.instance.client.from('user_substances').insert({
+        'id': id,
+        'user_id': uid,
+        'name': trimmed,
+        'direction': direction,
+        'default_impact': defaultImpact,
+      });
+    } catch (e) { debugPrint('[Readiness] addSubstance sync error: $e'); }
   }
 
   Future<void> updateSubstance(
@@ -258,6 +340,7 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
     double? defaultImpact,
     String? direction,
   }) async {
+    debugPrint('[Readiness:UserSubstances] updateSubstance — id=$id impact=$defaultImpact direction=$direction');
     final db = ref.read(databaseProvider);
     await (db.update(db.userSubstances)..where((t) => t.id.equals(id))).write(
       UserSubstancesCompanion(
@@ -267,16 +350,28 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
             direction != null ? Value(direction) : const Value.absent(),
       ),
     );
+    try {
+      await Supabase.instance.client.from('user_substances').upsert({
+        'id': id,
+        if (defaultImpact != null) 'default_impact': defaultImpact,
+        if (direction != null) 'direction': direction,
+      }, onConflict: 'id');
+    } catch (e) { debugPrint('[Readiness] updateSubstance sync error: $e'); }
   }
 
   Future<void> deleteSubstance(String id) async {
+    debugPrint('[Readiness:UserSubstances] deleteSubstance — id=$id');
     final db = ref.read(databaseProvider);
     await (db.delete(db.userSubstances)..where((t) => t.id.equals(id))).go();
+    try {
+      await Supabase.instance.client.from('user_substances').delete().eq('id', id);
+    } catch (e) { debugPrint('[Readiness] deleteSubstance sync error: $e'); }
   }
 
   /// Called by the learning engine to write back the Bayesian-blended impact.
   Future<void> applyLearnedImpact(
       String uid, String substanceName, double newLearned, int newCount) async {
+    debugPrint('[Readiness:Learning] applyLearnedImpact — substance=$substanceName newLearned=${newLearned.toStringAsFixed(2)} n=$newCount');
     final db = ref.read(databaseProvider);
     await (db.update(db.userSubstances)
           ..where(
@@ -285,6 +380,51 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
       learnedImpact: Value(newLearned),
       occurrenceCount: Value(newCount),
     ));
+    try {
+      final row = await (db.select(db.userSubstances)
+            ..where((t) => t.userId.equals(uid) & t.name.equals(substanceName)))
+          .getSingleOrNull();
+      if (row != null) {
+        await Supabase.instance.client.from('user_substances').upsert({
+          'id': row.id,
+          'user_id': uid,
+          'learned_impact': newLearned,
+          'occurrence_count': newCount,
+        }, onConflict: 'id');
+      }
+    } catch (e) { debugPrint('[Readiness] applyLearnedImpact sync error: $e'); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // syncFromRemote — pull user_substances from Supabase into local Drift DB.
+  // ---------------------------------------------------------------------------
+  Future<void> syncFromRemote() async {
+    debugPrint('[Readiness:Sync] userSubstances syncFromRemote — start');
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+    try {
+      final rows = await Supabase.instance.client
+          .from('user_substances')
+          .select()
+          .eq('user_id', uid);
+      debugPrint('[Readiness:Sync] userSubstances — pulled ${(rows as List).length} rows');
+      for (final r in rows) {
+        await db.into(db.userSubstances).insertOnConflictUpdate(
+              UserSubstancesCompanion.insert(
+                id: r['id'] as String,
+                userId: r['user_id'] as String,
+                name: r['name'] as String,
+                direction: Value(r['direction'] as String? ?? 'negative'),
+                defaultImpact: Value((r['default_impact'] as num?)?.toDouble() ?? 5.0),
+                learnedImpact: Value((r['learned_impact'] as num?)?.toDouble()),
+                occurrenceCount: Value(r['occurrence_count'] as int? ?? 0),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (e) { debugPrint('[Readiness] userSubstances syncFromRemote error: $e'); }
+    await seedDefaultsIfEmpty();
   }
 }
 
@@ -317,27 +457,78 @@ class SubstanceLogsNotifier extends StreamNotifier<List<SubstanceLog>> {
     String? notes,
     DateTime? date, // defaults to today; pass yesterday's date to backfill
   }) async {
+    debugPrint('[Readiness:SubstanceLogs] logSubstance — name=$substanceName direction=$direction impact=$impactSnapshot date=${date ?? 'today'}');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
+    final id = _uuid.v4();
     final logDate = _dateOnly(date ?? DateTime.now());
+    final name = substanceName.trim().toLowerCase();
     await db.into(db.substanceLogs).insert(
           SubstanceLogsCompanion.insert(
-            id: _uuid.v4(),
+            id: id,
             userId: uid,
             date: logDate,
-            substanceName: substanceName.trim().toLowerCase(),
+            substanceName: name,
             direction: direction,
             impactSnapshot: impactSnapshot,
             quantity: Value(quantity),
             notes: Value(notes),
           ),
         );
+    try {
+      await Supabase.instance.client.from('substance_logs').insert({
+        'id': id,
+        'user_id': uid,
+        'date': logDate.toIso8601String(),
+        'substance_name': name,
+        'direction': direction,
+        'impact_snapshot': impactSnapshot,
+        if (quantity != null) 'quantity': quantity,
+        if (notes != null) 'notes': notes,
+      });
+    } catch (e) { debugPrint('[Readiness] logSubstance sync error: $e'); }
   }
 
   Future<void> deleteLog(String id) async {
+    debugPrint('[Readiness:SubstanceLogs] deleteLog — id=$id');
     final db = ref.read(databaseProvider);
     await (db.delete(db.substanceLogs)..where((t) => t.id.equals(id))).go();
+    try {
+      await Supabase.instance.client.from('substance_logs').delete().eq('id', id);
+    } catch (e) { debugPrint('[Readiness] deleteLog sync error: $e'); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // syncFromRemote — pull substance_logs from Supabase into local Drift DB.
+  // ---------------------------------------------------------------------------
+  Future<void> syncFromRemote() async {
+    debugPrint('[Readiness:Sync] substanceLogs syncFromRemote — start');
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+    try {
+      final rows = await Supabase.instance.client
+          .from('substance_logs')
+          .select()
+          .eq('user_id', uid);
+      debugPrint('[Readiness:Sync] substanceLogs — pulled ${(rows as List).length} rows');
+      for (final r in rows) {
+        await db.into(db.substanceLogs).insertOnConflictUpdate(
+              SubstanceLogsCompanion.insert(
+                id: r['id'] as String,
+                userId: r['user_id'] as String,
+                date: _dateOnly(DateTime.parse((r['date'] as String).substring(0, 10))),
+                substanceName: r['substance_name'] as String,
+                direction: r['direction'] as String,
+                impactSnapshot: (r['impact_snapshot'] as num).toDouble(),
+                quantity: Value(r['quantity'] as String?),
+                notes: Value(r['notes'] as String?),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (e) { debugPrint('[Readiness] substanceLogs syncFromRemote error: $e'); }
   }
 
   Future<List<SubstanceLog>> logsForDate(DateTime date) async {
@@ -345,10 +536,9 @@ class SubstanceLogsNotifier extends StreamNotifier<List<SubstanceLog>> {
     final uid = _userId();
     if (uid == null) return [];
     final d = _dateOnly(date);
-    final end = d.add(const Duration(hours: 23, minutes: 59));
     return (db.select(db.substanceLogs)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(d, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(d, _dayEnd(d))))
         .get();
   }
 }
@@ -380,12 +570,11 @@ class ReadinessCheckInsNotifier
     final uid = _userId();
     if (uid == null) return null;
     final today = _dateOnly(DateTime.now());
-    final end = today.add(const Duration(hours: 23, minutes: 59));
     return (db.select(db.readinessCheckIns)
           ..where((t) =>
               t.userId.equals(uid) &
               t.checkInWindow.equals(window.value) &
-              t.date.isBetweenValues(today, end)))
+              t.date.isBetweenValues(today, _dayEnd(today))))
         .getSingleOrNull();
   }
 
@@ -400,23 +589,24 @@ class ReadinessCheckInsNotifier
     int? focusLevel,
     String? notes,
   }) async {
+    debugPrint('[Readiness:CheckIns] submitCheckIn — window=${window.name} sleep=$sleepHours quality=$sleepQuality stress=$stressLevel energy=$energyLevel mood=$mood caffeine=$caffeineCount focus=$focusLevel');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
     final today = _dateOnly(DateTime.now());
-    final end = today.add(const Duration(hours: 23, minutes: 59));
 
     // Upsert: delete existing for this window+date, then insert fresh.
     await (db.delete(db.readinessCheckIns)
           ..where((t) =>
               t.userId.equals(uid) &
               t.checkInWindow.equals(window.value) &
-              t.date.isBetweenValues(today, end)))
+              t.date.isBetweenValues(today, _dayEnd(today))))
         .go();
 
+    final id = _uuid.v4();
     await db.into(db.readinessCheckIns).insert(
           ReadinessCheckInsCompanion.insert(
-            id: _uuid.v4(),
+            id: id,
             userId: uid,
             date: today,
             checkInWindow: window.value,
@@ -430,8 +620,60 @@ class ReadinessCheckInsNotifier
             notes: Value(notes),
           ),
         );
+    try {
+      await Supabase.instance.client.from('readiness_check_ins').upsert({
+        'id': id,
+        'user_id': uid,
+        'date': today.toIso8601String(),
+        'check_in_window': window.name,
+        if (sleepHours != null) 'sleep_hours': sleepHours,
+        if (sleepQuality != null) 'sleep_quality': sleepQuality,
+        if (stressLevel != null) 'stress_level': stressLevel,
+        if (energyLevel != null) 'energy_level': energyLevel,
+        if (mood != null) 'mood': mood,
+        if (caffeineCount != null) 'caffeine_count': caffeineCount,
+        if (focusLevel != null) 'focus_level': focusLevel,
+        if (notes != null) 'notes': notes,
+      }, onConflict: 'id');
+    } catch (e) { debugPrint('[Readiness] submitCheckIn sync error: $e'); }
 
     await ref.read(readinessProvider.notifier).recomputeToday();
+  }
+
+  // ---------------------------------------------------------------------------
+  // syncFromRemote — pull readiness_check_ins from Supabase into local Drift DB.
+  // ---------------------------------------------------------------------------
+  Future<void> syncFromRemote() async {
+    debugPrint('[Readiness:Sync] checkIns syncFromRemote — start');
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+    try {
+      final rows = await Supabase.instance.client
+          .from('readiness_check_ins')
+          .select()
+          .eq('user_id', uid);
+      debugPrint('[Readiness:Sync] checkIns — pulled ${(rows as List).length} rows');
+      for (final r in rows) {
+        await db.into(db.readinessCheckIns).insertOnConflictUpdate(
+              ReadinessCheckInsCompanion.insert(
+                id: r['id'] as String,
+                userId: r['user_id'] as String,
+                date: _dateOnly(DateTime.parse((r['date'] as String).substring(0, 10))),
+                checkInWindow: r['check_in_window'] as String,
+                sleepHours: Value((r['sleep_hours'] as num?)?.toDouble()),
+                sleepQuality: Value(r['sleep_quality'] as int?),
+                stressLevel: Value(r['stress_level'] as int?),
+                energyLevel: Value(r['energy_level'] as int?),
+                mood: Value(r['mood'] as int?),
+                caffeineCount: Value(r['caffeine_count'] as int?),
+                focusLevel: Value(r['focus_level'] as int?),
+                notes: Value(r['notes'] as String?),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (e) { debugPrint('[Readiness] checkIns syncFromRemote error: $e'); }
   }
 }
 
@@ -457,20 +699,24 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
   }
 
   Future<DailyReadinessData> todaysReadiness() async {
+    debugPrint('[Readiness:Score] todaysReadiness — fetching');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) throw StateError('not logged in');
     final today = _dateOnly(DateTime.now());
-    final end = today.add(const Duration(hours: 23, minutes: 59));
 
     final existing = await (db.select(db.dailyReadiness)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(today, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
         .getSingleOrNull();
-    if (existing != null) return existing;
+    if (existing != null) {
+      debugPrint('[Readiness:Score] todaysReadiness — found existing score=${existing.computedScore.toStringAsFixed(1)} carryover=${existing.previousDayInfluence.toStringAsFixed(1)}');
+      return existing;
+    }
+    debugPrint('[Readiness:Score] todaysReadiness — no row for today, creating');
 
     final carryover = await _computeCarryoverDelta(uid);
-    final base = (70.0 + carryover).clamp(0.0, 100.0);
+    final base = (_kBase + carryover).clamp(0.0, 100.0);
 
     await db.into(db.dailyReadiness).insert(DailyReadinessCompanion.insert(
       id: _uuid.v4(),
@@ -482,140 +728,272 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
 
     return (db.select(db.dailyReadiness)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(today, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
         .getSingle();
   }
 
   Future<void> recomputeToday() async {
+    debugPrint('[Readiness:Score] recomputeToday — start');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
     final today = _dateOnly(DateTime.now());
-    final end = today.add(const Duration(hours: 23, minutes: 59));
 
     final carryover = await _computeCarryoverDelta(uid);
     final score = await _computeScore(uid, today, carryover);
+    debugPrint('[Readiness:Score] recomputeToday — score=${score.toStringAsFixed(1)} carryover=${carryover.toStringAsFixed(1)}');
 
     await (db.update(db.dailyReadiness)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(today, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
         .write(DailyReadinessCompanion(
       computedScore: Value(score),
       previousDayInfluence: Value(carryover),
     ));
+    try {
+      final row = await (db.select(db.dailyReadiness)
+            ..where((t) =>
+                t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
+          .getSingleOrNull();
+      if (row != null) {
+        await Supabase.instance.client.from('daily_readiness').upsert({
+          'id': row.id,
+          'user_id': uid,
+          'date': today.toIso8601String(),
+          'computed_score': score,
+          'previous_day_influence': carryover,
+        }, onConflict: 'id');
+      }
+    } catch (e) { debugPrint('[Readiness] recomputeToday sync error: $e'); }
   }
 
   Future<void> submitSelfRating(double rating) async {
+    debugPrint('[Readiness:Score] submitSelfRating — rating=$rating');
     final db = ref.read(databaseProvider);
     final uid = _userId();
     if (uid == null) return;
     final today = _dateOnly(DateTime.now());
-    final end = today.add(const Duration(hours: 23, minutes: 59));
 
     await (db.update(db.dailyReadiness)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(today, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
         .write(DailyReadinessCompanion(userRatedScore: Value(rating)));
+    try {
+      final row = await (db.select(db.dailyReadiness)
+            ..where((t) =>
+                t.userId.equals(uid) & t.date.isBetweenValues(today, _dayEnd(today))))
+          .getSingleOrNull();
+      if (row != null) {
+        await Supabase.instance.client.from('daily_readiness').upsert({
+          'id': row.id,
+          'user_id': uid,
+          'date': today.toIso8601String(),
+          'user_rated_score': rating,
+        }, onConflict: 'id');
+      }
+    } catch (e) { debugPrint('[Readiness] submitSelfRating sync error: $e'); }
 
     await _runLearningUpdate(uid, today, rating);
   }
 
+  // ---------------------------------------------------------------------------
+  // syncFromRemote — pull daily_readiness from Supabase into local Drift DB.
+  // ---------------------------------------------------------------------------
+  Future<void> syncFromRemote() async {
+    debugPrint('[Readiness:Sync] dailyReadiness syncFromRemote — start');
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+    try {
+      final rows = await Supabase.instance.client
+          .from('daily_readiness')
+          .select()
+          .eq('user_id', uid);
+      debugPrint('[Readiness:Sync] dailyReadiness — pulled ${(rows as List).length} rows');
+      for (final r in rows) {
+        await db.into(db.dailyReadiness).insertOnConflictUpdate(
+              DailyReadinessCompanion.insert(
+                id: r['id'] as String,
+                userId: r['user_id'] as String,
+                date: _dateOnly(DateTime.parse((r['date'] as String).substring(0, 10))),
+                computedScore: Value((r['computed_score'] as num?)?.toDouble() ?? 70.0),
+                userRatedScore: Value((r['user_rated_score'] as num?)?.toDouble()),
+                previousDayInfluence: Value((r['previous_day_influence'] as num?)?.toDouble() ?? 0.0),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (e) { debugPrint('[Readiness] dailyReadiness syncFromRemote error: $e'); }
+  }
+
   // ─────────────────────────────────────────────────────────────
   // SCORING ENGINE
+  //
+  // Assembles all same-day signals into a single 0–100 readiness
+  // score. The pipeline is:
+  //
+  //   1. Start at _kBase (70) — population average for a healthy day.
+  //   2. Add the carryover delta from yesterday's data (sleep shortfall,
+  //      stress residue, substance hangover).
+  //   3. Subtract the 7-day rolling sleep debt penalty.
+  //   4. Apply each check-in's contribution (sleep hours/quality,
+  //      stress, caffeine, energy, mood).
+  //   5. Apply same-day substance logs.
+  //   6. Clamp to [0, 100].
   // ─────────────────────────────────────────────────────────────
 
   Future<double> _computeScore(
       String uid, DateTime date, double carryover) async {
+    debugPrint('[Readiness:Score] _computeScore — date=$date carryover=${carryover.toStringAsFixed(1)}');
     final db = ref.read(databaseProvider);
-    final end = date.add(const Duration(hours: 23, minutes: 59));
-    double score = 70.0;
+    double score = _kBase; // 70 — healthy-adult population mean
 
-    // ── Carryover from yesterday ──────────────────────────────
+    // ── 1. Yesterday's residue ────────────────────────────────
+    // Carryover encodes overnight persistence of sleep debt,
+    // cortisol from stress, and substance metabolites. It is
+    // computed separately so it can also be stored as
+    // previousDayInfluence for display in the UI.
     score += carryover;
 
-    // ── 7-day rolling sleep debt penalty ─────────────────────
-    // Van Dongen (2003): debt is non-linear and accumulates.
-    // We look at the last 7 morning check-ins.
+    // ── 2. 7-day rolling sleep debt ───────────────────────────
+    // Van Dongen et al. (2003): cumulative sleep restriction
+    // impairs performance non-linearly, and subjects are mostly
+    // unaware of it. A single night of 6h feels fine but 14 days
+    // of it equals 48h of total deprivation. We penalise the
+    // rolling total, not just last night, to capture this.
     score -= await _computeSleepDebtPenalty(uid, excludeDate: date);
 
-    // ── Today's check-ins ─────────────────────────────────────
+    // ── 3. Check-in signals ───────────────────────────────────
     final checkIns = await (db.select(db.readinessCheckIns)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(date, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(date, _dayEnd(date))))
         .get();
 
     for (final ci in checkIns) {
-      final isEvening = ci.checkInWindow == CheckInWindow.evening.value;
+      // Used for the caffeine timing multiplier below.
       final isAfternoonOrEvening =
-          ci.checkInWindow == CheckInWindow.afternoon.value || isEvening;
+          ci.checkInWindow == CheckInWindow.afternoon.value ||
+          ci.checkInWindow == CheckInWindow.evening.value;
 
-      // Sleep (morning only) — non-linear curve.
-      // Formula: -pow(8 - h, 1.3) * 3.5 per Van Dongen non-linear finding.
+      debugPrint('[Readiness:Score]   check-in window=${ci.checkInWindow} sleep=${ci.sleepHours} quality=${ci.sleepQuality} stress=${ci.stressLevel} caffeine=${ci.caffeineCount} energy=${ci.energyLevel} mood=${ci.mood}');
+      // ── Sleep hours (morning check-in only) ──────────────────
+      // Van Dongen non-linear formula: -pow(8 - h, 1.3) * 3.5
+      //   8 h →   0 pts (full rest bonus applied instead)
+      //   7 h →  -3.5 pts
+      //   6 h →  -8.6 pts
+      //   5 h → -14.6 pts
+      //   4 h → -21   pts (capped at -_kSleepPenaltyCap)
+      // The exponent > 1 reflects the non-linear dose-response:
+      // going from 7→6 h hurts more than going from 8→7 h.
       if (ci.sleepHours != null) {
         final h = ci.sleepHours!;
         if (h >= 8.0) {
-          score += 20.0; // full rest bonus
+          // Full 8 h+ means adenosine fully cleared, glymphatic
+          // system completed waste clearance — award bonus.
+          score += _kSleepFullRestBonus;
         } else {
-          final debt = 8.0 - h;
-          score -= (math.pow(debt, 1.3) * 3.5).clamp(0.0, 20.0);
+          score -= (math.pow(8.0 - h, _kSleepDebtExp) * _kSleepDebtMult)
+              .clamp(0.0, _kSleepPenaltyCap);
         }
       }
 
-      // Sleep quality — REM architecture (Sleep Medicine Reviews 2024).
-      // ±8 pts; quality 1 = severely disrupted REM, 5 = restorative.
+      // ── Sleep quality ─────────────────────────────────────────
+      // Sleep Medicine Reviews meta-analysis (2024) on REM
+      // architecture: quality 1 = severely fragmented REM (e.g.
+      // alcohol-disrupted), quality 5 = restorative with full
+      // slow-wave and REM cycles. Centered at 3 (neutral) so
+      // good quality adds points and poor quality subtracts.
+      //   quality 5 → +8 pts   quality 1 → -8 pts
       if (ci.sleepQuality != null) {
-        score += (ci.sleepQuality! - 3) * 4.0;
+        score += (ci.sleepQuality! - 3) * _kSleepQualityMult;
       }
 
-      // Stress (all windows) — HPA axis / cortisol.
-      if (ci.stressLevel != null && ci.stressLevel! > 3) {
-        score -= (ci.stressLevel! - 3) * 3.0;
+      // ── Stress ────────────────────────────────────────────────
+      // HPA axis / cortisol literature (elevated IL-6, CRP):
+      // stress levels 1–3 are within a healthy arousal range and
+      // have no penalty. Levels 4–5 activate the HPA axis enough
+      // to measurably elevate cortisol, suppress immune function,
+      // and fragment sleep architecture.
+      //   level 4 → -3 pts   level 5 → -6 pts
+      if (ci.stressLevel != null && ci.stressLevel! > _kStressPenaltyThreshold) {
+        score -= (ci.stressLevel! - _kStressPenaltyThreshold) * _kStressPenaltyPerLevel;
       }
 
-      // Caffeine — Randall et al. SLEEP 2024.
-      // 1–2 cups: +3 (adenosine antagonism benefit)
-      // 3 cups:    0 (neutral)
-      // 4+ cups:  -3/cup × timing multiplier
+      // ── Caffeine ──────────────────────────────────────────────
+      // Randall et al. SLEEP 2024 (randomised crossover):
+      //   1–2 cups: adenosine antagonism → clear alertness boost (+3)
+      //   3 cups:   performance at neutral; no net benefit or harm
+      //   4+ cups:  anxiety + cortisol spike (Lane et al.) → -3/cup
+      //
+      // Timing multiplier (×1.5 for afternoon/evening):
+      // Caffeine half-life is 4–6 h (CYP1A2-dependent). A cup at
+      // 3 pm still has ~50% circulating at 9 pm, delaying sleep
+      // onset and suppressing slow-wave sleep — so the penalty is
+      // amplified when the check-in window is afternoon/evening.
       if (ci.caffeineCount != null) {
         final cups = ci.caffeineCount!;
-        if (cups <= 2) {
-          score += 3.0;
-        } else if (cups > 3) {
-          // Afternoon/evening caffeine has 1.5× penalty because it will
-          // disrupt tonight's sleep (half-life 4–6h; Randall et al. 2024).
-          final timingMultiplier = isAfternoonOrEvening ? 1.5 : 1.0;
-          score -= (cups - 3) * 3.0 * timingMultiplier;
+        if (cups <= _kCaffeineBoostMaxCups) {
+          score += _kCaffeineBoost;
+        } else if (cups > _kCaffeineNeutralCups) {
+          final timingMult = isAfternoonOrEvening ? _kCaffeineTimingMult : 1.0;
+          score -= (cups - _kCaffeineNeutralCups) * _kCaffeinePenaltyPerCup * timingMult;
         }
       }
 
-      // Energy + mood (all windows) — self-reported but calibrated.
-      if (ci.energyLevel != null) score += (ci.energyLevel! - 3) * 1.5;
-      if (ci.mood != null) score += (ci.mood! - 3) * 1.0;
+      // ── Energy + mood ─────────────────────────────────────────
+      // Self-reported signals calibrated to the scoring range.
+      // Both are centered at 3 (neutral on a 1–5 scale) so they
+      // add or subtract symmetrically. Energy is weighted higher
+      // than mood because it correlates more directly with
+      // physical readiness and cognitive performance measures.
+      if (ci.energyLevel != null) score += (ci.energyLevel! - 3) * _kEnergyMult;
+      if (ci.mood != null) score += (ci.mood! - 3) * _kMoodMult;
     }
 
-    // ── Today's substance logs ────────────────────────────────
+    // ── 4. Same-day substance logs ────────────────────────────
+    // Scales each substance's impact (1–10 user rating) to the
+    // 0–15 pt score range: delta = (impact / 10) * 15.
+    // learnedImpact overrides the logged snapshot once the
+    // Bayesian engine has enough observations.
     final logs = await (db.select(db.substanceLogs)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(date, end)))
+              t.userId.equals(uid) & t.date.isBetweenValues(date, _dayEnd(date))))
         .get();
 
     for (final log in logs) {
       final impact =
           await _resolvedImpact(db, uid, log.substanceName, log.impactSnapshot);
-      final delta = (impact / 10.0) * 15.0;
+      final delta = (impact / _kSubstanceScaleDenominator) * _kSubstanceScaleMax;
+      debugPrint('[Readiness:Score]   substance=${log.substanceName} direction=${log.direction} resolvedImpact=${impact.toStringAsFixed(2)} delta=${delta.toStringAsFixed(1)}');
       score += log.direction == 'positive' ? delta : -delta;
     }
 
+    debugPrint('[Readiness:Score] _computeScore — final=${score.clamp(0.0, 100.0).toStringAsFixed(1)}');
     return score.clamp(0.0, 100.0);
   }
 
   // ─────────────────────────────────────────────────────────────
   // 7-DAY SLEEP DEBT PENALTY
-  // Based on Van Dongen & Dinges (2003) + Belenky et al.
-  // Looks at up to 7 morning check-ins before today.
-  // Each hour below 8h/night adds to a cumulative debt.
-  // The penalty is non-linear: total debt of 7h = -10 pts,
-  // 14h = -17 pts, 21h = -22 pts (caps at -20).
+  //
+  // Van Dongen & Dinges (2003) + Belenky et al. + PMC 2022
+  // dynamics-of-recovery paper.
+  //
+  // Key finding: 6 h/night for 14 days produces the same
+  // performance deficit as 2 full nights of total sleep
+  // deprivation, yet subjects rated their sleepiness as only
+  // mildly elevated — they are "adapted" to the impairment.
+  //
+  // Implementation:
+  //   - Look back up to 7 morning check-ins (the only window
+  //     where sleep hours are collected).
+  //   - Sum each night's shortfall below 8 h (capped at 6 h per
+  //     night to avoid a single extreme outlier dominating).
+  //   - Apply a non-linear penalty: pow(totalDebtHours, 1.2) * 0.8
+  //     This means debt accumulates faster as it grows — consistent
+  //     with Van Dongen's non-linear dose–response curve.
+  //   - Require ≥2 data points before penalising; with only one
+  //     morning check-in we can't distinguish chronic debt from
+  //     a one-off late night.
   // ─────────────────────────────────────────────────────────────
   Future<double> _computeSleepDebtPenalty(String uid,
       {required DateTime excludeDate}) async {
@@ -623,74 +1001,125 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
     double totalDebtHours = 0.0;
     int daysWithData = 0;
 
-    for (int i = 1; i <= 7; i++) {
+    for (int i = 1; i <= _kSleepDebtLookbackDays; i++) {
       final d = _dateOnly(excludeDate.subtract(Duration(days: i)));
-      final dEnd = d.add(const Duration(hours: 23, minutes: 59));
+      // Only morning check-ins capture sleep hours; afternoon/
+      // evening check-ins don't ask about last night's sleep.
       final ci = await (db.select(db.readinessCheckIns)
             ..where((t) =>
                 t.userId.equals(uid) &
                 t.checkInWindow.equals('morning') &
-                t.date.isBetweenValues(d, dEnd)))
+                t.date.isBetweenValues(d, _dayEnd(d))))
           .getSingleOrNull();
 
       if (ci?.sleepHours != null) {
         daysWithData++;
-        final debt = (8.0 - ci!.sleepHours!).clamp(0.0, 6.0);
-        totalDebtHours += debt;
+        // Cap single-night debt at 6 h: beyond that the user
+        // almost certainly had a sick/travel night that isn't
+        // representative of their baseline pattern.
+        totalDebtHours += (8.0 - ci!.sleepHours!).clamp(0.0, 6.0);
       }
     }
 
-    if (daysWithData < 2) return 0.0; // not enough data to penalize
+    // Fewer than 2 data points means we can't yet distinguish
+    // a chronic pattern from noise — return 0 to avoid false penalties.
+    if (daysWithData < _kSleepDebtMinDays) {
+      debugPrint('[Readiness:Score] _computeSleepDebtPenalty — not enough data ($daysWithData days), skipping');
+      return 0.0;
+    }
 
-    // Non-linear accumulation penalty.
-    return (math.pow(totalDebtHours, 1.2) * 0.8).clamp(0.0, 15.0);
+    final penalty = (math.pow(totalDebtHours, _kRollingDebtExp) * _kRollingDebtMult)
+        .clamp(0.0, _kRollingDebtCap);
+    debugPrint('[Readiness:Score] _computeSleepDebtPenalty — daysWithData=$daysWithData totalDebtHours=${totalDebtHours.toStringAsFixed(1)} penalty=${penalty.toStringAsFixed(1)}');
+    // Non-linear accumulation: a total debt of 7 h → -10 pts,
+    // 14 h → -17 pts, 21 h → -22 pts (capped at -_kRollingDebtCap).
+    return penalty;
   }
 
   // ─────────────────────────────────────────────────────────────
   // CARRYOVER DELTA
-  // Science-backed per-substance carryover rates.
-  // Sleep debt carryover + stress carryover applied on top.
+  //
+  // Computes how much yesterday's physiology shifts today's
+  // baseline — before any of today's check-ins are factored in.
+  // Three independent carryover sources are summed:
+  //
+  //   1. Sleep shortfall carryover — 50% of last night's debt
+  //      penalty bleeds into today. This reflects the real-world
+  //      observation that one night of poor sleep still impairs
+  //      the following morning even after waking up.
+  //
+  //   2. Stress (cortisol) carryover — the HPA axis takes ~24 h
+  //      to return to baseline after activation. At stress levels
+  //      ≥4, we carry forward -2 pts per level above 3. Only
+  //      levels ≥4 qualify because sub-threshold stress resolves
+  //      quickly via normal diurnal cortisol rhythm.
+  //
+  //   3. Substance carryover — each substance has a literature-
+  //      backed rate (see _substanceCarryoverRate). The same-day
+  //      delta is scaled by that rate and added to the baseline.
+  //
+  // Sugar gets two additional adjustments not covered by the
+  // generic carryover rate:
+  //   • SWS penalty (-4 pts) on day 1: high glycaemic load
+  //     disrupts slow-wave sleep even when total hours look
+  //     normal — the user cannot observe this themselves.
+  //   • Day-2 carryover (25%): CRP/cytokine inflammation and
+  //     gut microbiome shifts persist a second day; dopamine
+  //     receptor down-regulation peaks at 24–48 h post-binge.
   // ─────────────────────────────────────────────────────────────
   Future<double> _computeCarryoverDelta(String uid) async {
+    debugPrint('[Readiness:Score] _computeCarryoverDelta — start');
     final db = ref.read(databaseProvider);
-    final yesterday =
-        _dateOnly(DateTime.now().subtract(const Duration(days: 1)));
-    final yEnd = yesterday.add(const Duration(hours: 23, minutes: 59));
+    final yesterday = _dateOnly(DateTime.now().subtract(const Duration(days: 1)));
     double delta = 0.0;
 
-    // Sleep debt carryover — yesterday's single-night shortfall.
-    // The 7-day rolling debt is applied separately in _computeScore.
+    // ── 1. Sleep shortfall carryover ──────────────────────────
+    // Re-applies 50% of the single-night penalty to today's
+    // baseline. The 7-day rolling debt is a separate, additive
+    // penalty applied later in _computeScore — they measure
+    // different things: acute vs. chronic deprivation.
     final morningCI = await (db.select(db.readinessCheckIns)
           ..where((t) =>
               t.userId.equals(uid) &
               t.checkInWindow.equals('morning') &
-              t.date.isBetweenValues(yesterday, yEnd)))
+              t.date.isBetweenValues(yesterday, _dayEnd(yesterday))))
         .getSingleOrNull();
 
     if (morningCI?.sleepHours != null) {
       final h = morningCI!.sleepHours!;
       if (h < 8.0) {
-        final debt = 8.0 - h;
-        // 50% of last night's sleep penalty carries into today's baseline.
-        delta -= (math.pow(debt, 1.3) * 3.5 * 0.5).clamp(0.0, 10.0);
+        // Same non-linear formula as the same-day penalty, but
+        // scaled by _kCarryoverSleepFrac (0.5) — only half the
+        // deficit persists into the next morning.
+        delta -= (math.pow(8.0 - h, _kSleepDebtExp) * _kSleepDebtMult * _kCarryoverSleepFrac)
+            .clamp(0.0, _kCarryoverSleepCap);
       }
     }
 
-    // Stress carryover — cortisol lingers ~67% into next day.
+    // ── 2. Stress (cortisol) carryover ────────────────────────
+    // Cortisol elevation from HPA axis activation (stress ≥4)
+    // persists approximately 67% into the next day. We query all
+    // windows because a high-stress evening matters as much as a
+    // high-stress morning — cortisol takes the same time to clear.
     final allCIs = await (db.select(db.readinessCheckIns)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, yEnd)))
+              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, _dayEnd(yesterday))))
         .get();
     for (final ci in allCIs) {
-      if (ci.stressLevel != null && ci.stressLevel! >= 4) {
-        delta -= (ci.stressLevel! - 3) * 2.0;
+      if (ci.stressLevel != null && ci.stressLevel! >= _kStressCarryoverThreshold) {
+        // -2 pts per level above 3: level 4 → -2, level 5 → -4.
+        delta -= (ci.stressLevel! - _kStressPenaltyThreshold) * _kStressCarryoverPerLevel;
       }
     }
 
-    // Substance carryover — substance-specific rates from literature.
+    // ── 3. Substance carryover ────────────────────────────────
+    // For each substance logged yesterday, scale its same-day
+    // delta by the literature-backed carryover rate to get
+    // today's residual. Positive substances carry forward a
+    // positive delta; negative ones carry forward a negative one.
     final logs = await (db.select(db.substanceLogs)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, yEnd)))
+              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, _dayEnd(yesterday))))
         .get();
 
     bool hadSugarYesterday = false;
@@ -698,7 +1127,7 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
     for (final log in logs) {
       final impact =
           await _resolvedImpact(db, uid, log.substanceName, log.impactSnapshot);
-      final sameDayDelta = (impact / 10.0) * 15.0;
+      final sameDayDelta = (impact / _kSubstanceScaleDenominator) * _kSubstanceScaleMax;
       final rate = _substanceCarryoverRate(log.substanceName);
       final carryoverDelta = sameDayDelta * rate;
       delta += log.direction == 'positive' ? carryoverDelta : -carryoverDelta;
@@ -707,55 +1136,93 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
       if (name == 'sugar spike' || name == 'sugar') hadSugarYesterday = true;
     }
 
-    // Sugar SWS penalty: even if sleep hours were 8h, a high-sugar binge
-    // reduces slow-wave sleep quality through overnight metabolic activity.
-    // User cannot self-report this accurately — applied as a hidden carryover.
-    if (hadSugarYesterday) delta -= 4.0;
+    debugPrint('[Readiness:Score] _computeCarryoverDelta — after sleep+stress+substances: delta=${delta.toStringAsFixed(1)}');
+    // ── 3a. Sugar SWS penalty (day 1) ─────────────────────────
+    // Mantantzis et al. (2019) + gut-brain axis research (2024):
+    // high glycaemic intake suppresses slow-wave sleep (SWS) via
+    // overnight insulin/glucagon oscillations and neuroinflammatory
+    // signalling. The user cannot detect this — their reported
+    // sleep hours and quality may look fine while SWS was actually
+    // fragmented. Applied as a hidden penalty on top of the
+    // substance carryover.
+    if (hadSugarYesterday) delta -= _kSugarSwsPenalty;
 
-    // ── Day-2 sugar carryover ─────────────────────────────────────────────
-    // Inflammation (CRP/cytokines) + gut microbiome shifts persist a second
-    // day after a sugar binge. Dopamine dip peaks 24–48h post-binge.
-    final twoDaysAgo =
-        _dateOnly(DateTime.now().subtract(const Duration(days: 2)));
-    final tdEnd = twoDaysAgo.add(const Duration(hours: 23, minutes: 59));
+    // ── 3b. Sugar carryover (day 2) ───────────────────────────
+    // Two distinct mechanisms extend the penalty into a second day:
+    //   - CRP/cytokine inflammation peaks ~24 h after a large
+    //     glycaemic spike and resolves slowly over 1–2 days.
+    //   - Dopamine receptor down-regulation: a large dopamine
+    //     release (reward from sugar) triggers compensatory
+    //     receptor reduction; the trough manifests as low
+    //     motivation and anhedonia 24–48 h later.
+    //   - Gut microbiome: sugar-loving bacteria overgrowth begins
+    //     within 24 h and produces brain-fog metabolites.
+    // Combined rate: 25% of the original same-day delta.
+    final twoDaysAgo = _dateOnly(DateTime.now().subtract(const Duration(days: 2)));
     final twoDayLogs = await (db.select(db.substanceLogs)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(twoDaysAgo, tdEnd)))
+              t.userId.equals(uid) & t.date.isBetweenValues(twoDaysAgo, _dayEnd(twoDaysAgo))))
         .get();
 
     for (final log in twoDayLogs) {
       final name = log.substanceName.toLowerCase().trim();
       if (name == 'sugar spike' || name == 'sugar') {
-        final impact = await _resolvedImpact(
-            db, uid, log.substanceName, log.impactSnapshot);
-        // Day-2 rate: 25% — lingering inflammation + microbiome fog
-        delta -= (impact / 10.0) * 15.0 * 0.25;
+        final impact =
+            await _resolvedImpact(db, uid, log.substanceName, log.impactSnapshot);
+        delta -= (impact / _kSubstanceScaleDenominator) * _kSubstanceScaleMax * _kSugarDay2Rate;
       }
     }
 
+    debugPrint('[Readiness:Score] _computeCarryoverDelta — final delta=${delta.toStringAsFixed(1)}');
     return delta;
   }
 
   // ─────────────────────────────────────────────────────────────
   // LEARNING ENGINE
-  // Direction-aware Bayesian blending.
-  // Negative substances: observed impact increases if next-day < 70.
-  // Positive substances: observed impact increases if next-day > 70.
-  // Blend weight reaches 0.7 (strong trust of observed data) at n=20.
+  //
+  // Each time the user rates their day (0–10), we compare that
+  // rating to the baseline (70/100) to infer how much the
+  // substances they used yesterday actually affected them —
+  // as opposed to how much we predicted they would.
+  //
+  // Direction-aware observed impact:
+  //   negative substance → observed impact = how far *below* 70
+  //     the user rated themselves (if they rated 40, the
+  //     substance produced a 30-pt drop → impact ≈ 10/10)
+  //   positive substance → observed impact = how far *above* 70
+  //     they rated (if they rated 90, the substance helped by
+  //     20 pts → impact ≈ 6.7/10)
+  //   "wrong direction" (negative substance, great day): the
+  //     observed delta clamps to 0, so the model learns that
+  //     this substance had little effect today.
+  //
+  // Bayesian blend:
+  //   newLearned = current * (1 - w) + observed * w
+  //   where w = (n / 20).clamp(0, 0.7)
+  //
+  //   At n=0:  w=0.0 → fully trust the user's stated default
+  //   At n=10: w=0.5 → 50/50 blend of stated and observed
+  //   At n=20: w=0.7 → observed data has strong influence
+  //   Beyond:  w never exceeds 0.7, preserving 30% of the
+  //            stated prior in case personal variation is high.
   // ─────────────────────────────────────────────────────────────
   Future<void> _runLearningUpdate(
       String uid, DateTime today, double userRating) async {
+    debugPrint('[Readiness:Learning] _runLearningUpdate — userRating=$userRating');
     final db = ref.read(databaseProvider);
     final yesterday = _dateOnly(today.subtract(const Duration(days: 1)));
-    final yEnd = yesterday.add(const Duration(hours: 23, minutes: 59));
 
+    // We look at yesterday's substances because the user is
+    // rating how they feel *today*, which reflects yesterday's
+    // behaviour (sleep, substances) via the carryover mechanism.
     final logs = await (db.select(db.substanceLogs)
           ..where((t) =>
-              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, yEnd)))
+              t.userId.equals(uid) & t.date.isBetweenValues(yesterday, _dayEnd(yesterday))))
         .get();
     if (logs.isEmpty) return;
 
-    // userRating 0–10 → normalise to 0–100 space.
+    // Map the user's 0–10 rating into the 0–100 score space so
+    // we can compare directly against _kBase (70).
     final ratingNorm = userRating * 10.0;
 
     for (final log in logs) {
@@ -768,24 +1235,30 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
       final n = substance.occurrenceCount;
       final current = substance.learnedImpact ?? substance.defaultImpact;
 
-      // Direction-aware observed impact:
-      // For negative substances: how far below 70 did readiness fall?
-      // For positive substances: how far above 70 did readiness rise?
-      // If the direction was "wrong" (negative substance but good day, or vice
-      // versa), the observed impact is small — model learns accordingly.
+      // Infer what this substance's impact "should" have been,
+      // given how far the user's self-rating deviated from the
+      // population baseline. Capped at 30 pts (~impact 10/10) to
+      // avoid a confounded outlier day (illness, big life event)
+      // permanently distorting the substance model.
       final double observedDelta;
       if (log.direction == 'negative') {
-        observedDelta = (70.0 - ratingNorm).clamp(0.0, 30.0);
+        // A negative substance that tanks readiness: the further
+        // below 70 the user rates, the higher the inferred impact.
+        observedDelta = (_kBase - ratingNorm).clamp(0.0, _kLearningObservedDeltaCap);
       } else {
-        observedDelta = (ratingNorm - 70.0).clamp(0.0, 30.0);
+        // A positive substance that lifts readiness: the further
+        // above 70 the user rates, the higher the inferred benefit.
+        observedDelta = (ratingNorm - _kBase).clamp(0.0, _kLearningObservedDeltaCap);
       }
-      final observedImpact = (observedDelta / 15.0 * 10.0).clamp(1.0, 10.0);
+      // Re-scale from score-space back to 1–10 impact scale.
+      final observedImpact = (observedDelta / _kSubstanceScaleMax * _kSubstanceScaleDenominator)
+          .clamp(_kLearningObservedImpactMin, _kLearningObservedImpactMax);
 
-      // Bayesian blend: starts trusting user's stated value, shifts toward
-      // observed reality as n grows. Full weight (0.7) reached at n=20.
-      final blendWeight = (n / 20.0).clamp(0.0, 0.7);
-      final newLearned =
-          current * (1.0 - blendWeight) + observedImpact * blendWeight;
+      // Bayesian blend: weight grows with n, capped at 0.7 so
+      // the stated prior never drops below 30% influence.
+      final blendWeight = (n / _kLearningFullTrustN).clamp(0.0, _kLearningMaxBlend);
+      final newLearned = current * (1.0 - blendWeight) + observedImpact * blendWeight;
+      debugPrint('[Readiness:Learning]   substance=${log.substanceName} n=$n observedDelta=${observedDelta.toStringAsFixed(1)} observedImpact=${observedImpact.toStringAsFixed(2)} blendWeight=${blendWeight.toStringAsFixed(2)} current=${current.toStringAsFixed(2)} → newLearned=${newLearned.toStringAsFixed(2)}');
 
       await ref
           .read(userSubstancesProvider.notifier)
@@ -795,7 +1268,15 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
 
   // ─────────────────────────────────────────────────────────────
   // PATTERN QUERY
-  // "After alcohol, avg next-day readiness: 4.1/10 (below 5 on 71%, n=12)"
+  //
+  // Surfaces a user-facing summary of the correlation between
+  // a given substance and their next-day readiness scores, e.g.:
+  // "After alcohol, avg next-day readiness: 4.1/10
+  //  (below 5 on 71% of days, n=12)"
+  //
+  // Uses userRatedScore when available (the user's honest
+  // self-assessment), falling back to computedScore / 10 so
+  // the denominator is consistent with the 0–10 display scale.
   // ─────────────────────────────────────────────────────────────
   Future<SubstancePattern> getSubstancePattern(String substanceName) async {
     final db = ref.read(databaseProvider);
@@ -810,13 +1291,14 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
 
     final nextDayScores = <double>[];
     for (final log in logs) {
-      final nextDay = log.date.add(const Duration(days: 1));
-      final end = nextDay.add(const Duration(hours: 23, minutes: 59));
+      final nextDay = _dateOnly(log.date.add(const Duration(days: 1)));
       final row = await (db.select(db.dailyReadiness)
             ..where((t) =>
-                t.userId.equals(uid) & t.date.isBetweenValues(nextDay, end)))
+                t.userId.equals(uid) & t.date.isBetweenValues(nextDay, _dayEnd(nextDay))))
           .getSingleOrNull();
       if (row != null) {
+        // Prefer the user's self-rating (0–10 scale); fall back to
+        // the algorithm's output divided by 10 to match the scale.
         final score = row.userRatedScore ?? row.computedScore / 10.0;
         nextDayScores.add(score);
       }

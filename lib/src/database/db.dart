@@ -68,7 +68,7 @@ class HabitCompletions extends Table {
   TextColumn get id => text()();
   TextColumn get habitId => text()();
   TextColumn get userId => text()();
-  // Date only — stored as midnight UTC to avoid timezone issues
+  // Date only — stored as local midnight to avoid timezone issues
   DateTimeColumn get completedDate => dateTime()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
@@ -207,7 +207,7 @@ class UserSubstances extends Table {
 class SubstanceLogs extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
-  // Stored date only as midnight UTC
+  // Stored date only as local midnight
   DateTimeColumn get date => dateTime()();
   TextColumn get substanceName => text()();
   // Snapshot of direction at time of logging
@@ -228,7 +228,7 @@ class SubstanceLogs extends Table {
 class ReadinessCheckIns extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
-  // Date only — stored as midnight UTC
+  // Date only — stored as local midnight
   DateTimeColumn get date => dateTime()();
   // 'morning' | 'afternoon' | 'evening'
   TextColumn get checkInWindow => text()();
@@ -260,7 +260,7 @@ class ReadinessCheckIns extends Table {
 class DailyReadiness extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
-  // Date only — stored as midnight UTC
+  // Date only — stored as local midnight
   DateTimeColumn get date => dateTime()();
   // Algorithm output 0–100
   RealColumn get computedScore => real().withDefault(const Constant(70.0))();
