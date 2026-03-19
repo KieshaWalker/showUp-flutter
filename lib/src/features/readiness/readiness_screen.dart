@@ -70,17 +70,17 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 56, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 46, 16, 32),
         children: [
           // ── Header ─────────────────────────────────────────────────────────
           Text('Readiness', style: AppTextStyles.displayLarge),
           const SizedBox(height: 4),
           Text(_windowGreeting(window), style: AppTextStyles.bodyMedium),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // ── Score ring ─────────────────────────────────────────────────────
           _ScoreRingCard(score: score, todaysRow: _todaysRow),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
 
           // ── Check-in card ───────────────────────────────────────────────────
           if (!hasCheckIn)
@@ -90,31 +90,38 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
               window: window,
               onEdit: () => _showCheckIn(context, window),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
 
-          // ── Substance log — today ───────────────────────────────────────────
-          _SubstanceLogCard(
-            title: "Today's Substances",
-            logs: todaySubstances,
-            onAdd: () => _showSubstanceSheet(context, null),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Substance log — yesterday ───────────────────────────────────────
-          _SubstanceLogCard(
-            title: 'Yesterday',
-            logs: yesterdaySubstances,
-            onAdd:
-                () => _showSubstanceSheet(
-                  context,
-                  DateTime.now().subtract(const Duration(days: 1)),
-                ),
-          ),
-          const SizedBox(height: 16),
-
+         // ── Substance logs — Side by Side ─────────────────────────────────────
+  IntrinsicHeight(
+    child: Row(
+  crossAxisAlignment: CrossAxisAlignment.start, // Keeps tops aligned
+  children: [
+    Expanded(
+      child: _SubstanceLogCard(
+        title: "Today", // Shortened title to fit better
+        logs: todaySubstances,
+        onAdd: () => _showSubstanceSheet(context, null),
+      ),
+    ),
+    const SizedBox(width: 6), // Gap between the two cards
+    Expanded(
+      child: _SubstanceLogCard(
+        title: 'Yesterday',
+        logs: yesterdaySubstances,
+        onAdd: () => _showSubstanceSheet(
+          context,
+          DateTime.now().subtract(const Duration(days: 1)),
+        ),
+      ),
+    ),
+  ],
+),
+  ),
+          const SizedBox(height: 6),
           // ── Pattern insights ────────────────────────────────────────────────
           _PatternInsightsCard(substances: todaySubstances),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
 
           // ── Self-rating ─────────────────────────────────────────────────────
           _SelfRatingCard(
@@ -125,6 +132,10 @@ class _ReadinessScreenState extends ConsumerState<ReadinessScreen> {
               _ensureToday();
             },
           ),
+          const SizedBox(height: 16),
+
+          // ── Substance science ───────────────────────────────────────────────
+          const _SubstanceScienceSection(),
         ],
       ),
     );
@@ -630,7 +641,7 @@ class _PatternInsightsCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_graph, size: 16, color: AppColors.ochre),
+              const Icon(Icons.trending_up, size: 16, color: AppColors.ochre),
               const SizedBox(width: 8),
               Text('What the data shows', style: AppTextStyles.titleMedium),
             ],
@@ -750,7 +761,7 @@ class _SelfRatingCardState extends State<_SelfRatingCard> {
             'Your honest rating trains the learning engine.',
             style: AppTextStyles.bodyMedium,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(11, (i) {
@@ -789,7 +800,7 @@ class _SelfRatingCardState extends State<_SelfRatingCard> {
               );
             }),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           if (!_submitted)
             SizedBox(
               width: double.infinity,
@@ -810,6 +821,334 @@ class _SelfRatingCardState extends State<_SelfRatingCard> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUBSTANCE SCIENCE SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SubstanceEntry {
+  final String name;
+  final bool positive;
+  final IconData icon;
+  final String tagline;
+  final String detail;
+  final String appDefault; // e.g. "−7/10" or "via check-in"
+  final String carryover;  // e.g. "65%" or "none"
+
+  const _SubstanceEntry({
+    required this.name,
+    required this.positive,
+    required this.icon,
+    required this.tagline,
+    required this.detail,
+    required this.appDefault,
+    required this.carryover,
+  });
+}
+
+const _kSubstanceEntries = [
+  _SubstanceEntry(
+    name: 'Alcohol',
+    positive: false,
+    icon: Icons.local_bar_outlined,
+    tagline: '2 drinks delays REM by 18 min. You feel like you slept fine — your brain didn\'t recover.',
+    detail:
+        'A 27-study meta-analysis (Sleep Medicine Reviews, 2024) found alcohol at 0.5 g/kg cuts REM '
+        'duration by 11 minutes and delays onset by 18 minutes. At 4+ drinks REM is severely fragmented, '
+        'with rebound insomnia in the second half of the night. Total sleep time barely changes — so drinkers '
+        'genuinely believe they slept well. Cortisol remains elevated all morning even after BAC hits zero. '
+        'Cognitive deficits (reaction time, recall, multitasking) persist 12–24 hours for moderate drinking. '
+        'Women are measurably more affected than men on objective metrics.',
+    appDefault: '−7/10',
+    carryover: '65%',
+  ),
+  _SubstanceEntry(
+    name: 'Cannabis',
+    positive: false,
+    icon: Icons.spa_outlined,
+    tagline: 'Only 3.5% of next-day tests show impairment — but chronic use compounds differently.',
+    detail:
+        'A University of Sydney systematic review (16 studies, 2023) found only 3.5% of next-day '
+        'performance tests showed significant impairment — far below alcohol. Cannabis suppresses REM '
+        'acutely (similar direction to alcohol, different mechanism). On withdrawal: REM rebound with '
+        'vivid dreams and disrupted sleep for 1–4 weeks. Heavy chronic use leads to working memory and '
+        'processing speed deficits that persist days into abstinence. CBD appears to buffer most negative '
+        'cognitive and anxiogenic effects of THC — which is why CBD carries a positive default.',
+    appDefault: '−3/10',
+    carryover: '30%',
+  ),
+  _SubstanceEntry(
+    name: 'Sugar spike',
+    positive: false,
+    icon: Icons.cake_outlined,
+    tagline: 'Zero evidence for a sugar rush. Strong evidence for a two-day crash.',
+    detail:
+        'A meta-analysis of 31 studies (Neuroscience & Biobehavioral Reviews, 2019) found no evidence '
+        'for a sugar rush in healthy adults — and strong evidence for a crash at 30–60 minutes. Beyond that: '
+        'a single high-glycemic meal spikes CRP and cytokines (inflammation persists 1–2 days, causing joint '
+        'stiffness and malaise). The brain down-regulates dopamine receptors after a large release, creating '
+        'a motivation and mood dip 24–48 hours later. High sugar also disrupts slow-wave sleep even when '
+        'total hours look fine, and gut flora shifts within 24h produce brain-fog byproducts for several days.',
+    appDefault: '−3/10',
+    carryover: '55% day 1, 25% day 2',
+  ),
+  _SubstanceEntry(
+    name: 'Caffeine',
+    positive: false,
+    icon: Icons.coffee_outlined,
+    tagline: 'Half-life 4–6h. A 3pm cup is still 50% active at midnight for slow metabolisers.',
+    detail:
+        'A 2024 randomised crossover trial (SLEEP journal) found 400mg consumed 4 hours before bed '
+        'cuts total sleep by 20+ minutes. 1–2 cups provide an alertness boost via adenosine antagonism; '
+        '3+ cups tip into anxiety and cortisol spikes. The CYP1A2 gene splits people into fast metabolisers '
+        '(half-life 3–4h) and slow (7–10h) — for slow metabolisers, a 3pm coffee is still half-active at '
+        'midnight. Afternoon and evening caffeine carries a 1.5× score penalty to reflect this. '
+        'Caffeine is tracked via the count field in your check-in, not as a substance log.',
+    appDefault: 'via check-in',
+    carryover: 'none',
+  ),
+  _SubstanceEntry(
+    name: 'Nicotine',
+    positive: false,
+    icon: Icons.air_outlined,
+    tagline: 'Withdrawal starts 2–4h after last use, cycling through the night.',
+    detail:
+        'Nicotine has a half-life of ~2 hours, so withdrawal begins during sleep for most users. '
+        'Westminster Research and PMC 2013 data show the withdrawal cycle disrupts sleep architecture '
+        'and elevates morning cortisol baseline. The result: lighter sleep, more arousals, and blunted '
+        'morning alertness. The 40% carryover reflects the next-morning cortisol disruption that '
+        'persists even after the nicotine itself has fully metabolised.',
+    appDefault: '−4/10',
+    carryover: '40%',
+  ),
+  _SubstanceEntry(
+    name: 'Psilocybin (microdose)',
+    positive: true,
+    icon: Icons.grain_outlined,
+    tagline: 'One confirmed benefit in blind conditions: divergent thinking. The rest is likely expectancy.',
+    detail:
+        'Three double-blind RCTs (Szigeti/Erritzoe, 2025) are the most rigorous data yet. '
+        'One finding survived blinding: increased originality in divergent thinking tasks. '
+        'Mood, energy, focus, and general cognitive performance effects largely disappeared when '
+        'participants didn\'t know whether they received the dose. Observational studies show large effects '
+        '— but expectancy accounts for most of it. No hangover or carryover at microdose levels. '
+        'The app default is intentionally low (+2) so your personal logged data takes over quickly.',
+    appDefault: '+2/10',
+    carryover: 'none',
+  ),
+  _SubstanceEntry(
+    name: 'Sleep deprivation',
+    positive: false,
+    icon: Icons.bedtime_outlined,
+    tagline: '6h/night for 2 weeks equals 2 nights of zero sleep — and you won\'t know it.',
+    detail:
+        'Van Dongen & Dinges (UPenn, SLEEP 2003) — still the defining dataset. At 6h/night for '
+        '14 days, performance equals 48h of total deprivation, yet subjects rated their sleepiness '
+        'as only mildly elevated. At 5h/night: equivalent to 3+ nights of zero sleep. A 2025 Frontiers '
+        'study found chronic partial restriction produces 17ms longer reaction times than acute total '
+        'deprivation — because chronic loss feels normal. Recovery is slow: 7 nights at 5h/night '
+        'requires 3+ recovery nights to restore performance, not one. '
+        'Sleep is the single biggest lever in the readiness model.',
+    appDefault: 'scored directly',
+    carryover: '50% of last-night penalty',
+  ),
+];
+
+class _SubstanceScienceSection extends StatelessWidget {
+  const _SubstanceScienceSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.science_outlined, size: 16, color: AppColors.khaki),
+            const SizedBox(width: 8),
+            Text('The Science', style: AppTextStyles.titleLarge),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'How common substances affect readiness — and why.',
+          style: AppTextStyles.bodyMedium,
+        ),
+        const SizedBox(height: 12),
+        ..._kSubstanceEntries.map(
+          (s) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _SubstanceInfoCard(entry: s),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubstanceInfoCard extends StatefulWidget {
+  final _SubstanceEntry entry;
+  const _SubstanceInfoCard({required this.entry});
+
+  @override
+  State<_SubstanceInfoCard> createState() => _SubstanceInfoCardState();
+}
+
+class _SubstanceInfoCardState extends State<_SubstanceInfoCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final e = widget.entry;
+    final accentColor = e.positive ? AppColors.eucalyptus : AppColors.terracotta;
+
+    return AppGlass.card(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header row (always visible) ──────────────────────────────────
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+              child: Row(
+                children: [
+                  Icon(e.icon, size: 18, color: accentColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(e.name, style: AppTextStyles.titleMedium),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.15),
+                                borderRadius: AppRadius.smAll,
+                                border: Border.all(
+                                    color: accentColor.withValues(alpha: 0.35)),
+                              ),
+                              child: Text(
+                                e.appDefault,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          e.tagline,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textOnDarkSecondary,
+                          ),
+                          maxLines: _expanded ? null : 2,
+                          overflow:
+                              _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 18,
+                    color: AppColors.textOnDarkTertiary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Expanded detail ──────────────────────────────────────────────
+          if (_expanded) ...[
+            Divider(
+              height: 1,
+              color: AppColors.glassBorder,
+              indent: 16,
+              endIndent: 16,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(e.detail, style: AppTextStyles.bodyMedium),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _InfoPill(
+                        label: 'Next-day carryover',
+                        value: e.carryover,
+                        color: e.carryover == 'none'
+                            ? AppColors.eucalyptus
+                            : AppColors.ochre,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _InfoPill({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppRadius.smAll,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textOnDarkTertiary,
+              fontSize: 10,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+            ),
+          ),
         ],
       ),
     );

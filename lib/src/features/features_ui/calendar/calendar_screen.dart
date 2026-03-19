@@ -393,13 +393,13 @@ class _WeekHeader extends StatelessWidget {
       accentColor = AppColors.glassBorder;
       pctLabel = '—';
     } else if (overallPct! >= 0.8) {
-      accentColor = AppColors.eucalyptus;
+      accentColor = const Color.fromARGB(255, 44, 164, 0);
       pctLabel = '${(overallPct! * 100).round()}%';
     } else if (overallPct! >= 0.5) {
-      accentColor = AppColors.ochre;
+      accentColor = const Color.fromARGB(255, 186, 118, 0);
       pctLabel = '${(overallPct! * 100).round()}%';
     } else {
-      accentColor = AppColors.terracotta;
+      accentColor = const Color.fromARGB(255, 9, 0, 64);
       pctLabel = '${(overallPct! * 100).round()}%';
     }
 
@@ -433,6 +433,7 @@ class _WeekHeader extends StatelessWidget {
               child: CircularProgressIndicator(
                   strokeWidth: 1.5, color: AppColors.khaki),
             )
+            
           else if (overallPct != null)
             Container(
               padding:
@@ -913,7 +914,7 @@ class _MacroBox extends StatelessWidget {
     required this.unit,
     required this.color,
   });
-
+// A small box showing a single macro or calorie total, used in the day detail sheet.
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -950,7 +951,7 @@ class _HabitRow extends StatelessWidget {
     required this.completed,
     required this.onToggle,
   });
-
+// A single row in the habits list of the day detail sheet, showing a habit name and a checkmark that can be toggled.
   @override
   Widget build(BuildContext context) {
     return GestureDetector(

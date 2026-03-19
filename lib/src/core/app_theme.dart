@@ -454,7 +454,6 @@ class AppGlass {
         boxShadow: AppShadows.xl,
       );
 }
-
 // ---------------------------------------------------------------------------
 // Gradient helpers
 // ---------------------------------------------------------------------------
@@ -462,15 +461,19 @@ class AppGradients {
   AppGradients._();
 
   /// Radial background — matches CSS --backgroundgradial
-  static const background = RadialGradient(
-    center: Alignment.center,
-    radius: 2.0,
+  static const background = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      ui.Color.fromARGB(105, 38, 132, 240),
-      ui.Color.fromARGB(255, 123, 84, 196),
-      ui.Color.fromARGB(245, 208, 110, 110),
+      ui.Color.fromARGB(255, 64, 36, 117),
+      ui.Color.fromARGB(255, 64, 36, 117),
+      ui.Color.fromARGB(255, 20, 76, 139),
+      ui.Color.fromARGB(245, 119, 105, 105),   
+      ui.Color.fromARGB(245, 119, 105, 105),
     ],
   );
+
+
 
   /// Linear accent gradient — matches CSS --backgroundgradialtwo
   static const accent = LinearGradient(
