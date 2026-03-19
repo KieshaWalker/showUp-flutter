@@ -611,8 +611,15 @@ class _PatternInsightsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allLogs = ref.watch(substanceLogsProvider).value ?? [];
-    // Get unique substance names from all logs (not just today's)
-    final names = allLogs.map((l) => l.substanceName).toSet().toList();
+    // Only show substances that have been logged ≥3 times (minimum for a pattern).
+    final counts = <String, int>{};
+    for (final l in allLogs) {
+      counts[l.substanceName] = (counts[l.substanceName] ?? 0) + 1;
+    }
+    final names = counts.entries
+        .where((e) => e.value >= 3)
+        .map((e) => e.key)
+        .toList();
 
     if (names.isEmpty) return const SizedBox.shrink();
 
@@ -651,20 +658,21 @@ class _PatternRowState extends ConsumerState<_PatternRow> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      debugPrint(
-        '[ReadinessScreen] getSubstancePattern — substance=${widget.substanceName}',
-      );
-      final p = await ref
-          .read(readinessProvider.notifier)
-          .getSubstancePattern(widget.substanceName);
-      debugPrint('[ReadinessScreen] getSubstancePattern — ${p.summaryText}');
-      if (mounted) setState(() => _pattern = p);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    final p = await ref
+        .read(readinessProvider.notifier)
+        .getSubstancePattern(widget.substanceName);
+    if (mounted) setState(() => _pattern = p);
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(readinessProvider, (_, _) => _load());
+    ref.listen(substanceLogsProvider, (_, _) => _load());
+
     if (_pattern == null || _pattern!.occurrences < 3) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
