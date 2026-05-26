@@ -24,9 +24,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/app_theme.dart';
 import '../../database/db.dart';
+import '../../shared/widgets.dart';
 import '../agent/agent_notifier.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
@@ -82,18 +82,7 @@ class PresentationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Padding(
-  padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0), // Adjust this value as needed
-  child: SvgPicture.asset(
-    'assets/images/logo.svg',
-    height: 100,
-    width: 150,
-    colorFilter: const ColorFilter.mode(
-            Colors.white,
-            BlendMode.srcIn,
-          )
-  ),
-),
+        title: const AppLogoTitle(),
         
         titleTextStyle: AppTextStyles.displayLarge,
       ),
@@ -591,18 +580,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.glassBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const AppDragHandle(),
 
           // Food name + serving label
           Text(widget.food.name, style: AppTextStyles.titleLarge),
@@ -1315,18 +1293,7 @@ class _EditWeekCompletionsSheetState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.glassBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const AppDragHandle(bottomMargin: AppSpacing.lg),
 
           Text(widget.h.habit.name, style: AppTextStyles.titleLarge),
           const SizedBox(height: AppSpacing.xs),

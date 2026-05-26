@@ -22,8 +22,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../shared/widgets.dart';
 import '../../core/app_theme.dart';
 import '../profile/profile_notifier.dart';
 import '../profile/profile_screen.dart';
@@ -38,15 +38,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Padding(
-          padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0),
-          child: SvgPicture.asset(
-            'assets/images/logo.svg',
-            height: 100,
-            width: 150,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
-        ),
+        title: const AppLogoTitle(),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

@@ -149,10 +149,18 @@ class _AppShellState extends ConsumerState<AppShell> {
         backgroundColor: Colors.transparent,
         body: _screens[_currentIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex < 2 ? _currentIndex : 2,
+          selectedIndex: _currentIndex == 0
+              ? 0
+              : _currentIndex == 1
+                  ? 1
+                  : _currentIndex == 5
+                      ? 2
+                      : 3,
           onDestinationSelected: (i) {
-            if (i == 2) {
+            if (i == 3) {
               _openMenu();
+            } else if (i == 2) {
+              setState(() => _currentIndex = 5); // Calendar
             } else {
               setState(() => _currentIndex = i);
             }
@@ -167,6 +175,11 @@ class _AppShellState extends ConsumerState<AppShell> {
               icon: Icon(Icons.bolt_outlined),
               selectedIcon: Icon(Icons.bolt),
               label: 'Readiness',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month),
+              label: 'Calendar',
             ),
             NavigationDestination(
               icon: Icon(Icons.menu),
@@ -192,7 +205,6 @@ class _MenuSheet extends StatelessWidget {
       (index: 4, icon: Icons.check_circle_outline, label: 'Habits'),
       (index: 2, icon: Icons.restaurant_menu_outlined, label: 'Nutrition'),
       (index: 3, icon: Icons.kitchen_outlined, label: 'Pantry'),
-      (index: 5, icon: Icons.calendar_month_outlined, label: 'Calendar'),
       (index: 6, icon: Icons.settings_outlined, label: 'Settings'),
     ];
 
