@@ -22,17 +22,20 @@
 //                             NutritionMacroPill for reuse in the nutrition tab
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
+import 'dart:math';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../database/db.dart';
-import '../../shared/widgets.dart';
+import '../../shared/widgets.dart' show AppLogoTitle, AppDragHandle, StreakBadge;
 import '../agent/agent_notifier.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
 import '../nutrition/nutrition_screen.dart';
 import '../pantry/pantry_notifier.dart';
 import '../profile/profile_notifier.dart';
+import '../readiness/readiness_notifier.dart';
 
 const List<String> _months = [
   'January',
@@ -59,8 +62,15 @@ const List<String> _weekdays = [
   'Sunday',
 ];
 
-class PresentationScreen extends ConsumerWidget {
+class PresentationScreen extends ConsumerStatefulWidget {
   const PresentationScreen({super.key});
+
+  @override
+  ConsumerState<PresentationScreen> createState() => _PresentationScreenState();
+}
+
+class _PresentationScreenState extends ConsumerState<PresentationScreen> {
+  late final ConfettiController _confettiCtrl;
 
   static String _greeting(int hour, String? name) {
     final suffix = name != null ? ', $name.' : '.';
@@ -74,81 +84,359 @@ class PresentationScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _confettiCtrl = ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _confettiCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final now = DateTime.now();
     final nutritionAsync = ref.watch(nutritionNotifierProvider);
     final profile = ref.watch(profileProvider).value;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const AppLogoTitle(),
-        
-        titleTextStyle: AppTextStyles.displayLarge,
-      ),
-      body: ListView(
-        padding: AppPaddings.all,
-        children: [
-          // greeting section
-          Text(
-            _greeting(
-              now.hour,
-              profile?.displayName.isNotEmpty == true
-                  ? profile!.displayName
-                  : null,
-            ),
-            style: AppTextStyles.headlineMedium,
+    ref.listen(habitsNotifierProvider, (prev, next) {
+      final prevList = prev?.value ?? [];
+      final nextList = next.value ?? [];
+      if (nextList.isEmpty) return;
+      final prevAllDone = prevList.isNotEmpty && prevList.every((h) => h.isDone);
+      final nextAllDone = nextList.every((h) => h.isDone);
+      if (!prevAllDone && nextAllDone) _confettiCtrl.play();
+    });
+
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const AppLogoTitle(),
+            titleTextStyle: AppTextStyles.displayLarge,
           ),
-
-          // date label
-          Text(_dateLabel(now), style: AppTextStyles.bodyMedium),
-
-          // time label
-          Text(
-            TimeOfDay.now().format(context),
-            style: AppTextStyles.bodyMedium,
-          ),
-
-          const Divider(height: AppSpacing.lg),
-
-// nutrition widget 
-          nutritionAsync.when(
-            data:
-                (nutrition) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    NutritionCalorieSummary(nutrition: nutrition),
-                    const SizedBox(height: AppSpacing.md),
-                    NutritionMacroRow(nutrition: nutrition),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+          body: ListView(
+            padding: AppPaddings.all,
+            children: [
+              _HeroCard(
+                greeting: _greeting(
+                  now.hour,
+                  profile?.displayName.isNotEmpty == true
+                      ? profile!.displayName
+                      : null,
                 ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
+                dateLabel: _dateLabel(now),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              nutritionAsync.when(
+                data: (nutrition) => NutritionMacroRow(nutrition: nutrition),
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const _IncompleteHabitsListForDay(),
+              const SizedBox(height: AppSpacing.lg),
+              const _QuickAddSection(),
+              const SizedBox(height: AppSpacing.lg),
+              const _ShowFoodsToday(),
+              const SizedBox(height: AppSpacing.lg),
+              const _HabitsCompletedToday(),
+              const SizedBox(height: AppSpacing.lg),
+              const _AgentSection(),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+        IgnorePointer(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiCtrl,
+              blastDirection: pi / 2,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              emissionFrequency: 0.07,
+              numberOfParticles: 22,
+              gravity: 0.18,
+              colors: const [
+                Color(0xFF9E8F8A), // terracotta
+                Color(0xFF4C9C2F), // eucalyptus
+                Color(0xFF4ECDC4), // teal
+                Color(0xFF6BCB77), // green
+                Color(0xFFFFB347), // gold
+                Color(0xFFBF7800), // ochre
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Score helpers (mirrored from readiness_screen — same semantics)
+// ---------------------------------------------------------------------------
+
+Color _heroScoreColor(double score) {
+  if (score >= 80) return AppColors.eucalyptus;
+  if (score >= 60) return AppColors.ochre;
+  if (score >= 40) return AppColors.terracotta;
+  return AppColors.mahogany;
+}
+
+String _heroScoreLabel(double score) {
+  if (score >= 80) return 'Peak';
+  if (score >= 65) return 'Good';
+  if (score >= 50) return 'Moderate';
+  if (score >= 35) return 'Low';
+  return 'Depleted';
+}
+
+String _heroScoreSubtitle(double score) {
+  if (score >= 80) return "You're firing on all cylinders today.";
+  if (score >= 65) return "Solid baseline. Good day to push.";
+  if (score >= 50) return "You've got enough — pace yourself.";
+  if (score >= 35) return "Take it easy. Recovery is progress.";
+  return "Rest is the move today.";
+}
+
+// ---------------------------------------------------------------------------
+// _TripleDial — three concentric arcs: readiness / habits / nutrition
+// ---------------------------------------------------------------------------
+//
+// Outer arc  → readiness score (0–100), color tracks score state
+// Middle arc → habit completion (done / total)
+// Inner arc  → calorie goal progress (logged / goal)
+//
+// All three arcs animate from 0 → target over 1400 ms on first paint.
+// Arc geometry: 270° sweep starting at −135° (bottom-left to bottom-right).
+
+class _TripleDial extends CustomPainter {
+  static const double _stroke = 10.0;
+  static const double _gap    = 12.0;
+  static const double _start  = -pi * 0.75;   // −135°
+  static const double _sweep  = pi * 1.5;      // 270°
+
+  final double readinessPct;
+  final double habitsPct;
+  final double nutritionPct;
+  final double animValue;
+  final Color readinessColor;
+
+  const _TripleDial({
+    required this.readinessPct,
+    required this.habitsPct,
+    required this.nutritionPct,
+    required this.animValue,
+    required this.readinessColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final outerR = cx - _stroke / 2;
+    final midR   = outerR - _stroke - _gap;
+    final innerR = midR   - _stroke - _gap;
+
+    _arc(canvas, cx, cy, outerR,  readinessPct,  readinessColor);
+    _arc(canvas, cx, cy, midR,    habitsPct,     AppColors.terracotta);
+    _arc(canvas, cx, cy, innerR,  nutritionPct,  AppColors.waterColor);
+  }
+
+  void _arc(Canvas canvas, double cx, double cy, double r, double pct, Color color) {
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
+    final track = Paint()
+      ..color = color.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, _start, _sweep, false, track);
+
+    final progress = (pct * animValue).clamp(0.0, 1.0);
+    if (progress > 0.01) {
+      canvas.drawArc(rect, _start, _sweep * progress, false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _stroke
+          ..strokeCap = StrokeCap.round);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TripleDial o) =>
+      o.animValue     != animValue     ||
+      o.readinessPct  != readinessPct  ||
+      o.habitsPct     != habitsPct     ||
+      o.nutritionPct  != nutritionPct;
+}
+
+// ---------------------------------------------------------------------------
+// _HeroCard — the overview's primary visual anchor
+// ---------------------------------------------------------------------------
+
+class _HeroCard extends ConsumerStatefulWidget {
+  const _HeroCard({required this.greeting, required this.dateLabel});
+  final String greeting;
+  final String dateLabel;
+
+  @override
+  ConsumerState<_HeroCard> createState() => _HeroCardState();
+}
+
+class _HeroCardState extends ConsumerState<_HeroCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+  DailyReadinessData? _readinessRow;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(milliseconds: 1400),
+      vsync: this,
+    );
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final row = await ref.read(readinessProvider.notifier).todaysReadiness();
+      if (mounted) {
+        setState(() => _readinessRow = row);
+        _ctrl.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final habits    = ref.watch(habitsNotifierProvider).value ?? [];
+    final nutrition = ref.watch(nutritionNotifierProvider).value;
+
+    final total    = habits.length;
+    final done     = habits.where((h) => h.isDone).length;
+    final habitPct = total == 0 ? 0.0 : done / total;
+
+    final calories = nutrition?.totalCalories ?? 0.0;
+    final calGoal  = (nutrition?.goals?.calories ?? 2000.0).clamp(1.0, double.infinity);
+    final calPct   = (calories / calGoal).clamp(0.0, 1.0);
+    final waterMl  = nutrition?.totalWaterMl ?? 0.0;
+
+    final score      = _readinessRow?.computedScore ?? 70.0;
+    final scoreColor = _heroScoreColor(score);
+
+    return AppGlass.card(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.xlAll,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Greeting + date
+          Text(widget.greeting, style: AppTextStyles.titleLarge),
+          Text(widget.dateLabel, style: AppTextStyles.bodyMedium),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Triple arc dial
+          Center(
+            child: SizedBox(
+              width: 220,
+              height: 220,
+              child: AnimatedBuilder(
+                animation: _anim,
+                builder: (context, _) => CustomPaint(
+                  painter: _TripleDial(
+                    readinessPct:  score / 100,
+                    habitsPct:     habitPct,
+                    nutritionPct:  calPct,
+                    animValue:     _anim.value,
+                    readinessColor: scoreColor,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          score.round().toString(),
+                          style: TextStyle(
+                            fontSize: 52,
+                            fontWeight: FontWeight.w800,
+                            color: scoreColor,
+                            height: 1.0,
+                          ),
+                        ),
+                        Text(
+                          _heroScoreLabel(score),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: scoreColor.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
 
-          const _HabitsCard(),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Insight line
+          Text(
+            _heroScoreSubtitle(score),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnDarkSecondary,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Arc legend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ArcLegend('Readiness', scoreColor),
+              const SizedBox(width: AppSpacing.md),
+              _ArcLegend('Habits', AppColors.terracotta),
+              const SizedBox(width: AppSpacing.md),
+              _ArcLegend('Nutrition', AppColors.waterColor),
+            ],
+          ),
+
           const SizedBox(height: AppSpacing.lg),
 
-          const Divider(height: AppSpacing.lg),
-
-          const _QuickAddSection(),
-          const SizedBox(height: 80),
-
-          const Divider(height: AppSpacing.lg),
-
-          const _ShowFoodsToday(),
-
-          const _HabitsCompletedToday(),
-
-          // Watches habitsNotifierProvider directly so it reacts to toggles
-          const Divider(height: AppSpacing.lg),
-
-          const _IncompleteHabitsListForDay(),
-          const SizedBox(height: AppSpacing.lg),
-
-          const _AgentSection(),
-          const SizedBox(height: 100),
+          // Stats strip
+          Row(
+            children: [
+              _StatPill(
+                label: 'habits',
+                value: '$done / $total',
+                color: AppColors.terracotta,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _StatPill(
+                label: 'kcal',
+                value: calories.toInt().toString(),
+                color: AppColors.ochre,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _StatPill(
+                label: 'water',
+                value: '${waterMl.toInt()} ml',
+                color: AppColors.waterColor,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -156,117 +444,72 @@ class PresentationScreen extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _HabitsCard — circular progress summary card
+// _StatPill — a labeled stat in the hero card's bottom strip
 // ---------------------------------------------------------------------------
-//
-// Shows a circular progress indicator + "X of Y done" text.
-//
-// ┌──────────────────────────────────────────────────────────────────────┐
-// │  WHAT IS COUNTED                                                     │
-// │  done  = habits where completedToday == true                        │
-// │  total = all habits (daily + weekly)                                 │
-// │                                                                      │
-// │  This intentionally uses completedToday so the ring resets to 0     │
-// │  every morning (daily habits) and ticks up as you check things off. │
-// │  A weekly habit at 3/3 that was last completed yesterday shows as   │
-// │  "not done today" — it contributes 0 to this ring.                  │
-// │                                                                      │
-// │  To count "fully done for the period" instead (i.e. weekly habits   │
-// │  that met their target contribute 1 even if not completed today),   │
-// │  change the done line to:                                            │
-// │    final done = habits.where((h) => h.isDone).length;               │
-// └──────────────────────────────────────────────────────────────────────┘
 
-class _HabitsCard extends ConsumerWidget {
-  const _HabitsCard();
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(habitsNotifierProvider);
-
-    return AppGlass.card(
-      padding: AppPaddings.card,
-      borderRadius: AppRadius.xlAll,
-      child: habitsAsync.when(
-        loading:
-            () => const SizedBox(
-              height: 80,
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.terracotta),
-              ),
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: AppRadius.mdAll,
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: AppTextStyles.titleMedium.copyWith(color: color),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-        error: (e, _) => Text("Couldn't load habits right now.", style: AppTextStyles.bodyMedium),
-        data: (habits) {
-          // Counts habits completed today (resets daily).
-          // See comment block above to switch to isDone-based counting.
-          final total = habits.length;
-          final done = habits.where((h) => h.isDone).length;
-          final pct = total == 0 ? 0.0 : done / total;
-          final allDone = total > 0 && done == total;
-
-          return Row(
-            children: [
-              SizedBox(
-                width: 80,
-                height: 80,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CircularProgressIndicator(
-                      value: pct,
-                      strokeWidth: 7,
-                      backgroundColor: AppColors.glassBorder,
-                      color:
-                          allDone ? AppColors.eucalyptus : AppColors.terracotta,
-                      strokeCap: StrokeCap.round,
-                    ),
-                    Center(
-                      child: Text(
-                        '${(pct * 100).round()}%',
-                        style: AppTextStyles.titleMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg - 4),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_outline,
-                          size: 14,
-                          color: AppColors.terracotta,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text('Habits', style: AppTextStyles.labelSmall),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      '$done of $total done',
-                      style: AppTextStyles.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      total == 0
-                          ? 'No habits tracked yet.'
-                          : allDone
-                          ? 'All done. Great work today!'
-                          : '${total - done} remaining',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+            Text(label, style: AppTextStyles.labelSmall),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _ArcLegend — tiny dot + label explaining each arc in the dial
+// ---------------------------------------------------------------------------
+
+class _ArcLegend extends StatelessWidget {
+  const _ArcLegend(this.label, this.color);
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: AppColors.textOnDarkTertiary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -976,8 +1219,18 @@ class _HabitsCompletedToday extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sm),
                  
             Column(
-              children: 
-                  completedToday.map((h) => Text(h.habit.name)).toList(),
+              children: completedToday
+                  .map((h) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: Row(
+                          children: [
+                            Text(h.habit.name, style: AppTextStyles.bodyMedium),
+                            const Spacer(),
+                            StreakBadge(h.streak),
+                          ],
+                        ),
+                      ))
+                  .toList(),
             ),
           ],
         );
@@ -1164,43 +1417,52 @@ class _HabitTodayChip extends StatelessWidget {
               : null,
       child: Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-        child: AppGlass.card(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.lg,
-          ),
+        child: ClipRRect(
           borderRadius: AppRadius.lgAll,
-          child: Row(
+          child: Stack(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.terracotta.withValues(alpha: 0.15),
-                  borderRadius: AppRadius.smAll,
+              AppGlass.card(
+                padding: EdgeInsets.only(
+                  left: h.streak > 0 ? AppSpacing.md + 6 : AppSpacing.md,
+                  right: AppSpacing.md,
+                  top: AppSpacing.lg,
+                  bottom: AppSpacing.lg,
                 ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  size: 14,
-                  color: AppColors.terracotta,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                borderRadius: AppRadius.lgAll,
+                child: Row(
                   children: [
-                    Text(h.habit.name, style: AppTextStyles.bodyMedium),
-                    if (isWeekly)
-                      Text(
-                        '${h.completionsThisWeek}/${h.habit.targetDaysPerWeek}× this week',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.khaki,
-                        ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(h.habit.name, style: AppTextStyles.bodyMedium),
+                          if (isWeekly)
+                            Text(
+                              '${h.completionsThisWeek}/${h.habit.targetDaysPerWeek}× this week',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.khaki,
+                              ),
+                            ),
+                        ],
                       ),
+                    ),
+                    if (h.streak > 0) ...[
+                      const SizedBox(width: AppSpacing.md),
+                      StreakBadge(h.streak),
+                    ],
                   ],
                 ),
               ),
+              if (h.streak > 0)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 3,
+                    color: StreakBadge.color(h.streak),
+                  ),
+                ),
             ],
           ),
         ),

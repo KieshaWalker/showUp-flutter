@@ -129,20 +129,51 @@ class _HabitManageCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AppGlass.card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
-        ),
-        title: Text(item.habit.name, style: AppTextStyles.titleMedium),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: HabitFreqChip(habit: item.habit),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textOnDarkSecondary),
-        onTap: () => _showAddHabitSheet(context, ref, existing: item.habit),
-        onLongPress: () => _confirmDelete(context, ref, item.habit),
+    final hasStreak = item.streak > 0;
+    return ClipRRect(
+      borderRadius: AppRadius.lgAll,
+      child: Stack(
+        children: [
+          AppGlass.card(
+            borderRadius: AppRadius.lgAll,
+            child: ListTile(
+              contentPadding: EdgeInsets.only(
+                left: hasStreak ? AppSpacing.md + 6 : AppSpacing.md,
+                right: AppSpacing.md,
+                top: AppSpacing.xs,
+                bottom: AppSpacing.xs,
+              ),
+              title: Text(item.habit.name, style: AppTextStyles.titleMedium),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: HabitFreqChip(habit: item.habit),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasStreak) ...[
+                    StreakBadge(item.streak),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  const Icon(Icons.chevron_right,
+                      color: AppColors.textOnDarkSecondary),
+                ],
+              ),
+              onTap: () => _showAddHabitSheet(context, ref, existing: item.habit),
+              onLongPress: () => _confirmDelete(context, ref, item.habit),
+            ),
+          ),
+          if (hasStreak)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 3,
+                color: StreakBadge.color(item.streak),
+              ),
+            ),
+        ],
       ),
     );
   }

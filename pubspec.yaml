@@ -57,6 +57,7 @@ dependencies:
   css_colors: ^1.1.7
   string_similarity: ^2.1.1
   flutter_svg: ^2.0.10+1
+  confetti: ^0.7.0
 
 dev_dependencies:
   flutter_test:

@@ -46,6 +46,33 @@ class AppDragHandle extends StatelessWidget {
   }
 }
 
+// Streak display — large colored number. Renders nothing when streak == 0.
+// Color escalates with streak length so users feel momentum building.
+// Use StreakBadge.color(n) to get the same color for accent bars / borders.
+class StreakBadge extends StatelessWidget {
+  const StreakBadge(this.streak, {super.key});
+  final int streak;
+
+  static Color color(int n) {
+    if (n >= 30) return const Color(0xFFFFB347); // gold
+    if (n >= 14) return const Color(0xFF4ECDC4); // teal
+    if (n >= 7)  return const Color(0xFF6BCB77); // green
+    return const Color(0xFF82C4A0);              // mint
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (streak == 0) return const SizedBox.shrink();
+    return Text(
+      '$streak',
+      style: AppTextStyles.titleLarge.copyWith(
+        color: color(streak),
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
 // A selectable chip used in meal pickers and similar selectors.
 class SelectableChip extends StatelessWidget {
   const SelectableChip({
