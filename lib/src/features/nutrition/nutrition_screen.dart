@@ -44,6 +44,11 @@ class NutritionScreen extends ConsumerWidget {
         title: const AppLogoTitle(),
         actions: [
           IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Copy yesterday\'s meals',
+            onPressed: () => _copyYesterday(context, ref),
+          ),
+          IconButton(
             icon: const Icon(Icons.tune_outlined),
             tooltip: 'Edit goals',
             onPressed: () =>
@@ -122,9 +127,9 @@ class _NutritionBody extends StatelessWidget {
 // Empty state
 // =============================================================================
 
-class _EmptyMeals extends StatelessWidget {
+class _EmptyMeals extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppGlass.card(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
@@ -136,6 +141,12 @@ class _EmptyMeals extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text('Tap + Add Meal to get started',
               style: AppTextStyles.bodyMedium),
+          const SizedBox(height: AppSpacing.lg),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.history, size: 18),
+            label: const Text('Copy yesterday\'s meals'),
+            onPressed: () => _copyYesterday(context, ref),
+          ),
         ],
       ),
     );
@@ -462,6 +473,19 @@ class _FoodEntryTile extends ConsumerWidget {
 // =============================================================================
 // Add meal sheet
 // =============================================================================
+
+Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
+  final copied =
+      await ref.read(nutritionNotifierProvider.notifier).copyYesterdaysMeals();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        copied ? 'Yesterday\'s meals copied' : 'No meals logged yesterday',
+      ),
+    ),
+  );
+}
 
 void _showAddMealSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(

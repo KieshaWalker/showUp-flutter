@@ -478,6 +478,97 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     );
   }
 
+  /// Copies yesterday's meals and food entries into today.
+  /// Returns true if any meals were copied, false if yesterday had none.
+  Future<bool> copyYesterdaysMeals() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final startOfYesterday =
+        DateTime(yesterday.year, yesterday.month, yesterday.day);
+    final endOfYesterday = startOfYesterday.add(const Duration(days: 1));
+
+    final yesterdayMeals =
+        await (db.select(db.meals)
+          ..where(
+            (m) =>
+                m.userId.equals(userId) &
+                m.loggedAt.isBiggerOrEqualValue(startOfYesterday) &
+                m.loggedAt.isSmallerThanValue(endOfYesterday),
+          )).get();
+
+    if (yesterdayMeals.isEmpty) return false;
+
+    final yesterdayMealIds = yesterdayMeals.map((m) => m.id).toList();
+    final yesterdayEntries =
+        await (db.select(db.foodEntries)
+          ..where((e) => e.mealId.isIn(yesterdayMealIds))).get();
+
+    final now = DateTime.now();
+
+    for (final meal in yesterdayMeals) {
+      final newMealId = _uuid.v4();
+
+      await db.into(db.meals).insert(
+        MealsCompanion.insert(
+          id: newMealId,
+          userId: userId,
+          name: meal.name,
+          loggedAt: Value(now),
+        ),
+      );
+
+      final mealEntries =
+          yesterdayEntries.where((e) => e.mealId == meal.id).toList();
+      final remoteEntries = <Map<String, dynamic>>[];
+
+      for (final entry in mealEntries) {
+        final newEntryId = _uuid.v4();
+        await db.into(db.foodEntries).insert(
+          FoodEntriesCompanion.insert(
+            id: newEntryId,
+            mealId: newMealId,
+            userId: userId,
+            name: entry.name,
+            calories: Value(entry.calories),
+            protein: Value(entry.protein),
+            carbs: Value(entry.carbs),
+            fat: Value(entry.fat),
+          ),
+        );
+        remoteEntries.add({
+          'id': newEntryId,
+          'meal_id': newMealId,
+          'user_id': userId,
+          'name': entry.name,
+          'calories': entry.calories,
+          'protein': entry.protein,
+          'carbs': entry.carbs,
+          'fat': entry.fat,
+        });
+      }
+
+      try {
+        await Supabase.instance.client.from('meals').insert({
+          'id': newMealId,
+          'user_id': userId,
+          'name': meal.name,
+          'logged_at': now.toIso8601String(),
+        });
+        if (remoteEntries.isNotEmpty) {
+          await Supabase.instance.client
+              .from('food_entries')
+              .insert(remoteEntries);
+        }
+        await (db.update(db.meals)..where(
+          (m) => m.id.equals(newMealId),
+        )).write(const MealsCompanion(synced: Value(true)));
+      } catch (_) {}
+    }
+
+    return true;
+  }
+
   Future<void> syncFromRemote() async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
