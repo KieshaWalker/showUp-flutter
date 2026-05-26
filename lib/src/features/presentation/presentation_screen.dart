@@ -121,15 +121,28 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
           body: ListView(
             padding: AppPaddings.all,
             children: [
-              _HeroCard(
-                greeting: _greeting(
+              // Greeting — lives outside any card so it feels like the screen talking
+              Text(
+                _greeting(
                   now.hour,
                   profile?.displayName.isNotEmpty == true
                       ? profile!.displayName
                       : null,
                 ),
-                dateLabel: _dateLabel(now),
+                style: AppTextStyles.displayLarge,
               ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                _dateLabel(now),
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: AppColors.textOnDarkSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const _HeroCard(),
+              const SizedBox(height: AppSpacing.sm),
+              const _StatsRow(),
               const SizedBox(height: AppSpacing.lg),
               nutritionAsync.when(
                 data: (nutrition) => NutritionMacroRow(nutrition: nutrition),
@@ -281,9 +294,7 @@ class _TripleDial extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 class _HeroCard extends ConsumerStatefulWidget {
-  const _HeroCard({required this.greeting, required this.dateLabel});
-  final String greeting;
-  final String dateLabel;
+  const _HeroCard();
 
   @override
   ConsumerState<_HeroCard> createState() => _HeroCardState();
@@ -330,7 +341,6 @@ class _HeroCardState extends ConsumerState<_HeroCard>
     final calories = nutrition?.totalCalories ?? 0.0;
     final calGoal  = (nutrition?.goals?.calories ?? 2000.0).clamp(1.0, double.infinity);
     final calPct   = (calories / calGoal).clamp(0.0, 1.0);
-    final waterMl  = nutrition?.totalWaterMl ?? 0.0;
 
     final score      = _readinessRow?.computedScore ?? 70.0;
     final scoreColor = _heroScoreColor(score);
@@ -341,16 +351,11 @@ class _HeroCardState extends ConsumerState<_HeroCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Greeting + date
-          Text(widget.greeting, style: AppTextStyles.titleLarge),
-          Text(widget.dateLabel, style: AppTextStyles.bodyMedium),
-          const SizedBox(height: AppSpacing.lg),
-
           // Triple arc dial
           Center(
             child: SizedBox(
-              width: 220,
-              height: 220,
+              width: 240,
+              height: 240,
               child: AnimatedBuilder(
                 animation: _anim,
                 builder: (context, _) => CustomPaint(
@@ -413,30 +418,6 @@ class _HeroCardState extends ConsumerState<_HeroCard>
             ],
           ),
 
-          const SizedBox(height: AppSpacing.lg),
-
-          // Stats strip
-          Row(
-            children: [
-              _StatPill(
-                label: 'habits',
-                value: '$done / $total',
-                color: AppColors.terracotta,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _StatPill(
-                label: 'kcal',
-                value: calories.toInt().toString(),
-                color: AppColors.ochre,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _StatPill(
-                label: 'water',
-                value: '${waterMl.toInt()} ml',
-                color: AppColors.waterColor,
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -510,6 +491,71 @@ class _ArcLegend extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _StatsRow — three stat pills displayed below the hero card
+// ---------------------------------------------------------------------------
+
+class _StatsRow extends ConsumerWidget {
+  const _StatsRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final habits    = ref.watch(habitsNotifierProvider).value ?? [];
+    final nutrition = ref.watch(nutritionNotifierProvider).value;
+
+    final done    = habits.where((h) => h.isDone).length;
+    final total   = habits.length;
+    final calories = nutrition?.totalCalories ?? 0.0;
+    final waterMl  = nutrition?.totalWaterMl ?? 0.0;
+
+    return Row(
+      children: [
+        _StatPill(label: 'habits',  value: '$done / $total',          color: AppColors.terracotta),
+        const SizedBox(width: AppSpacing.sm),
+        _StatPill(label: 'kcal',    value: calories.toInt().toString(), color: AppColors.ochre),
+        const SizedBox(width: AppSpacing.sm),
+        _StatPill(label: 'water',   value: '${waterMl.toInt()} ml',   color: AppColors.waterColor),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _SectionHeader — consistent titled section divider with left accent bar
+// ---------------------------------------------------------------------------
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.title, {this.trailing});
+  final String title;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 3,
+            height: 18,
+            decoration: BoxDecoration(
+              color: AppColors.terracotta,
+              borderRadius: AppRadius.smAll,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(title, style: AppTextStyles.titleMedium),
+          if (trailing != null) ...[
+            const Spacer(),
+            Text(trailing!, style: AppTextStyles.labelSmall),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1119,73 +1165,58 @@ class _ShowFoodsToday extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Foods Eaten Today', style: AppTextStyles.labelSmall),
-            const SizedBox(height: AppSpacing.lg),
-            Column(
-              children:
-                  foods.map((food) {
-                    return GestureDetector(
-                      onLongPress: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                title: const Text('Delete Food Entry'),
-                                content: Text(
-                                  'Are you sure you want to delete "${food.name}"?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      ref
-                                          .read(
-                                            nutritionNotifierProvider.notifier,
-                                          )
-                                          .deleteFoodEntry(food.id);
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
-                              ),
-                        );
-                      },
+            _SectionHeader('Eaten Today', trailing: '${foods.length} items'),
+            AppGlass.card(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Column(
+                children: foods.map((food) {
+                  return GestureDetector(
+                    onLongPress: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Food Entry'),
+                          content: Text('Remove "${food.name}"?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                ref
+                                    .read(nutritionNotifierProvider.notifier)
+                                    .deleteFoodEntry(food.id);
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                       child: Row(
                         children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: AppColors.terracotta.withValues(
-                                alpha: 0.15,
-                              ),
-                              borderRadius: AppRadius.smAll,
-                            ),
-                            child: const Icon(
-                              Icons.set_meal_outlined,
-                              size: 14,
-                              color: AppColors.terracotta,
-                            ),
+                          Expanded(
+                            child: Text(food.name, style: AppTextStyles.bodyLarge),
                           ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(food.name, style: AppTextStyles.bodyMedium),
-                          const SizedBox(width: AppSpacing.xs),
                           Text(
                             '${food.calories.toInt()} kcal',
-                            style: AppTextStyles.labelSmall.copyWith(
+                            style: AppTextStyles.titleMedium.copyWith(
                               color: AppColors.terracotta,
                             ),
                           ),
                         ],
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ],
         );
@@ -1215,22 +1246,31 @@ class _HabitsCompletedToday extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Completed Today', style: AppTextStyles.bodyMedium),
-            const SizedBox(height: AppSpacing.sm),
-                 
-            Column(
-              children: completedToday
-                  .map((h) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        child: Row(
-                          children: [
-                            Text(h.habit.name, style: AppTextStyles.bodyMedium),
-                            const Spacer(),
-                            StreakBadge(h.streak),
-                          ],
-                        ),
-                      ))
-                  .toList(),
+            _SectionHeader('Done Today', trailing: '${completedToday.length} completed'),
+            AppGlass.card(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Column(
+                children: completedToday.map((h) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 18,
+                        color: AppColors.eucalyptus,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(h.habit.name, style: AppTextStyles.bodyLarge),
+                      ),
+                      StreakBadge(h.streak),
+                    ],
+                  ),
+                )).toList(),
+              ),
             ),
           ],
         );
@@ -1267,125 +1307,27 @@ class _HabitsCompletedToday extends ConsumerWidget {
 // │  To change what appears here, edit the `remaining` filter below.    │
 // └──────────────────────────────────────────────────────────────────────┘
 
-class _IncompleteHabitsListForDay extends ConsumerStatefulWidget {
+class _IncompleteHabitsListForDay extends ConsumerWidget {
   const _IncompleteHabitsListForDay();
 
   @override
-  ConsumerState<_IncompleteHabitsListForDay> createState() =>
-      _IncompleteHabitsListForDayState();
-}
-
-class _IncompleteHabitsListForDayState
-    extends ConsumerState<_IncompleteHabitsListForDay> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ref
-        .watch(habitsNotifierProvider)
-        .when(
-          loading: () => const SizedBox.shrink(),
-          error: (e, _) => const SizedBox.shrink(),
-          data: (habits) {
-            // !completedToday → hasn't been done yet today
-            // !isDone         → period goal (daily: today, weekly: week) not met
-            final remaining =
-                habits.where((h) => !h.completedToday && !h.isDone).toList();
-            if (remaining.isEmpty) return const SizedBox.shrink();
-
-            // Filter by search query (case-insensitive name match)
-            final filtered =
-                _query.isEmpty
-                    ? remaining
-                    : remaining
-                        .where(
-                          (h) => h.habit.name.toLowerCase().contains(
-                            _query.toLowerCase(),
-                          ),
-                        )
-                        .toList();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Remaining Today', style: AppTextStyles.labelSmall),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Search bar — only shown when there's more than one habit
-                if (remaining.length > 1) ...[
-                  AppGlass.card(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                    borderRadius: AppRadius.lgAll,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.search,
-                          size: 16,
-                          color: AppColors.textOnDarkTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (v) => setState(() => _query = v),
-                            style: AppTextStyles.bodyMedium,
-                            decoration: InputDecoration(
-                              hintText: 'Search habits…',
-                              hintStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textOnDarkTertiary,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                        if (_query.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: AppColors.textOnDarkTertiary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-
-                if (filtered.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Text(
-                      'No habits match "$_query"',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textOnDarkTertiary,
-                      ),
-                    ),
-                  )
-                else
-                  ...filtered.map((h) => _HabitTodayChip(h: h)),
-              ],
-            );
-          },
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(habitsNotifierProvider).when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (habits) {
+        final remaining =
+            habits.where((h) => !h.completedToday && !h.isDone).toList();
+        if (remaining.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader('To Do', trailing: '${remaining.length} left'),
+            ...remaining.map((h) => _HabitTodayChip(h: h)),
+          ],
         );
+      },
+    );
   }
 }
 
@@ -1435,7 +1377,7 @@ class _HabitTodayChip extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(h.habit.name, style: AppTextStyles.bodyMedium),
+                          Text(h.habit.name, style: AppTextStyles.titleMedium),
                           if (isWeekly)
                             Text(
                               '${h.completionsThisWeek}/${h.habit.targetDaysPerWeek}× this week',
@@ -1446,10 +1388,20 @@ class _HabitTodayChip extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (h.streak > 0) ...[
-                      const SizedBox(width: AppSpacing.md),
-                      StreakBadge(h.streak),
-                    ],
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (h.streak > 0) ...[
+                          StreakBadge(h.streak),
+                          const SizedBox(width: AppSpacing.sm),
+                        ],
+                        const Icon(
+                          Icons.radio_button_unchecked,
+                          size: 20,
+                          color: AppColors.textOnDarkTertiary,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
