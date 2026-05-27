@@ -518,7 +518,7 @@ class _StatsRow extends ConsumerWidget {
         const SizedBox(width: AppSpacing.sm),
         _StatPill(label: 'kcal',    value: calories.toInt().toString(), color: AppColors.ochre),
         const SizedBox(width: AppSpacing.sm),
-        _StatPill(label: 'water',   value: '${waterMl.toInt()} ml',   color: AppColors.waterColor),
+        _StatPill(label: 'water',   value: '${(waterMl / 1000).toStringAsFixed(1)} L',   color: AppColors.waterColor),
       ],
     );
   }

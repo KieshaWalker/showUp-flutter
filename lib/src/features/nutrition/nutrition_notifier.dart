@@ -103,29 +103,20 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
   Stream<TodayNutrition> build() {
     final db = ref.watch(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
 
+    // Stream watchers are date-agnostic so they still fire after midnight
+    // without needing to recreate the provider. The asyncMap recomputes the
+    // current day's window fresh on every trigger.
     final mealsStream =
-        (db.select(db.meals)..where(
-          (m) =>
-              m.userId.equals(userId) &
-              m.loggedAt.isBiggerOrEqualValue(startOfDay) &
-              m.loggedAt.isSmallerThanValue(endOfDay),
-        )).watch();
+        (db.select(db.meals)..where((m) => m.userId.equals(userId))).watch();
 
     final entriesStream =
         (db.select(db.foodEntries)
           ..where((e) => e.userId.equals(userId))).watch();
 
     final waterStream =
-        (db.select(db.waterLogs)..where(
-          (w) =>
-              w.userId.equals(userId) &
-              w.loggedAt.isBiggerOrEqualValue(startOfDay) &
-              w.loggedAt.isSmallerThanValue(endOfDay),
-        )).watch();
+        (db.select(db.waterLogs)
+          ..where((w) => w.userId.equals(userId))).watch();
 
     final goalsStream =
         (db.select(db.dailyNutritionGoals)
@@ -141,6 +132,12 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     ]).map((_) => null);
 
     return trigger.asyncMap((_) async {
+      // Compute today's window fresh on every trigger so the view stays correct
+      // if the app is used past midnight.
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
       // re‑query everything each time any underlying table changes
       final meals =
           await (db.select(db.meals)..where(

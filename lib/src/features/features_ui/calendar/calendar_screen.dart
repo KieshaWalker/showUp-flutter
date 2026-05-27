@@ -13,6 +13,8 @@
 //   nutrition_notifier.dart — nutritionNotifierProvider for per-day calorie totals
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_theme.dart';
@@ -67,6 +69,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _displayMonth;
   List<_WeekSummary?> _weekSummaries = [];
   bool _loadingMonth = false;
+  int _loadGeneration = 0;
+  Timer? _debounce;
 
   static const _monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -78,15 +82,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.initState();
     final now = DateTime.now();
     _displayMonth = DateTime(now.year, now.month);
-    _loadMonthSummaries();
+    _loadMonthSummaries(_loadGeneration);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleReload() {
+    _debounce?.cancel();
+    _debounce = Timer(Duration.zero, () => _loadMonthSummaries(++_loadGeneration));
   }
 
   void _prevMonth() {
     setState(() {
       _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1);
       _weekSummaries = [];
+      _loadGeneration++;
     });
-    _loadMonthSummaries();
+    _loadMonthSummaries(_loadGeneration);
   }
 
   void _nextMonth() {
@@ -94,8 +110,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     setState(() {
       _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1);
       _weekSummaries = [];
+      _loadGeneration++;
     });
-    _loadMonthSummaries();
+    _loadMonthSummaries(_loadGeneration);
   }
 
   bool _canGoNext() {
@@ -104,7 +121,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _displayMonth.month == now.month);
   }
 
-  Future<void> _loadMonthSummaries() async {
+  Future<void> _loadMonthSummaries(int generation) async {
     setState(() => _loadingMonth = true);
 
     final firstDay = DateTime(_displayMonth.year, _displayMonth.month, 1);
@@ -141,9 +158,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           .read(habitsNotifierProvider.notifier)
           .getWeekHabitStats(weekStart, weekEnd);
 
+      if (generation != _loadGeneration) return;
+
       final nutrition = await ref
           .read(nutritionNotifierProvider.notifier)
           .getNutritionForDateRange(weekStart, weekEnd);
+
+      if (generation != _loadGeneration) return;
 
       final goals = nutrition.goals;
       summaries.add(_WeekSummary(
@@ -158,7 +179,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ));
     }
 
-    if (mounted) {
+    if (mounted && generation == _loadGeneration) {
       setState(() {
         _weekSummaries = summaries;
         _loadingMonth = false;
@@ -177,8 +198,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(habitsNotifierProvider, (_, _) => _loadMonthSummaries());
-    ref.listen(nutritionNotifierProvider, (_, _) => _loadMonthSummaries());
+    ref.listen(habitsNotifierProvider, (_, _) => _scheduleReload());
+    ref.listen(nutritionNotifierProvider, (_, _) => _scheduleReload());
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -399,7 +420,7 @@ class _WeekHeader extends StatelessWidget {
       accentColor = const Color.fromARGB(255, 186, 118, 0);
       pctLabel = '${(overallPct! * 100).round()}%';
     } else {
-      accentColor = const Color.fromARGB(255, 9, 0, 64);
+      accentColor = AppColors.terracotta;
       pctLabel = '${(overallPct! * 100).round()}%';
     }
 

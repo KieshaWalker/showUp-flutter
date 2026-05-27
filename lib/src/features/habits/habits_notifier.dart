@@ -678,10 +678,15 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     // Use the same UTC-midnight-of-local-date encoding as toggleCompletion.
     final d = DateTime.utc(date.year, date.month, date.day);
+    // Upper bound for createdAt: local midnight of the day after `date`.
+    // Uses local time to match how Drift stores createdAt (DateTime.now()).
+    final createdAtCutoff = DateTime(date.year, date.month, date.day + 1);
 
     final habits =
         await (db.select(db.habits)
-          ..where((h) => h.userId.equals(userId))).get();
+          ..where((h) =>
+              h.userId.equals(userId) &
+              h.createdAt.isSmallerThanValue(createdAtCutoff))).get();
 
     // SQL comparison: matches exactly the UTC midnight timestamp stored.
     final completions =
@@ -713,7 +718,9 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
 
     final habits =
         await (db.select(db.habits)
-          ..where((h) => h.userId.equals(userId))).get();
+          ..where((h) =>
+              h.userId.equals(userId) &
+              h.createdAt.isSmallerThanValue(weekEnd))).get();
     if (habits.isEmpty) return (done: 0, total: 0);
 
     final completions =
@@ -820,9 +827,10 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // _calculateDailyStreak
   // ---------------------------------------------------------------------------
   //
-  // Walks the completion list backward from today, counting consecutive days
-  // that have a completion. If today has no completion the streak is still
-  // counted (streak = 0 means broken yesterday, not broken today).
+  // Walks the completion list backward from the most-recent completion date,
+  // counting consecutive days. Starting from the most recent completion (rather
+  // than today) means the streak survives until end-of-day even if today's
+  // habit hasn't been logged yet — it only breaks if yesterday was also missed.
   //
   // ┌──────────────────────────────────────────────────────────────────────┐
   // │  To change streak logic:                                             │
@@ -833,8 +841,15 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   int _calculateDailyStreak(List<HabitCompletion> completions) {
     if (completions.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final mostRecent = _storedDateOnly(completions.first.completedDate);
+    // If the last completion was before yesterday, the streak is definitively
+    // broken regardless of whether today is done yet.
+    if (mostRecent != today && mostRecent != yesterday) return 0;
+
     int streak = 0;
-    DateTime cursor = today; // starts at today, walks backward
+    DateTime cursor = mostRecent;
 
     for (final c in completions) {
       final d = _storedDateOnly(c.completedDate);
@@ -842,10 +857,8 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
         streak++;
         cursor = cursor.subtract(const Duration(days: 1));
       } else if (d.isBefore(cursor)) {
-        // Gap found — streak is broken.
         break;
       }
-      // d.isAfter(cursor): future-dated entry (shouldn't happen); skip it.
     }
     return streak;
   }
@@ -854,34 +867,42 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // _calculateWeeklyStreak
   // ---------------------------------------------------------------------------
   //
-  // Walks backward week-by-week from the current week, counting consecutive
-  // weeks where completions >= [target]. Checks up to 52 weeks (1 year).
+  // Walks backward week-by-week, counting consecutive weeks where
+  // completions >= [target]. Checks up to 52 weeks (1 year).
   //
-  // NOTE: The current (in-progress) week counts toward the streak even if the
-  // target hasn't been fully met yet, as long as it eventually is. This is
-  // correct because the stream re-evaluates as completions are added.
+  // If the current week hasn't met the target yet (in-progress), it is skipped
+  // so the streak from prior weeks stays intact until the week ends.
   int _calculateWeeklyStreak(List<HabitCompletion> completions, int target) {
     if (completions.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
     int streak = 0;
-    DateTime weekStart = _startOfWeek(today); // start from current week
+    DateTime weekStart = _startOfWeek(today);
+
+    // If the current week is still in progress and below target, skip it —
+    // the historical streak shouldn't reset mid-week.
+    final currentWeekEnd = weekStart.add(const Duration(days: 7));
+    final currentCount = completions
+        .where((c) =>
+            !_storedDateOnly(c.completedDate).isBefore(weekStart) &&
+            _storedDateOnly(c.completedDate).isBefore(currentWeekEnd))
+        .length;
+    if (currentCount < target) {
+      weekStart = weekStart.subtract(const Duration(days: 7));
+    }
 
     for (var i = 0; i < 52; i++) {
       final weekEnd = weekStart.add(const Duration(days: 7));
-      final count =
-          completions
-              .where(
-                (c) =>
-                    !_storedDateOnly(c.completedDate).isBefore(weekStart) &&
-                    _storedDateOnly(c.completedDate).isBefore(weekEnd),
-              )
-              .length;
+      final count = completions
+          .where((c) =>
+              !_storedDateOnly(c.completedDate).isBefore(weekStart) &&
+              _storedDateOnly(c.completedDate).isBefore(weekEnd))
+          .length;
 
       if (count >= target) {
         streak++;
-        weekStart = weekStart.subtract(const Duration(days: 7)); // go back
+        weekStart = weekStart.subtract(const Duration(days: 7));
       } else {
-        break; // streak broken
+        break;
       }
     }
     return streak;
