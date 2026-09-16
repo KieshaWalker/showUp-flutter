@@ -915,6 +915,7 @@ class _PantryFoodTile extends ConsumerWidget {
                               protein: food.protein * servings,
                               carbs: food.carbs * servings,
                               fat: food.fat * servings,
+                              sugar: food.sugar * servings,
                             );
                         Navigator.pop(dialogCtx); // close dialog
                         sheetNavigator.pop(); // close food sheet

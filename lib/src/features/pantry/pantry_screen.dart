@@ -202,6 +202,15 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
               required double carbs,
               required double fat,
               required String servingLabel,
+              required double sugar,
+              required double fiber,
+              required double sodium,
+              required double cholesterol,
+              required double potassium,
+              required double calcium,
+              required double iron,
+              required double vitaminA,
+              required double vitaminC,
             }) async {
               final notifier = ref.read(pantryNotifierProvider.notifier);
               if (food == null) {
@@ -212,6 +221,15 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                   carbs: carbs,
                   fat: fat,
                   servingLabel: servingLabel,
+                  sugar: sugar,
+                  fiber: fiber,
+                  sodium: sodium,
+                  cholesterol: cholesterol,
+                  potassium: potassium,
+                  calcium: calcium,
+                  iron: iron,
+                  vitaminA: vitaminA,
+                  vitaminC: vitaminC,
                 );
               } else {
                 await notifier.updateFood(
@@ -222,6 +240,15 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                   carbs: carbs,
                   fat: fat,
                   servingLabel: servingLabel,
+                  sugar: sugar,
+                  fiber: fiber,
+                  sodium: sodium,
+                  cholesterol: cholesterol,
+                  potassium: potassium,
+                  calcium: calcium,
+                  iron: iron,
+                  vitaminA: vitaminA,
+                  vitaminC: vitaminC,
                 );
               }
             },
@@ -340,7 +367,7 @@ class _FoodCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'P ${food.protein.toInt()}  C ${food.carbs.toInt()}  F ${food.fat.toInt()}',
+                      'P ${food.protein.toInt()}  C ${food.carbs.toInt()}  F ${food.fat.toInt()}  Sug ${food.sugar.toInt()}',
                       style: AppTextStyles.labelSmall,
                     ),
                   ],
@@ -373,6 +400,15 @@ typedef _SaveCallback =
       required double carbs,
       required double fat,
       required String servingLabel,
+      required double sugar,
+      required double fiber,
+      required double sodium,
+      required double cholesterol,
+      required double potassium,
+      required double calcium,
+      required double iron,
+      required double vitaminA,
+      required double vitaminC,
     });
 
 class _FoodFormSheet extends StatefulWidget {
@@ -391,7 +427,16 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
   late final TextEditingController _proCtrl;
   late final TextEditingController _carbCtrl;
   late final TextEditingController _fatCtrl;
+  late final TextEditingController _sugarCtrl;
   late final TextEditingController _servingCtrl;
+  late final TextEditingController _fiberCtrl;
+  late final TextEditingController _sodiumCtrl;
+  late final TextEditingController _cholesterolCtrl;
+  late final TextEditingController _potassiumCtrl;
+  late final TextEditingController _calciumCtrl;
+  late final TextEditingController _ironCtrl;
+  late final TextEditingController _vitaminACtrl;
+  late final TextEditingController _vitaminCCtrl;
   bool _saving = false;
 
   bool get _isEditing => widget.food != null;
@@ -413,7 +458,34 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
     _fatCtrl = TextEditingController(
       text: f != null ? f.fat.toStringAsFixed(1) : '',
     );
+    _sugarCtrl = TextEditingController(
+      text: f != null ? f.sugar.toStringAsFixed(1) : '',
+    );
     _servingCtrl = TextEditingController(text: f?.servingLabel ?? '1 serving');
+    _fiberCtrl = TextEditingController(
+      text: f != null ? f.fiber.toStringAsFixed(1) : '',
+    );
+    _sodiumCtrl = TextEditingController(
+      text: f != null ? f.sodium.toStringAsFixed(0) : '',
+    );
+    _cholesterolCtrl = TextEditingController(
+      text: f != null ? f.cholesterol.toStringAsFixed(0) : '',
+    );
+    _potassiumCtrl = TextEditingController(
+      text: f != null ? f.potassium.toStringAsFixed(0) : '',
+    );
+    _calciumCtrl = TextEditingController(
+      text: f != null ? f.calcium.toStringAsFixed(0) : '',
+    );
+    _ironCtrl = TextEditingController(
+      text: f != null ? f.iron.toStringAsFixed(1) : '',
+    );
+    _vitaminACtrl = TextEditingController(
+      text: f != null ? f.vitaminA.toStringAsFixed(0) : '',
+    );
+    _vitaminCCtrl = TextEditingController(
+      text: f != null ? f.vitaminC.toStringAsFixed(0) : '',
+    );
   }
 
   @override
@@ -423,7 +495,16 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
     _proCtrl.dispose();
     _carbCtrl.dispose();
     _fatCtrl.dispose();
+    _sugarCtrl.dispose();
     _servingCtrl.dispose();
+    _fiberCtrl.dispose();
+    _sodiumCtrl.dispose();
+    _cholesterolCtrl.dispose();
+    _potassiumCtrl.dispose();
+    _calciumCtrl.dispose();
+    _ironCtrl.dispose();
+    _vitaminACtrl.dispose();
+    _vitaminCCtrl.dispose();
     super.dispose();
   }
 
@@ -437,6 +518,15 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
       protein: double.tryParse(_proCtrl.text) ?? 0,
       carbs: double.tryParse(_carbCtrl.text) ?? 0,
       fat: double.tryParse(_fatCtrl.text) ?? 0,
+      sugar: double.tryParse(_sugarCtrl.text) ?? 0,
+      fiber: double.tryParse(_fiberCtrl.text) ?? 0,
+      sodium: double.tryParse(_sodiumCtrl.text) ?? 0,
+      cholesterol: double.tryParse(_cholesterolCtrl.text) ?? 0,
+      potassium: double.tryParse(_potassiumCtrl.text) ?? 0,
+      calcium: double.tryParse(_calciumCtrl.text) ?? 0,
+      iron: double.tryParse(_ironCtrl.text) ?? 0,
+      vitaminA: double.tryParse(_vitaminACtrl.text) ?? 0,
+      vitaminC: double.tryParse(_vitaminCCtrl.text) ?? 0,
       servingLabel:
           _servingCtrl.text.trim().isEmpty
               ? '1 serving'
@@ -530,6 +620,108 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
                   ),
                 ),
               ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _Field(
+                    ctrl: _sugarCtrl,
+                    label: 'Sugar',
+                    unit: 'g',
+                    numeric: true,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _Field(
+                    ctrl: _fiberCtrl,
+                    label: 'Fiber',
+                    unit: 'g',
+                    numeric: true,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text('Micronutrients (optional)', style: AppTextStyles.labelSmall),
+                childrenPadding: const EdgeInsets.only(top: AppSpacing.sm),
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Field(
+                          ctrl: _sodiumCtrl,
+                          label: 'Sodium',
+                          unit: 'mg',
+                          numeric: true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _Field(
+                          ctrl: _cholesterolCtrl,
+                          label: 'Cholesterol',
+                          unit: 'mg',
+                          numeric: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Field(
+                          ctrl: _potassiumCtrl,
+                          label: 'Potassium',
+                          unit: 'mg',
+                          numeric: true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _Field(
+                          ctrl: _calciumCtrl,
+                          label: 'Calcium',
+                          unit: 'mg',
+                          numeric: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Field(
+                          ctrl: _ironCtrl,
+                          label: 'Iron',
+                          unit: 'mg',
+                          numeric: true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _Field(
+                          ctrl: _vitaminACtrl,
+                          label: 'Vitamin A',
+                          unit: 'mcg',
+                          numeric: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  _Field(
+                    ctrl: _vitaminCCtrl,
+                    label: 'Vitamin C',
+                    unit: 'mg',
+                    numeric: true,
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: AppSpacing.lg - 4),

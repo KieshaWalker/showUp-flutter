@@ -1223,6 +1223,7 @@ class _ShowFoodsToday extends ConsumerWidget {
                 children:
                     foods.map((food) {
                       return GestureDetector(
+                        onTap: () => _showFoodNutritionDialog(context, food),
                         onLongPress: () {
                           showDialog(
                             context: context,
@@ -1270,6 +1271,12 @@ class _ShowFoodsToday extends ConsumerWidget {
                                   color: AppColors.terracotta,
                                 ),
                               ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: AppColors.textOnDarkTertiary,
+                              ),
                             ],
                           ),
                         ),
@@ -1280,6 +1287,87 @@ class _ShowFoodsToday extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showFoodNutritionDialog(BuildContext context, FoodEntry food) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(food.name, style: AppTextStyles.titleMedium),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${food.calories.toInt()} kcal',
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.terracotta,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: NutritionMacroPill(
+                          label: 'Protein',
+                          current: food.protein,
+                          goal: null,
+                          unit: 'g',
+                          color: AppColors.proteinColor,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: NutritionMacroPill(
+                          label: 'Carbs',
+                          current: food.carbs,
+                          goal: null,
+                          unit: 'g',
+                          color: AppColors.carbColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: NutritionMacroPill(
+                          label: 'Fat',
+                          current: food.fat,
+                          goal: null,
+                          unit: 'g',
+                          color: AppColors.fatColor,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: NutritionMacroPill(
+                          label: 'Sugar',
+                          current: food.sugar,
+                          goal: null,
+                          unit: 'g',
+                          color: AppColors.sugarColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
     );
   }
 }

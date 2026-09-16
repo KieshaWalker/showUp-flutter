@@ -32,6 +32,8 @@
 //   v7 — added readiness system: UserSubstances, SubstanceLogs,
 //         ReadinessCheckIns, DailyReadiness
 //   v8 — added sugar to FoodEntries
+//   v9 — added sugar + micronutrients (fiber, sodium, cholesterol,
+//         potassium, calcium, iron, vitaminA, vitaminC) to PantryFoods
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -171,6 +173,33 @@ class PantryFoods extends Table {
 
   /// Fat per serving (g)
   RealColumn get fat => real().withDefault(const Constant(0.0))();
+
+  /// Sugar per serving (g)
+  RealColumn get sugar => real().withDefault(const Constant(0.0))();
+
+  /// Fiber per serving (g)
+  RealColumn get fiber => real().withDefault(const Constant(0.0))();
+
+  /// Sodium per serving (mg)
+  RealColumn get sodium => real().withDefault(const Constant(0.0))();
+
+  /// Cholesterol per serving (mg)
+  RealColumn get cholesterol => real().withDefault(const Constant(0.0))();
+
+  /// Potassium per serving (mg)
+  RealColumn get potassium => real().withDefault(const Constant(0.0))();
+
+  /// Calcium per serving (mg)
+  RealColumn get calcium => real().withDefault(const Constant(0.0))();
+
+  /// Iron per serving (mg)
+  RealColumn get iron => real().withDefault(const Constant(0.0))();
+
+  /// Vitamin A per serving (mcg)
+  RealColumn get vitaminA => real().withDefault(const Constant(0.0))();
+
+  /// Vitamin C per serving (mg)
+  RealColumn get vitaminC => real().withDefault(const Constant(0.0))();
 
   /// Human-readable serving description e.g. "1 slice (28g)", "1 egg (50g)"
   TextColumn get servingLabel =>
@@ -344,7 +373,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -392,6 +421,23 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'ALTER TABLE food_entries ADD COLUMN sugar REAL NOT NULL DEFAULT 0.0',
         );
+      }
+      if (from < 9) {
+        for (final column in [
+          'sugar',
+          'fiber',
+          'sodium',
+          'cholesterol',
+          'potassium',
+          'calcium',
+          'iron',
+          'vitamin_a',
+          'vitamin_c',
+        ]) {
+          await customStatement(
+            'ALTER TABLE pantry_foods ADD COLUMN $column REAL NOT NULL DEFAULT 0.0',
+          );
+        }
       }
     },
   );

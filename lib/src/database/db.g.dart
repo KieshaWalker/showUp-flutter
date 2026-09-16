@@ -3225,6 +3225,106 @@ class $PantryFoodsTable extends PantryFoods
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _cholesterolMeta = const VerificationMeta(
+    'cholesterol',
+  );
+  @override
+  late final GeneratedColumn<double> cholesterol = GeneratedColumn<double>(
+    'cholesterol',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _potassiumMeta = const VerificationMeta(
+    'potassium',
+  );
+  @override
+  late final GeneratedColumn<double> potassium = GeneratedColumn<double>(
+    'potassium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _calciumMeta = const VerificationMeta(
+    'calcium',
+  );
+  @override
+  late final GeneratedColumn<double> calcium = GeneratedColumn<double>(
+    'calcium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _ironMeta = const VerificationMeta('iron');
+  @override
+  late final GeneratedColumn<double> iron = GeneratedColumn<double>(
+    'iron',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _vitaminAMeta = const VerificationMeta(
+    'vitaminA',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminA = GeneratedColumn<double>(
+    'vitamin_a',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _vitaminCMeta = const VerificationMeta(
+    'vitaminC',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminC = GeneratedColumn<double>(
+    'vitamin_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _servingLabelMeta = const VerificationMeta(
     'servingLabel',
   );
@@ -3286,6 +3386,15 @@ class $PantryFoodsTable extends PantryFoods
     protein,
     carbs,
     fat,
+    sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     servingLabel,
     isPreset,
     createdAt,
@@ -3344,6 +3453,63 @@ class $PantryFoodsTable extends PantryFoods
       context.handle(
         _fatMeta,
         fat.isAcceptableOrUnknown(data['fat']!, _fatMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
+    if (data.containsKey('cholesterol')) {
+      context.handle(
+        _cholesterolMeta,
+        cholesterol.isAcceptableOrUnknown(
+          data['cholesterol']!,
+          _cholesterolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('potassium')) {
+      context.handle(
+        _potassiumMeta,
+        potassium.isAcceptableOrUnknown(data['potassium']!, _potassiumMeta),
+      );
+    }
+    if (data.containsKey('calcium')) {
+      context.handle(
+        _calciumMeta,
+        calcium.isAcceptableOrUnknown(data['calcium']!, _calciumMeta),
+      );
+    }
+    if (data.containsKey('iron')) {
+      context.handle(
+        _ironMeta,
+        iron.isAcceptableOrUnknown(data['iron']!, _ironMeta),
+      );
+    }
+    if (data.containsKey('vitamin_a')) {
+      context.handle(
+        _vitaminAMeta,
+        vitaminA.isAcceptableOrUnknown(data['vitamin_a']!, _vitaminAMeta),
+      );
+    }
+    if (data.containsKey('vitamin_c')) {
+      context.handle(
+        _vitaminCMeta,
+        vitaminC.isAcceptableOrUnknown(data['vitamin_c']!, _vitaminCMeta),
       );
     }
     if (data.containsKey('serving_label')) {
@@ -3416,6 +3582,51 @@ class $PantryFoodsTable extends PantryFoods
             DriftSqlType.double,
             data['${effectivePrefix}fat'],
           )!,
+      sugar:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}sugar'],
+          )!,
+      fiber:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}fiber'],
+          )!,
+      sodium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}sodium'],
+          )!,
+      cholesterol:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}cholesterol'],
+          )!,
+      potassium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}potassium'],
+          )!,
+      calcium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}calcium'],
+          )!,
+      iron:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}iron'],
+          )!,
+      vitaminA:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_a'],
+          )!,
+      vitaminC:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_c'],
+          )!,
       servingLabel:
           attachedDatabase.typeMapping.read(
             DriftSqlType.string,
@@ -3465,6 +3676,33 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
   /// Fat per serving (g)
   final double fat;
 
+  /// Sugar per serving (g)
+  final double sugar;
+
+  /// Fiber per serving (g)
+  final double fiber;
+
+  /// Sodium per serving (mg)
+  final double sodium;
+
+  /// Cholesterol per serving (mg)
+  final double cholesterol;
+
+  /// Potassium per serving (mg)
+  final double potassium;
+
+  /// Calcium per serving (mg)
+  final double calcium;
+
+  /// Iron per serving (mg)
+  final double iron;
+
+  /// Vitamin A per serving (mcg)
+  final double vitaminA;
+
+  /// Vitamin C per serving (mg)
+  final double vitaminC;
+
   /// Human-readable serving description e.g. "1 slice (28g)", "1 egg (50g)"
   final String servingLabel;
 
@@ -3480,6 +3718,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     required this.protein,
     required this.carbs,
     required this.fat,
+    required this.sugar,
+    required this.fiber,
+    required this.sodium,
+    required this.cholesterol,
+    required this.potassium,
+    required this.calcium,
+    required this.iron,
+    required this.vitaminA,
+    required this.vitaminC,
     required this.servingLabel,
     required this.isPreset,
     required this.createdAt,
@@ -3497,6 +3744,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     map['protein'] = Variable<double>(protein);
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
+    map['sugar'] = Variable<double>(sugar);
+    map['fiber'] = Variable<double>(fiber);
+    map['sodium'] = Variable<double>(sodium);
+    map['cholesterol'] = Variable<double>(cholesterol);
+    map['potassium'] = Variable<double>(potassium);
+    map['calcium'] = Variable<double>(calcium);
+    map['iron'] = Variable<double>(iron);
+    map['vitamin_a'] = Variable<double>(vitaminA);
+    map['vitamin_c'] = Variable<double>(vitaminC);
     map['serving_label'] = Variable<String>(servingLabel);
     map['is_preset'] = Variable<bool>(isPreset);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -3514,6 +3770,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       protein: Value(protein),
       carbs: Value(carbs),
       fat: Value(fat),
+      sugar: Value(sugar),
+      fiber: Value(fiber),
+      sodium: Value(sodium),
+      cholesterol: Value(cholesterol),
+      potassium: Value(potassium),
+      calcium: Value(calcium),
+      iron: Value(iron),
+      vitaminA: Value(vitaminA),
+      vitaminC: Value(vitaminC),
       servingLabel: Value(servingLabel),
       isPreset: Value(isPreset),
       createdAt: Value(createdAt),
@@ -3534,6 +3799,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       protein: serializer.fromJson<double>(json['protein']),
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
+      sugar: serializer.fromJson<double>(json['sugar']),
+      fiber: serializer.fromJson<double>(json['fiber']),
+      sodium: serializer.fromJson<double>(json['sodium']),
+      cholesterol: serializer.fromJson<double>(json['cholesterol']),
+      potassium: serializer.fromJson<double>(json['potassium']),
+      calcium: serializer.fromJson<double>(json['calcium']),
+      iron: serializer.fromJson<double>(json['iron']),
+      vitaminA: serializer.fromJson<double>(json['vitaminA']),
+      vitaminC: serializer.fromJson<double>(json['vitaminC']),
       servingLabel: serializer.fromJson<String>(json['servingLabel']),
       isPreset: serializer.fromJson<bool>(json['isPreset']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -3551,6 +3825,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       'protein': serializer.toJson<double>(protein),
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
+      'sugar': serializer.toJson<double>(sugar),
+      'fiber': serializer.toJson<double>(fiber),
+      'sodium': serializer.toJson<double>(sodium),
+      'cholesterol': serializer.toJson<double>(cholesterol),
+      'potassium': serializer.toJson<double>(potassium),
+      'calcium': serializer.toJson<double>(calcium),
+      'iron': serializer.toJson<double>(iron),
+      'vitaminA': serializer.toJson<double>(vitaminA),
+      'vitaminC': serializer.toJson<double>(vitaminC),
       'servingLabel': serializer.toJson<String>(servingLabel),
       'isPreset': serializer.toJson<bool>(isPreset),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -3566,6 +3849,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     double? protein,
     double? carbs,
     double? fat,
+    double? sugar,
+    double? fiber,
+    double? sodium,
+    double? cholesterol,
+    double? potassium,
+    double? calcium,
+    double? iron,
+    double? vitaminA,
+    double? vitaminC,
     String? servingLabel,
     bool? isPreset,
     DateTime? createdAt,
@@ -3578,6 +3870,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     protein: protein ?? this.protein,
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
+    sugar: sugar ?? this.sugar,
+    fiber: fiber ?? this.fiber,
+    sodium: sodium ?? this.sodium,
+    cholesterol: cholesterol ?? this.cholesterol,
+    potassium: potassium ?? this.potassium,
+    calcium: calcium ?? this.calcium,
+    iron: iron ?? this.iron,
+    vitaminA: vitaminA ?? this.vitaminA,
+    vitaminC: vitaminC ?? this.vitaminC,
     servingLabel: servingLabel ?? this.servingLabel,
     isPreset: isPreset ?? this.isPreset,
     createdAt: createdAt ?? this.createdAt,
@@ -3592,6 +3893,16 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
+      cholesterol:
+          data.cholesterol.present ? data.cholesterol.value : this.cholesterol,
+      potassium: data.potassium.present ? data.potassium.value : this.potassium,
+      calcium: data.calcium.present ? data.calcium.value : this.calcium,
+      iron: data.iron.present ? data.iron.value : this.iron,
+      vitaminA: data.vitaminA.present ? data.vitaminA.value : this.vitaminA,
+      vitaminC: data.vitaminC.present ? data.vitaminC.value : this.vitaminC,
       servingLabel:
           data.servingLabel.present
               ? data.servingLabel.value
@@ -3612,6 +3923,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('servingLabel: $servingLabel, ')
           ..write('isPreset: $isPreset, ')
           ..write('createdAt: $createdAt, ')
@@ -3629,6 +3949,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
     protein,
     carbs,
     fat,
+    sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     servingLabel,
     isPreset,
     createdAt,
@@ -3645,6 +3974,15 @@ class PantryFood extends DataClass implements Insertable<PantryFood> {
           other.protein == this.protein &&
           other.carbs == this.carbs &&
           other.fat == this.fat &&
+          other.sugar == this.sugar &&
+          other.fiber == this.fiber &&
+          other.sodium == this.sodium &&
+          other.cholesterol == this.cholesterol &&
+          other.potassium == this.potassium &&
+          other.calcium == this.calcium &&
+          other.iron == this.iron &&
+          other.vitaminA == this.vitaminA &&
+          other.vitaminC == this.vitaminC &&
           other.servingLabel == this.servingLabel &&
           other.isPreset == this.isPreset &&
           other.createdAt == this.createdAt &&
@@ -3659,6 +3997,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
   final Value<double> protein;
   final Value<double> carbs;
   final Value<double> fat;
+  final Value<double> sugar;
+  final Value<double> fiber;
+  final Value<double> sodium;
+  final Value<double> cholesterol;
+  final Value<double> potassium;
+  final Value<double> calcium;
+  final Value<double> iron;
+  final Value<double> vitaminA;
+  final Value<double> vitaminC;
   final Value<String> servingLabel;
   final Value<bool> isPreset;
   final Value<DateTime> createdAt;
@@ -3672,6 +4019,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.servingLabel = const Value.absent(),
     this.isPreset = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3686,6 +4042,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.servingLabel = const Value.absent(),
     this.isPreset = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3701,6 +4066,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? sugar,
+    Expression<double>? fiber,
+    Expression<double>? sodium,
+    Expression<double>? cholesterol,
+    Expression<double>? potassium,
+    Expression<double>? calcium,
+    Expression<double>? iron,
+    Expression<double>? vitaminA,
+    Expression<double>? vitaminC,
     Expression<String>? servingLabel,
     Expression<bool>? isPreset,
     Expression<DateTime>? createdAt,
@@ -3715,6 +4089,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (sugar != null) 'sugar': sugar,
+      if (fiber != null) 'fiber': fiber,
+      if (sodium != null) 'sodium': sodium,
+      if (cholesterol != null) 'cholesterol': cholesterol,
+      if (potassium != null) 'potassium': potassium,
+      if (calcium != null) 'calcium': calcium,
+      if (iron != null) 'iron': iron,
+      if (vitaminA != null) 'vitamin_a': vitaminA,
+      if (vitaminC != null) 'vitamin_c': vitaminC,
       if (servingLabel != null) 'serving_label': servingLabel,
       if (isPreset != null) 'is_preset': isPreset,
       if (createdAt != null) 'created_at': createdAt,
@@ -3731,6 +4114,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     Value<double>? protein,
     Value<double>? carbs,
     Value<double>? fat,
+    Value<double>? sugar,
+    Value<double>? fiber,
+    Value<double>? sodium,
+    Value<double>? cholesterol,
+    Value<double>? potassium,
+    Value<double>? calcium,
+    Value<double>? iron,
+    Value<double>? vitaminA,
+    Value<double>? vitaminC,
     Value<String>? servingLabel,
     Value<bool>? isPreset,
     Value<DateTime>? createdAt,
@@ -3745,6 +4137,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      sugar: sugar ?? this.sugar,
+      fiber: fiber ?? this.fiber,
+      sodium: sodium ?? this.sodium,
+      cholesterol: cholesterol ?? this.cholesterol,
+      potassium: potassium ?? this.potassium,
+      calcium: calcium ?? this.calcium,
+      iron: iron ?? this.iron,
+      vitaminA: vitaminA ?? this.vitaminA,
+      vitaminC: vitaminC ?? this.vitaminC,
       servingLabel: servingLabel ?? this.servingLabel,
       isPreset: isPreset ?? this.isPreset,
       createdAt: createdAt ?? this.createdAt,
@@ -3777,6 +4178,33 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
+    if (cholesterol.present) {
+      map['cholesterol'] = Variable<double>(cholesterol.value);
+    }
+    if (potassium.present) {
+      map['potassium'] = Variable<double>(potassium.value);
+    }
+    if (calcium.present) {
+      map['calcium'] = Variable<double>(calcium.value);
+    }
+    if (iron.present) {
+      map['iron'] = Variable<double>(iron.value);
+    }
+    if (vitaminA.present) {
+      map['vitamin_a'] = Variable<double>(vitaminA.value);
+    }
+    if (vitaminC.present) {
+      map['vitamin_c'] = Variable<double>(vitaminC.value);
+    }
     if (servingLabel.present) {
       map['serving_label'] = Variable<String>(servingLabel.value);
     }
@@ -3805,6 +4233,15 @@ class PantryFoodsCompanion extends UpdateCompanion<PantryFood> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('servingLabel: $servingLabel, ')
           ..write('isPreset: $isPreset, ')
           ..write('createdAt: $createdAt, ')
@@ -7987,6 +8424,15 @@ typedef $$PantryFoodsTableCreateCompanionBuilder =
       Value<double> protein,
       Value<double> carbs,
       Value<double> fat,
+      Value<double> sugar,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<String> servingLabel,
       Value<bool> isPreset,
       Value<DateTime> createdAt,
@@ -8002,6 +8448,15 @@ typedef $$PantryFoodsTableUpdateCompanionBuilder =
       Value<double> protein,
       Value<double> carbs,
       Value<double> fat,
+      Value<double> sugar,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<String> servingLabel,
       Value<bool> isPreset,
       Value<DateTime> createdAt,
@@ -8050,6 +8505,51 @@ class $$PantryFoodsTableFilterComposer
 
   ColumnFilters<double> get fat => $composableBuilder(
     column: $table.fat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8118,6 +8618,51 @@ class $$PantryFoodsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get servingLabel => $composableBuilder(
     column: $table.servingLabel,
     builder: (column) => ColumnOrderings(column),
@@ -8168,6 +8713,35 @@ class $$PantryFoodsTableAnnotationComposer
 
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
+
+  GeneratedColumn<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get potassium =>
+      $composableBuilder(column: $table.potassium, builder: (column) => column);
+
+  GeneratedColumn<double> get calcium =>
+      $composableBuilder(column: $table.calcium, builder: (column) => column);
+
+  GeneratedColumn<double> get iron =>
+      $composableBuilder(column: $table.iron, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminA =>
+      $composableBuilder(column: $table.vitaminA, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminC =>
+      $composableBuilder(column: $table.vitaminC, builder: (column) => column);
 
   GeneratedColumn<String> get servingLabel => $composableBuilder(
     column: $table.servingLabel,
@@ -8223,6 +8797,15 @@ class $$PantryFoodsTableTableManager
                 Value<double> protein = const Value.absent(),
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
+                Value<double> sugar = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<String> servingLabel = const Value.absent(),
                 Value<bool> isPreset = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -8236,6 +8819,15 @@ class $$PantryFoodsTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 servingLabel: servingLabel,
                 isPreset: isPreset,
                 createdAt: createdAt,
@@ -8251,6 +8843,15 @@ class $$PantryFoodsTableTableManager
                 Value<double> protein = const Value.absent(),
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
+                Value<double> sugar = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<String> servingLabel = const Value.absent(),
                 Value<bool> isPreset = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -8264,6 +8865,15 @@ class $$PantryFoodsTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 servingLabel: servingLabel,
                 isPreset: isPreset,
                 createdAt: createdAt,
