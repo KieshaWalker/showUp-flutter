@@ -15,7 +15,7 @@ import 'src/features/presentation/presentation_screen.dart';
 import 'src/features/readiness/readiness_notifier.dart';
 import 'src/features/readiness/readiness_screen.dart';
 import 'src/features/settings/settings_screen.dart';
-import 'src/features/features_ui/calendar/calendar_screen.dart';
+import 'src/features/calendar/calendar_screen.dart';
 
 // main.dart — App entry point and top-level routing.
 //
@@ -83,7 +83,12 @@ class _AuthGate extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, _) => const AuthScreen(),
+      // A transient error on the auth stream (e.g. a network blip during
+      // token refresh) shouldn't log the user out if a session is still
+      // cached locally — only fall back to AuthScreen if it really is gone.
+      error: (_, _) => Supabase.instance.client.auth.currentSession != null
+          ? const AppShell()
+          : const AuthScreen(),
       data: (state) {
         if (state.session != null) return const AppShell();
         return const AuthScreen();
@@ -106,9 +111,20 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    // Pull latest data from Supabase on every login / app launch.
-    // Each call is fire-and-forget (errors are swallowed in the notifiers).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Push any local writes that failed to sync earlier (e.g. made while
+    // offline), then pull latest data from Supabase, on every login / app
+    // launch. Each call is fire-and-forget (errors are swallowed in the
+    // notifiers). Push runs first so pending local writes reach Supabase
+    // before being compared against a pull.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(habitsNotifierProvider.notifier).pushUnsyncedChanges();
+      await ref.read(nutritionNotifierProvider.notifier).pushUnsyncedChanges();
+      await ref.read(pantryNotifierProvider.notifier).pushUnsyncedChanges();
+      await ref.read(userSubstancesProvider.notifier).pushUnsyncedChanges();
+      await ref.read(substanceLogsProvider.notifier).pushUnsyncedChanges();
+      await ref.read(checkInsProvider.notifier).pushUnsyncedChanges();
+      await ref.read(readinessProvider.notifier).pushUnsyncedChanges();
+
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();

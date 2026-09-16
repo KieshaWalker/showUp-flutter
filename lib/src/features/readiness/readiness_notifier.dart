@@ -128,7 +128,6 @@ const double _kBase = 70.0;
 // Sleep — Van Dongen et al. (SLEEP 2003); Belenky et al.
 const double _kSleepDebtExp         = 1.3;   // non-linear exponent
 const double _kSleepDebtMult        = 3.5;   // pts-per-hour-of-debt
-const double _kSleepFullRestBonus   = 20.0;  // ≥8 h bonus cap
 const double _kSleepPenaltyCap      = 20.0;
 const double _kSleepQualityMult     = 4.0;   // Sleep Medicine Reviews 2024; ±8 pts over 1–5 scale
 const double _kRollingDebtExp       = 1.2;   // Belenky / PMC 2022 dynamics
@@ -300,6 +299,8 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
           'direction': s.direction,
           'default_impact': s.defaultImpact,
         });
+        await (db.update(db.userSubstances)..where((t) => t.id.equals(id)))
+            .write(const UserSubstancesCompanion(synced: Value(true)));
       } catch (e) { debugPrint('[Readiness] seedDefaults sync error: $e'); }
     }
   }
@@ -332,6 +333,8 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
         'direction': direction,
         'default_impact': defaultImpact,
       });
+      await (db.update(db.userSubstances)..where((t) => t.id.equals(id)))
+          .write(const UserSubstancesCompanion(synced: Value(true)));
     } catch (e) { debugPrint('[Readiness] addSubstance sync error: $e'); }
   }
 
@@ -348,6 +351,7 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
             defaultImpact != null ? Value(defaultImpact) : const Value.absent(),
         direction:
             direction != null ? Value(direction) : const Value.absent(),
+        synced: const Value(false),
       ),
     );
     try {
@@ -356,6 +360,8 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
         if (defaultImpact != null) 'default_impact': defaultImpact,
         if (direction != null) 'direction': direction,
       }, onConflict: 'id');
+      await (db.update(db.userSubstances)..where((t) => t.id.equals(id)))
+          .write(const UserSubstancesCompanion(synced: Value(true)));
     } catch (e) { debugPrint('[Readiness] updateSubstance sync error: $e'); }
   }
 
@@ -379,6 +385,7 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
         .write(UserSubstancesCompanion(
       learnedImpact: Value(newLearned),
       occurrenceCount: Value(newCount),
+      synced: const Value(false),
     ));
     try {
       final row = await (db.select(db.userSubstances)
@@ -391,8 +398,41 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
           'learned_impact': newLearned,
           'occurrence_count': newCount,
         }, onConflict: 'id');
+        await (db.update(db.userSubstances)..where((t) => t.id.equals(row.id)))
+            .write(const UserSubstancesCompanion(synced: Value(true)));
       }
     } catch (e) { debugPrint('[Readiness] applyLearnedImpact sync error: $e'); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed (e.g. made while offline). Uses upsert since a prior attempt may
+  // have partially succeeded remotely. Call this before syncFromRemote() on
+  // app launch.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+
+    final unsynced = await (db.select(db.userSubstances)
+          ..where((t) => t.userId.equals(uid) & t.synced.equals(false)))
+        .get();
+    for (final s in unsynced) {
+      try {
+        await Supabase.instance.client.from('user_substances').upsert({
+          'id': s.id,
+          'user_id': s.userId,
+          'name': s.name,
+          'direction': s.direction,
+          'default_impact': s.defaultImpact,
+          'learned_impact': s.learnedImpact,
+          'occurrence_count': s.occurrenceCount,
+        }, onConflict: 'id');
+        await (db.update(db.userSubstances)..where((t) => t.id.equals(s.id)))
+            .write(const UserSubstancesCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Readiness] pushUnsyncedChanges userSubstances error: $e'); }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -410,11 +450,39 @@ class UserSubstancesNotifier extends StreamNotifier<List<UserSubstance>> {
           .eq('user_id', uid);
       debugPrint('[Readiness:Sync] userSubstances — pulled ${(rows as List).length} rows');
       for (final r in rows) {
+        final remoteId = r['id'] as String;
+        final name = r['name'] as String;
+
+        // Match by (userId, name) rather than id first: if this device
+        // independently seeded the same default substance under a different
+        // id (e.g. it seeded offline before this remote row ever existed),
+        // insertOnConflictUpdate-by-id would add a second row for the same
+        // substance. Update the existing local row in place instead.
+        final existingLocal = await (db.select(db.userSubstances)
+              ..where((t) => t.userId.equals(uid) & t.name.equals(name)))
+            .getSingleOrNull();
+
+        if (existingLocal != null && existingLocal.id != remoteId) {
+          await (db.update(db.userSubstances)
+                ..where((t) => t.id.equals(existingLocal.id)))
+              .write(
+            UserSubstancesCompanion(
+              direction: Value(r['direction'] as String? ?? 'negative'),
+              defaultImpact:
+                  Value((r['default_impact'] as num?)?.toDouble() ?? 5.0),
+              learnedImpact: Value((r['learned_impact'] as num?)?.toDouble()),
+              occurrenceCount: Value(r['occurrence_count'] as int? ?? 0),
+              synced: const Value(true),
+            ),
+          );
+          continue;
+        }
+
         await db.into(db.userSubstances).insertOnConflictUpdate(
               UserSubstancesCompanion.insert(
-                id: r['id'] as String,
+                id: remoteId,
                 userId: r['user_id'] as String,
-                name: r['name'] as String,
+                name: name,
                 direction: Value(r['direction'] as String? ?? 'negative'),
                 defaultImpact: Value((r['default_impact'] as num?)?.toDouble() ?? 5.0),
                 learnedImpact: Value((r['learned_impact'] as num?)?.toDouble()),
@@ -487,6 +555,8 @@ class SubstanceLogsNotifier extends StreamNotifier<List<SubstanceLog>> {
         if (quantity != null) 'quantity': quantity,
         if (notes != null) 'notes': notes,
       });
+      await (db.update(db.substanceLogs)..where((t) => t.id.equals(id)))
+          .write(const SubstanceLogsCompanion(synced: Value(true)));
     } catch (e) { debugPrint('[Readiness] logSubstance sync error: $e'); }
   }
 
@@ -497,6 +567,36 @@ class SubstanceLogsNotifier extends StreamNotifier<List<SubstanceLog>> {
     try {
       await Supabase.instance.client.from('substance_logs').delete().eq('id', id);
     } catch (e) { debugPrint('[Readiness] deleteLog sync error: $e'); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed. Call this before syncFromRemote() on app launch.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+
+    final unsynced = await (db.select(db.substanceLogs)
+          ..where((t) => t.userId.equals(uid) & t.synced.equals(false)))
+        .get();
+    for (final l in unsynced) {
+      try {
+        await Supabase.instance.client.from('substance_logs').upsert({
+          'id': l.id,
+          'user_id': l.userId,
+          'date': l.date.toIso8601String(),
+          'substance_name': l.substanceName,
+          'direction': l.direction,
+          'impact_snapshot': l.impactSnapshot,
+          if (l.quantity != null) 'quantity': l.quantity,
+          if (l.notes != null) 'notes': l.notes,
+        }, onConflict: 'id');
+        await (db.update(db.substanceLogs)..where((t) => t.id.equals(l.id)))
+            .write(const SubstanceLogsCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Readiness] pushUnsyncedChanges substanceLogs error: $e'); }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -635,9 +735,45 @@ class ReadinessCheckInsNotifier
         if (focusLevel != null) 'focus_level': focusLevel,
         if (notes != null) 'notes': notes,
       }, onConflict: 'id');
+      await (db.update(db.readinessCheckIns)..where((t) => t.id.equals(id)))
+          .write(const ReadinessCheckInsCompanion(synced: Value(true)));
     } catch (e) { debugPrint('[Readiness] submitCheckIn sync error: $e'); }
 
     await ref.read(readinessProvider.notifier).recomputeToday();
+  }
+
+  // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed. Call this before syncFromRemote() on app launch.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+
+    final unsynced = await (db.select(db.readinessCheckIns)
+          ..where((t) => t.userId.equals(uid) & t.synced.equals(false)))
+        .get();
+    for (final ci in unsynced) {
+      try {
+        await Supabase.instance.client.from('readiness_check_ins').upsert({
+          'id': ci.id,
+          'user_id': ci.userId,
+          'date': ci.date.toIso8601String(),
+          'check_in_window': ci.checkInWindow,
+          if (ci.sleepHours != null) 'sleep_hours': ci.sleepHours,
+          if (ci.sleepQuality != null) 'sleep_quality': ci.sleepQuality,
+          if (ci.stressLevel != null) 'stress_level': ci.stressLevel,
+          if (ci.energyLevel != null) 'energy_level': ci.energyLevel,
+          if (ci.mood != null) 'mood': ci.mood,
+          if (ci.caffeineCount != null) 'caffeine_count': ci.caffeineCount,
+          if (ci.focusLevel != null) 'focus_level': ci.focusLevel,
+          if (ci.notes != null) 'notes': ci.notes,
+        }, onConflict: 'id');
+        await (db.update(db.readinessCheckIns)..where((t) => t.id.equals(ci.id)))
+            .write(const ReadinessCheckInsCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Readiness] pushUnsyncedChanges checkIns error: $e'); }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -763,6 +899,8 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
           'computed_score': score,
           'previous_day_influence': carryover,
         }, onConflict: 'id');
+        await (db.update(db.dailyReadiness)..where((t) => t.id.equals(row.id)))
+            .write(const DailyReadinessCompanion(synced: Value(true)));
       }
     } catch (e) { debugPrint('[Readiness] recomputeToday sync error: $e'); }
   }
@@ -790,10 +928,40 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
           'date': today.toIso8601String(),
           'user_rated_score': rating,
         }, onConflict: 'id');
+        await (db.update(db.dailyReadiness)..where((t) => t.id.equals(row.id)))
+            .write(const DailyReadinessCompanion(synced: Value(true)));
       }
     } catch (e) { debugPrint('[Readiness] submitSelfRating sync error: $e'); }
 
     await _runLearningUpdate(uid, today, rating);
+  }
+
+  // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed. Call this before syncFromRemote() on app launch.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final uid = _userId();
+    if (uid == null) return;
+
+    final unsynced = await (db.select(db.dailyReadiness)
+          ..where((t) => t.userId.equals(uid) & t.synced.equals(false)))
+        .get();
+    for (final r in unsynced) {
+      try {
+        await Supabase.instance.client.from('daily_readiness').upsert({
+          'id': r.id,
+          'user_id': r.userId,
+          'date': r.date.toIso8601String(),
+          'computed_score': r.computedScore,
+          if (r.userRatedScore != null) 'user_rated_score': r.userRatedScore,
+          'previous_day_influence': r.previousDayInfluence,
+        }, onConflict: 'id');
+        await (db.update(db.dailyReadiness)..where((t) => t.id.equals(r.id)))
+            .write(const DailyReadinessCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Readiness] pushUnsyncedChanges dailyReadiness error: $e'); }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -887,11 +1055,11 @@ class ReadinessNotifier extends StreamNotifier<List<DailyReadinessData>> {
       // going from 7→6 h hurts more than going from 8→7 h.
       if (ci.sleepHours != null) {
         final h = ci.sleepHours!;
-        if (h >= 8.0) {
-          // Full 8 h+ means adenosine fully cleared, glymphatic
-          // system completed waste clearance — award bonus.
-          score += _kSleepFullRestBonus;
-        } else {
+        // h >= 8: no penalty — matches the documented formula ("8h = 0 pts").
+        // No flat bonus here: that previously created a 20-point cliff right
+        // at 8.0h (7.99h ≈ 0 pts, 8.00h = +20 pts) for a trivial difference
+        // in logged sleep.
+        if (h < 8.0) {
           score -= (math.pow(8.0 - h, _kSleepDebtExp) * _kSleepDebtMult)
               .clamp(0.0, _kSleepPenaltyCap);
         }

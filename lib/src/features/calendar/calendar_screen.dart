@@ -17,10 +17,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/app_theme.dart';
-import '../../habits/habits_notifier.dart';
-import '../../nutrition/nutrition_notifier.dart';
-import '../../../database/db.dart' show Habit;
+import '../../core/app_theme.dart';
+import '../habits/habits_notifier.dart';
+import '../nutrition/nutrition_notifier.dart';
+import '../../database/db.dart' show Habit;
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -97,6 +97,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _prevMonth() {
+    // Cancel any reload scheduled by _scheduleReload() — otherwise it can
+    // still fire after this manual navigation and trigger a redundant
+    // duplicate fetch for the month we just navigated to.
+    _debounce?.cancel();
     setState(() {
       _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1);
       _weekSummaries = [];
@@ -107,6 +111,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   void _nextMonth() {
     if (!_canGoNext()) return;
+    // See _prevMonth — cancel any pending debounced reload first.
+    _debounce?.cancel();
     setState(() {
       _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1);
       _weekSummaries = [];
@@ -216,6 +222,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     onPressed: _prevMonth,
                     icon: const Icon(Icons.chevron_left,
                         color: Colors.white),
+                    tooltip: 'Previous month',
                   ),
                   Expanded(
                     child: Center(
@@ -233,6 +240,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           ? Colors.white
                           : AppColors.glassBorder,
                     ),
+                    tooltip: 'Next month',
                   ),
                 ],
               ),
@@ -784,6 +792,7 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.khaki),
+                    tooltip: 'Close',
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],

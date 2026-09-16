@@ -7,6 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../core/app_theme.dart';
 
+/// Formats a water volume in mL as e.g. "500ml" or "1.5L".
+/// Shared so every screen/assistant reply displays water the same way.
+String formatWaterMl(double ml) =>
+    ml >= 1000 ? '${(ml / 1000).toStringAsFixed(1)}L' : '${ml.toInt()}ml';
+
 // The logo AppBar title — identical across all main screens.
 class AppLogoTitle extends StatelessWidget {
   const AppLogoTitle({super.key});

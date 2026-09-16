@@ -232,11 +232,14 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
                 )
                 .length;
 
+        final habitSkips = skips.where((s) => s.habitId == habit.id).toList();
+
         // Streak: daily habits count consecutive days, weekly count weeks.
         final streak =
             habit.frequencyType == 'weekly'
                 ? _calculateWeeklyStreak(
                   habitCompletions,
+                  habitSkips,
                   habit.targetDaysPerWeek,
                 )
                 : _calculateDailyStreak(habitCompletions);
@@ -281,7 +284,8 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     int skipsAllowedPerWeek = 0,
   }) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final id = _uuid.v4();
 
     await db
@@ -370,47 +374,58 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   //     date, you would need a separate method (not currently supported).
   Future<void> toggleCompletion(String habitId) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final today = _dateOnly(DateTime.now());
 
-    // SQL comparison on completedDate — avoids Dart-side timezone issues.
-    final existing =
-        await (db.select(db.habitCompletions)..where(
-          (c) => c.habitId.equals(habitId) & c.completedDate.equals(today),
-        )).getSingleOrNull();
+    // Wrapped in a transaction so a rapid double-tap can't have both calls
+    // read "not completed yet" and both insert a row for the same day.
+    final action = await db.transaction(() async {
+      // SQL comparison on completedDate — avoids Dart-side timezone issues.
+      final existing =
+          await (db.select(db.habitCompletions)..where(
+            (c) => c.habitId.equals(habitId) & c.completedDate.equals(today),
+          )).getSingleOrNull();
 
-    if (existing != null) {
-      // Already completed today → remove (undo).
-      await (db.delete(db.habitCompletions)
-        ..where((c) => c.id.equals(existing.id))).go();
+      if (existing != null) {
+        // Already completed today → remove (undo).
+        await (db.delete(db.habitCompletions)
+          ..where((c) => c.id.equals(existing.id))).go();
+        return (deleted: true, id: existing.id);
+      } else {
+        // Not completed yet → insert.
+        final id = _uuid.v4();
+        await db
+            .into(db.habitCompletions)
+            .insert(
+              HabitCompletionsCompanion.insert(
+                id: id,
+                habitId: habitId,
+                userId: userId,
+                completedDate: today, // UTC midnight of LOCAL today
+              ),
+            );
+        return (deleted: false, id: id);
+      }
+    });
+
+    if (action.deleted) {
       try {
         await Supabase.instance.client
             .from('habit_completions')
             .delete()
-            .eq('id', existing.id);
+            .eq('id', action.id);
       } catch (e) { debugPrint('[Habits] toggleCompletion delete error: $e'); }
     } else {
-      // Not completed yet → insert.
-      final id = _uuid.v4();
-      await db
-          .into(db.habitCompletions)
-          .insert(
-            HabitCompletionsCompanion.insert(
-              id: id,
-              habitId: habitId,
-              userId: userId,
-              completedDate: today, // UTC midnight of LOCAL today
-            ),
-          );
       try {
         await Supabase.instance.client.from('habit_completions').insert({
-          'id': id,
+          'id': action.id,
           'habit_id': habitId,
           'user_id': userId,
           'completed_date': today.toIso8601String(),
         });
         await (db.update(db.habitCompletions)..where(
-          (c) => c.id.equals(id),
+          (c) => c.id.equals(action.id),
         )).write(const HabitCompletionsCompanion(synced: Value(true)));
       } catch (e) { debugPrint('[Habits] toggleCompletion insert error: $e'); }
     }
@@ -424,42 +439,58 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     DateTime date,
   ) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final day = _dateOnly(date);
 
-    final existing =
-        await (db.select(db.habitCompletions)..where(
-          (c) => c.habitId.equals(habitId) & c.completedDate.equals(day),
-        )).getSingleOrNull();
+    // build() assumes future-dated completions cannot exist locally — a
+    // future date here would silently corrupt streak calculation.
+    final today = _dateOnly(DateTime.now());
+    if (day.isAfter(today)) return;
 
-    if (existing != null) {
-      await (db.delete(db.habitCompletions)
-        ..where((c) => c.id.equals(existing.id))).go();
+    // Wrapped in a transaction so a rapid double-tap can't have both calls
+    // read "not completed yet" and both insert a row for the same day.
+    final action = await db.transaction(() async {
+      final existing =
+          await (db.select(db.habitCompletions)..where(
+            (c) => c.habitId.equals(habitId) & c.completedDate.equals(day),
+          )).getSingleOrNull();
+
+      if (existing != null) {
+        await (db.delete(db.habitCompletions)
+          ..where((c) => c.id.equals(existing.id))).go();
+        return (deleted: true, id: existing.id);
+      } else {
+        final id = _uuid.v4();
+        await db.into(db.habitCompletions).insert(
+              HabitCompletionsCompanion.insert(
+                id: id,
+                habitId: habitId,
+                userId: userId,
+                completedDate: day,
+              ),
+            );
+        return (deleted: false, id: id);
+      }
+    });
+
+    if (action.deleted) {
       try {
         await Supabase.instance.client
             .from('habit_completions')
             .delete()
-            .eq('id', existing.id);
+            .eq('id', action.id);
       } catch (e) { debugPrint('[Habits] toggleCompletionForDate delete error: $e'); }
     } else {
-      final id = _uuid.v4();
-      await db.into(db.habitCompletions).insert(
-            HabitCompletionsCompanion.insert(
-              id: id,
-              habitId: habitId,
-              userId: userId,
-              completedDate: day,
-            ),
-          );
       try {
         await Supabase.instance.client.from('habit_completions').insert({
-          'id': id,
+          'id': action.id,
           'habit_id': habitId,
           'user_id': userId,
           'completed_date': day.toIso8601String(),
         });
         await (db.update(db.habitCompletions)..where(
-          (c) => c.id.equals(id),
+          (c) => c.id.equals(action.id),
         )).write(const HabitCompletionsCompanion(synced: Value(true)));
       } catch (e) { debugPrint('[Habits] toggleCompletionForDate insert error: $e'); }
     }
@@ -503,35 +534,40 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // └──────────────────────────────────────────────────────────────────────┘
   Future<void> skipWeek(String habitId) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final weekStart = _startOfWeek(_dateOnly(DateTime.now()));
 
-    // Guard: do not exceed the allowed skip count (notifier-level validation,
-    // mirroring the UI guard in _HabitCard so the API is safe to call directly).
-    final habit =
-        await (db.select(db.habits)
-          ..where((h) => h.id.equals(habitId))).getSingleOrNull();
-    if (habit == null) return;
+    // Guard (do not exceed the allowed skip count) and insert are wrapped in
+    // one transaction so a rapid double-tap can't have both calls read the
+    // same "under the limit" count and both insert, exceeding the limit.
+    final id = await db.transaction(() async {
+      final habit =
+          await (db.select(db.habits)
+            ..where((h) => h.id.equals(habitId))).getSingleOrNull();
+      if (habit == null) return null;
 
-    final existingSkips =
-        await (db.select(db.habitSkips)..where(
-          (s) => s.habitId.equals(habitId) & s.weekStart.equals(weekStart),
-        )).get();
+      final existingSkips =
+          await (db.select(db.habitSkips)..where(
+            (s) => s.habitId.equals(habitId) & s.weekStart.equals(weekStart),
+          )).get();
 
-    if (existingSkips.length >= habit.skipsAllowedPerWeek) return;
+      if (existingSkips.length >= habit.skipsAllowedPerWeek) return null;
 
-    final id = _uuid.v4();
-
-    await db
-        .into(db.habitSkips)
-        .insert(
-          HabitSkipsCompanion.insert(
-            id: id,
-            habitId: habitId,
-            userId: userId,
-            weekStart: weekStart,
-          ),
-        );
+      final id = _uuid.v4();
+      await db
+          .into(db.habitSkips)
+          .insert(
+            HabitSkipsCompanion.insert(
+              id: id,
+              habitId: habitId,
+              userId: userId,
+              weekStart: weekStart,
+            ),
+          );
+      return id;
+    });
+    if (id == null) return;
 
     try {
       await Supabase.instance.client.from('habit_skips').insert({
@@ -582,6 +618,71 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   }
 
   // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed (e.g. made while offline). `synced` stays false until a push
+  // succeeds, so this simply re-attempts every row still marked unsynced.
+  // Uses upsert (not insert) since a prior attempt may have partially
+  // succeeded remotely before failing to update the local `synced` flag.
+  // Call this before syncFromRemote() on app launch, so pending local writes
+  // reach Supabase before a pull could otherwise be compared against them.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final unsyncedHabits = await (db.select(db.habits)
+          ..where((h) => h.userId.equals(userId) & h.synced.equals(false)))
+        .get();
+    for (final h in unsyncedHabits) {
+      try {
+        await Supabase.instance.client.from('habits').upsert({
+          'id': h.id,
+          'user_id': h.userId,
+          'name': h.name,
+          'frequency_type': h.frequencyType,
+          'target_days_per_week': h.targetDaysPerWeek,
+          'skips_allowed_per_week': h.skipsAllowedPerWeek,
+        });
+        await (db.update(db.habits)..where((t) => t.id.equals(h.id)))
+            .write(const HabitsCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Habits] pushUnsyncedChanges habit error: $e'); }
+    }
+
+    final unsyncedCompletions = await (db.select(db.habitCompletions)
+          ..where((c) => c.userId.equals(userId) & c.synced.equals(false)))
+        .get();
+    for (final c in unsyncedCompletions) {
+      try {
+        await Supabase.instance.client.from('habit_completions').upsert({
+          'id': c.id,
+          'habit_id': c.habitId,
+          'user_id': c.userId,
+          'completed_date': c.completedDate.toIso8601String(),
+        });
+        await (db.update(db.habitCompletions)..where((t) => t.id.equals(c.id)))
+            .write(const HabitCompletionsCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Habits] pushUnsyncedChanges completion error: $e'); }
+    }
+
+    final unsyncedSkips = await (db.select(db.habitSkips)
+          ..where((s) => s.userId.equals(userId) & s.synced.equals(false)))
+        .get();
+    for (final s in unsyncedSkips) {
+      try {
+        await Supabase.instance.client.from('habit_skips').upsert({
+          'id': s.id,
+          'habit_id': s.habitId,
+          'user_id': s.userId,
+          'week_start': s.weekStart.toIso8601String(),
+        });
+        await (db.update(db.habitSkips)..where((t) => t.id.equals(s.id)))
+            .write(const HabitSkipsCompanion(synced: Value(true)));
+      } catch (e) { debugPrint('[Habits] pushUnsyncedChanges skip error: $e'); }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // syncFromRemote — pull latest data from Supabase into local Drift DB.
   // Uses insertOnConflictUpdate so duplicate rows are safely overwritten.
   // Call this on app launch / after sign-in.
@@ -598,6 +699,10 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
           .eq('user_id', userId);
 
       for (final h in habits as List) {
+        // Preserve the habit's real creation date so calendar queries that
+        // filter on createdAt don't treat re-synced habits as brand new
+        // (which would hide all history for them on a fresh device/reinstall).
+        final createdAtRaw = h['created_at'] as String?;
         await db
             .into(db.habits)
             .insertOnConflictUpdate(
@@ -610,6 +715,9 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
                 skipsAllowedPerWeek: Value(
                   (h['skips_allowed_per_week'] as int?) ?? 0,
                 ),
+                createdAt: createdAtRaw != null
+                    ? Value(DateTime.parse(createdAtRaw))
+                    : const Value.absent(),
                 synced: const Value(true),
               ),
             );
@@ -704,11 +812,9 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // getWeekHabitStats — used by CalendarScreen week summary strip
   // ---------------------------------------------------------------------------
   //
-  // Returns (done: total completions in range, total: habits × elapsed days).
+  // Returns (done: total completions in range, total: sum of each habit's
+  // elapsed days since it existed, capped to the 7-day week).
   // [weekStart] is inclusive, [weekEnd] is exclusive.
-  //
-  // To change the "total" denominator (e.g., count unique habits per day rather
-  // than raw completions), update the total calculation here.
   Future<({int done, int total})> getWeekHabitStats(
     DateTime weekStart,
     DateTime weekEnd,
@@ -716,6 +822,8 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
+    // createdAt is a local-time instant (see addHabit/getHabitsForDate), so
+    // it's compared against the local weekEnd passed in, not a UTC encoding.
     final habits =
         await (db.select(db.habits)
           ..where((h) =>
@@ -723,24 +831,45 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
               h.createdAt.isSmallerThanValue(weekEnd))).get();
     if (habits.isEmpty) return (done: 0, total: 0);
 
+    // completedDate is stored as UTC-midnight-of-local-date (see DATE ENCODING
+    // below); weekStart/weekEnd here are plain local DateTimes from the
+    // calendar UI, so they must be re-encoded before comparing against it —
+    // otherwise non-UTC users can silently lose a day's completion at the
+    // week boundary.
+    final weekStartKey = _dateOnly(weekStart);
+    final weekEndKey = _dateOnly(weekEnd);
+
     final completions =
         await (db.select(db.habitCompletions)..where(
           (c) =>
               c.userId.equals(userId) &
-              c.completedDate.isBiggerOrEqualValue(weekStart) &
-              c.completedDate.isSmallerThanValue(weekEnd),
+              c.completedDate.isBiggerOrEqualValue(weekStartKey) &
+              c.completedDate.isSmallerThanValue(weekEndKey),
         )).get();
 
     // Cap the effective end at today so future days don't inflate "total".
-    final now = DateTime.now();
-    final todayUtc = DateTime.utc(now.year, now.month, now.day);
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final effectiveEnd =
-        weekEnd.isAfter(todayUtc)
-            ? todayUtc.add(const Duration(days: 1))
-            : weekEnd;
-    final elapsedDays = effectiveEnd.difference(weekStart).inDays.clamp(0, 7);
+        weekEnd.isAfter(today) ? today.add(const Duration(days: 1)) : weekEnd;
 
-    return (done: completions.length, total: habits.length * elapsedDays);
+    // Prorate each habit's contribution to "total" by how many days of the
+    // week it actually existed for — a habit created mid-week only counts
+    // the days since its creation, not the full week, so it doesn't deflate
+    // the week's completion percentage.
+    var total = 0;
+    for (final h in habits) {
+      final createdDate =
+          DateTime(h.createdAt.year, h.createdAt.month, h.createdAt.day);
+      final habitStart =
+          createdDate.isAfter(weekStart) ? createdDate : weekStart;
+      total += effectiveEnd.difference(habitStart).inDays.clamp(0, 7);
+    }
+
+    return (done: completions.length, total: total);
   }
 
   // ---------------------------------------------------------------------------
@@ -872,33 +1001,41 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   //
   // If the current week hasn't met the target yet (in-progress), it is skipped
   // so the streak from prior weeks stays intact until the week ends.
-  int _calculateWeeklyStreak(List<HabitCompletion> completions, int target) {
-    if (completions.isEmpty) return 0;
+  //
+  // Effective count = completions + skips, matching HabitWithStatus.isDone
+  // above ((completionsThisWeek + skipsThisWeek) >= target) — otherwise a
+  // habit can show as "done" for the week via a skip while its streak still
+  // treats that week as unmet.
+  int _calculateWeeklyStreak(
+    List<HabitCompletion> completions,
+    List<HabitSkip> skips,
+    int target,
+  ) {
+    if (completions.isEmpty && skips.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
     int streak = 0;
     DateTime weekStart = _startOfWeek(today);
 
+    int effectiveCountForWeek(DateTime start) {
+      final end = start.add(const Duration(days: 7));
+      final completedCount = completions
+          .where((c) =>
+              !_storedDateOnly(c.completedDate).isBefore(start) &&
+              _storedDateOnly(c.completedDate).isBefore(end))
+          .length;
+      final skippedCount =
+          skips.where((s) => _storedDateOnly(s.weekStart) == start).length;
+      return completedCount + skippedCount;
+    }
+
     // If the current week is still in progress and below target, skip it —
     // the historical streak shouldn't reset mid-week.
-    final currentWeekEnd = weekStart.add(const Duration(days: 7));
-    final currentCount = completions
-        .where((c) =>
-            !_storedDateOnly(c.completedDate).isBefore(weekStart) &&
-            _storedDateOnly(c.completedDate).isBefore(currentWeekEnd))
-        .length;
-    if (currentCount < target) {
+    if (effectiveCountForWeek(weekStart) < target) {
       weekStart = weekStart.subtract(const Duration(days: 7));
     }
 
     for (var i = 0; i < 52; i++) {
-      final weekEnd = weekStart.add(const Duration(days: 7));
-      final count = completions
-          .where((c) =>
-              !_storedDateOnly(c.completedDate).isBefore(weekStart) &&
-              _storedDateOnly(c.completedDate).isBefore(weekEnd))
-          .length;
-
-      if (count >= target) {
+      if (effectiveCountForWeek(weekStart) >= target) {
         streak++;
         weekStart = weekStart.subtract(const Duration(days: 7));
       } else {

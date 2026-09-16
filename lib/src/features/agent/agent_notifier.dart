@@ -46,6 +46,7 @@ import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
 import '../pantry/pantry_notifier.dart';
 import '../readiness/readiness_notifier.dart';
+import '../../shared/widgets.dart' show formatWaterMl;
 
 // ---------------------------------------------------------------------------
 // Multi-step pending action
@@ -671,10 +672,7 @@ class AgentNotifier extends Notifier<AgentState> {
     }
 
     await ref.read(nutritionNotifierProvider.notifier).logWater(ml);
-    final label = ml >= 1000
-        ? '${(ml / 1000).toStringAsFixed(1)}L'
-        : '${ml.toInt()}ml';
-    return '💧 Logged $label.';
+    return '💧 Logged ${formatWaterMl(ml)}.';
   }
 
   // ── Summaries ──────────────────────────────────────────────────────────────
@@ -688,7 +686,7 @@ class AgentNotifier extends Notifier<AgentState> {
         : '${n.totalCalories.toInt()} kcal';
     return 'Today: $calStr\n'
         'P: ${n.totalProtein.toInt()}g  C: ${n.totalCarbs.toInt()}g  F: ${n.totalFat.toInt()}g\n'
-        'Water: ${(n.totalWaterMl / 1000).toStringAsFixed(1)}L';
+        'Water: ${formatWaterMl(n.totalWaterMl)}';
   }
 
   String _handleHabitProgress() {

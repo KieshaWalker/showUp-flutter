@@ -198,7 +198,7 @@ class _ReadinessSummaryCardState extends ConsumerState<ReadinessSummaryCard> {
     );
 
     return AppGlass.card(
-      padding: const EdgeInsets.all(50),
+      padding: AppPaddings.card,
       child: Row(
         children: [
           // Mini ring

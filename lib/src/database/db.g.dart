@@ -1703,6 +1703,16 @@ class $FoodEntriesTable extends FoodEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
   @override
   late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
@@ -1726,6 +1736,7 @@ class $FoodEntriesTable extends FoodEntries
     protein,
     carbs,
     fat,
+    sugar,
     synced,
   ];
   @override
@@ -1793,6 +1804,12 @@ class $FoodEntriesTable extends FoodEntries
         fat.isAcceptableOrUnknown(data['fat']!, _fatMeta),
       );
     }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
     if (data.containsKey('synced')) {
       context.handle(
         _syncedMeta,
@@ -1848,6 +1865,11 @@ class $FoodEntriesTable extends FoodEntries
             DriftSqlType.double,
             data['${effectivePrefix}fat'],
           )!,
+      sugar:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}sugar'],
+          )!,
       synced:
           attachedDatabase.typeMapping.read(
             DriftSqlType.bool,
@@ -1871,6 +1893,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   final double protein;
   final double carbs;
   final double fat;
+  final double sugar;
   final bool synced;
   const FoodEntry({
     required this.id,
@@ -1881,6 +1904,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     required this.protein,
     required this.carbs,
     required this.fat,
+    required this.sugar,
     required this.synced,
   });
   @override
@@ -1894,6 +1918,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     map['protein'] = Variable<double>(protein);
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
+    map['sugar'] = Variable<double>(sugar);
     map['synced'] = Variable<bool>(synced);
     return map;
   }
@@ -1908,6 +1933,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       protein: Value(protein),
       carbs: Value(carbs),
       fat: Value(fat),
+      sugar: Value(sugar),
       synced: Value(synced),
     );
   }
@@ -1926,6 +1952,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       protein: serializer.fromJson<double>(json['protein']),
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
+      sugar: serializer.fromJson<double>(json['sugar']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
   }
@@ -1941,6 +1968,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       'protein': serializer.toJson<double>(protein),
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
+      'sugar': serializer.toJson<double>(sugar),
       'synced': serializer.toJson<bool>(synced),
     };
   }
@@ -1954,6 +1982,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     double? protein,
     double? carbs,
     double? fat,
+    double? sugar,
     bool? synced,
   }) => FoodEntry(
     id: id ?? this.id,
@@ -1964,6 +1993,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     protein: protein ?? this.protein,
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
+    sugar: sugar ?? this.sugar,
     synced: synced ?? this.synced,
   );
   FoodEntry copyWithCompanion(FoodEntriesCompanion data) {
@@ -1976,6 +2006,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
   }
@@ -1991,6 +2022,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
           ..write('synced: $synced')
           ..write(')'))
         .toString();
@@ -2006,6 +2038,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     protein,
     carbs,
     fat,
+    sugar,
     synced,
   );
   @override
@@ -2020,6 +2053,7 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.protein == this.protein &&
           other.carbs == this.carbs &&
           other.fat == this.fat &&
+          other.sugar == this.sugar &&
           other.synced == this.synced);
 }
 
@@ -2032,6 +2066,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
   final Value<double> protein;
   final Value<double> carbs;
   final Value<double> fat;
+  final Value<double> sugar;
   final Value<bool> synced;
   final Value<int> rowid;
   const FoodEntriesCompanion({
@@ -2043,6 +2078,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2055,6 +2091,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2070,6 +2107,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? sugar,
     Expression<bool>? synced,
     Expression<int>? rowid,
   }) {
@@ -2082,6 +2120,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (sugar != null) 'sugar': sugar,
       if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2096,6 +2135,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     Value<double>? protein,
     Value<double>? carbs,
     Value<double>? fat,
+    Value<double>? sugar,
     Value<bool>? synced,
     Value<int>? rowid,
   }) {
@@ -2108,6 +2148,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      sugar: sugar ?? this.sugar,
       synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
     );
@@ -2140,6 +2181,9 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
@@ -2160,6 +2204,7 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -7136,6 +7181,7 @@ typedef $$FoodEntriesTableCreateCompanionBuilder =
       Value<double> protein,
       Value<double> carbs,
       Value<double> fat,
+      Value<double> sugar,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -7149,6 +7195,7 @@ typedef $$FoodEntriesTableUpdateCompanionBuilder =
       Value<double> protein,
       Value<double> carbs,
       Value<double> fat,
+      Value<double> sugar,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -7199,6 +7246,11 @@ class $$FoodEntriesTableFilterComposer
 
   ColumnFilters<double> get fat => $composableBuilder(
     column: $table.fat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7257,6 +7309,11 @@ class $$FoodEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get synced => $composableBuilder(
     column: $table.synced,
     builder: (column) => ColumnOrderings(column),
@@ -7295,6 +7352,9 @@ class $$FoodEntriesTableAnnotationComposer
 
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
 
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
@@ -7340,6 +7400,7 @@ class $$FoodEntriesTableTableManager
                 Value<double> protein = const Value.absent(),
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
+                Value<double> sugar = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodEntriesCompanion(
@@ -7351,6 +7412,7 @@ class $$FoodEntriesTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                sugar: sugar,
                 synced: synced,
                 rowid: rowid,
               ),
@@ -7364,6 +7426,7 @@ class $$FoodEntriesTableTableManager
                 Value<double> protein = const Value.absent(),
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
+                Value<double> sugar = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodEntriesCompanion.insert(
@@ -7375,6 +7438,7 @@ class $$FoodEntriesTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                sugar: sugar,
                 synced: synced,
                 rowid: rowid,
               ),

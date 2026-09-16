@@ -1,21 +1,22 @@
-// habits_screen.dart — The Habits tab where users manage and complete their habits.
+// habits_screen.dart — The Habits tab where users manage their habits.
 //
 // Shows:
 //   • A list of all habits with completion status for today/this week
-//   • Tap a habit to toggle it done/undone
+//   • Tap a habit to open its edit sheet; long-press to delete it
+//     (completion toggling happens elsewhere, e.g. the Overview screen)
 //   • FAB to add a new habit (opens a bottom sheet)
-//   • Each habit has a menu: edit, view calendar history, delete
 //   • HabitFreqChip — shows "Daily" or "3x/week" style frequency badge
 //   • HabitCalendarSheet — a monthly calendar showing a habit's completion history
 //
 // Reused widgets (exported for use elsewhere):
-//   HabitFreqChip       — used in settings_screen.dart to show habit frequency
-//   HabitCalendarSheet  — used in settings_screen.dart for habit history view
+//   HabitFreqChip       — not currently reused elsewhere in the app
+//   HabitCalendarSheet  — not currently reused elsewhere in the app
+//   (settings_screen.dart used to show a habits list built from these, but
+//   that was removed — see the note at the top of settings_screen.dart)
 //
 // Connections:
 //   habits_notifier.dart    — habitsNotifierProvider drives the list;
 //                             addHabit, updateHabit, deleteHabit, toggleCompletion
-//   settings_screen.dart    — imports HabitFreqChip + HabitCalendarSheet
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'package:flutter/material.dart';
@@ -42,9 +43,7 @@ class HabitsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const AppLogoTitle(),
-      ),
+      appBar: AppBar(title: const AppLogoTitle()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddHabitSheet(context, ref),
         icon: const Icon(Icons.add),
@@ -59,11 +58,18 @@ class HabitsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline, size: 64, color: AppColors.glassBorder),
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 64,
+                    color: AppColors.glassBorder,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   Text('No habits yet', style: AppTextStyles.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
-                  Text('Tap + to add your first habit', style: AppTextStyles.bodyMedium),
+                  Text(
+                    'Tap + to add your first habit',
+                    style: AppTextStyles.bodyMedium,
+                  ),
                 ],
               ),
             );
@@ -80,42 +86,54 @@ class HabitsScreen extends ConsumerWidget {
   }
 }
 
-void _showAddHabitSheet(BuildContext context, WidgetRef ref, {Habit? existing}) {
+void _showAddHabitSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  Habit? existing,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (ctx) => _HabitFormSheet(
-      initialName: existing?.name,
-      initialFrequencyType: existing?.frequencyType,
-      initialTargetDaysPerWeek: existing?.targetDaysPerWeek,
-      initialSkipsAllowedPerWeek: existing?.skipsAllowedPerWeek,
-      onSave: ({
-        required String name,
-        required String frequencyType,
-        required int targetDaysPerWeek,
-        required int skipsAllowedPerWeek,
-      }) {
-        if (existing != null) {
-          ref.read(habitsNotifierProvider.notifier).updateHabit(
-                existing.id,
-                name: name,
-                frequencyType: frequencyType,
-                targetDaysPerWeek: targetDaysPerWeek,
-                skipsAllowedPerWeek: skipsAllowedPerWeek,
-              );
-        } else {
-          ref.read(habitsNotifierProvider.notifier).addHabit(
-                name,
-                frequencyType: frequencyType,
-                targetDaysPerWeek: targetDaysPerWeek,
-                skipsAllowedPerWeek: skipsAllowedPerWeek,
-              );
-        }
-      },
-      onDelete: existing != null
-          ? () => ref.read(habitsNotifierProvider.notifier).deleteHabit(existing.id)
-          : null,
-    ),
+    builder:
+        (ctx) => _HabitFormSheet(
+          initialName: existing?.name,
+          initialFrequencyType: existing?.frequencyType,
+          initialTargetDaysPerWeek: existing?.targetDaysPerWeek,
+          initialSkipsAllowedPerWeek: existing?.skipsAllowedPerWeek,
+          onSave: ({
+            required String name,
+            required String frequencyType,
+            required int targetDaysPerWeek,
+            required int skipsAllowedPerWeek,
+          }) {
+            if (existing != null) {
+              ref
+                  .read(habitsNotifierProvider.notifier)
+                  .updateHabit(
+                    existing.id,
+                    name: name,
+                    frequencyType: frequencyType,
+                    targetDaysPerWeek: targetDaysPerWeek,
+                    skipsAllowedPerWeek: skipsAllowedPerWeek,
+                  );
+            } else {
+              ref
+                  .read(habitsNotifierProvider.notifier)
+                  .addHabit(
+                    name,
+                    frequencyType: frequencyType,
+                    targetDaysPerWeek: targetDaysPerWeek,
+                    skipsAllowedPerWeek: skipsAllowedPerWeek,
+                  );
+            }
+          },
+          onDelete:
+              existing != null
+                  ? () => ref
+                      .read(habitsNotifierProvider.notifier)
+                      .deleteHabit(existing.id)
+                  : null,
+        ),
   );
 }
 
@@ -130,50 +148,60 @@ class _HabitManageCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasStreak = item.streak > 0;
-    return ClipRRect(
-      borderRadius: AppRadius.lgAll,
-      child: Stack(
-        children: [
-          AppGlass.card(
-            borderRadius: AppRadius.lgAll,
-            child: ListTile(
-              contentPadding: EdgeInsets.only(
-                left: hasStreak ? AppSpacing.md + 6 : AppSpacing.md,
-                right: AppSpacing.md,
-                top: AppSpacing.xs,
-                bottom: AppSpacing.xs,
-              ),
-              title: Text(item.habit.name, style: AppTextStyles.titleMedium),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: HabitFreqChip(habit: item.habit),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (hasStreak) ...[
-                    StreakBadge(item.streak),
-                    const SizedBox(width: AppSpacing.sm),
+    return Semantics(
+      button: true,
+      label:
+          '${item.habit.name}. Double tap to edit, double tap and hold to delete.',
+      excludeSemantics: true,
+      child: ClipRRect(
+        borderRadius: AppRadius.lgAll,
+        child: Stack(
+          children: [
+            AppGlass.card(
+              borderRadius: AppRadius.lgAll,
+              child: ListTile(
+                contentPadding: EdgeInsets.only(
+                  left: hasStreak ? AppSpacing.md + 6 : AppSpacing.md,
+                  right: AppSpacing.md,
+                  top: AppSpacing.xs,
+                  bottom: AppSpacing.xs,
+                ),
+                title: Text(item.habit.name, style: AppTextStyles.titleMedium),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: HabitFreqChip(habit: item.habit),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (hasStreak) ...[
+                      StreakBadge(item.streak),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                    const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textOnDarkSecondary,
+                    ),
                   ],
-                  const Icon(Icons.chevron_right,
-                      color: AppColors.textOnDarkSecondary),
-                ],
-              ),
-              onTap: () => _showAddHabitSheet(context, ref, existing: item.habit),
-              onLongPress: () => _confirmDelete(context, ref, item.habit),
-            ),
-          ),
-          if (hasStreak)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Container(
-                width: 3,
-                color: StreakBadge.color(item.streak),
+                ),
+                onTap:
+                    () =>
+                        _showAddHabitSheet(context, ref, existing: item.habit),
+                onLongPress: () => _confirmDelete(context, ref, item.habit),
               ),
             ),
-        ],
+            if (hasStreak)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 3,
+                  color: StreakBadge.color(item.streak),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -181,20 +209,31 @@ class _HabitManageCard extends ConsumerWidget {
   void _confirmDelete(BuildContext context, WidgetRef ref, Habit habit) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete habit?'),
-        content: Text('This will permanently delete "${habit.name}" and all its history.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(habitsNotifierProvider.notifier).deleteHabit(habit.id);
-            },
-            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete habit?'),
+            content: Text(
+              'This will permanently delete "${habit.name}" and all its history.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref
+                      .read(habitsNotifierProvider.notifier)
+                      .deleteHabit(habit.id);
+                },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -225,7 +264,8 @@ class _HabitFormSheet extends StatefulWidget {
     required String frequencyType,
     required int targetDaysPerWeek,
     required int skipsAllowedPerWeek,
-  }) onSave;
+  })
+  onSave;
   final VoidCallback? onDelete;
 
   const _HabitFormSheet({
@@ -312,19 +352,21 @@ class _HabitFormSheetState extends State<_HabitFormSheet> {
               HabitFreqChip(
                 label: 'Daily',
                 selected: _frequencyType == 'daily',
-                onTap: () => setState(() {
-                  _frequencyType = 'daily';
-                  _targetDays = 7;
-                }),
+                onTap:
+                    () => setState(() {
+                      _frequencyType = 'daily';
+                      _targetDays = 7;
+                    }),
               ),
               const SizedBox(width: 10),
               HabitFreqChip(
                 label: 'Weekly',
                 selected: _frequencyType == 'weekly',
-                onTap: () => setState(() {
-                  _frequencyType = 'weekly';
-                  if (_targetDays == 7) _targetDays = 3;
-                }),
+                onTap:
+                    () => setState(() {
+                      _frequencyType = 'weekly';
+                      if (_targetDays == 7) _targetDays = 3;
+                    }),
               ),
             ],
           ),
@@ -354,7 +396,10 @@ class _HabitFormSheetState extends State<_HabitFormSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Skip allowance / week', style: AppTextStyles.bodyMedium),
+                    Text(
+                      'Skip allowance / week',
+                      style: AppTextStyles.bodyMedium,
+                    ),
                     Text(
                       'How many times can you skip this habit each week?',
                       style: AppTextStyles.labelSmall,
@@ -475,17 +520,16 @@ class _CounterBtn extends StatelessWidget {
           shape: BoxShape.circle,
           color: enabled ? AppColors.glassBg : Colors.transparent,
           border: Border.all(
-            color: enabled
-                ? AppColors.glassBorder
-                : AppColors.glassBorder.withValues(alpha: 0.4),
+            color:
+                enabled
+                    ? AppColors.glassBorder
+                    : AppColors.glassBorder.withValues(alpha: 0.4),
           ),
         ),
         child: Icon(
           icon,
           size: 16,
-          color: enabled
-              ? AppColors.textOnDark
-              : AppColors.textOnDarkTertiary,
+          color: enabled ? AppColors.textOnDark : AppColors.textOnDarkTertiary,
         ),
       ),
     );
@@ -512,9 +556,11 @@ class HabitFreqChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // When used as a display chip (passed a habit), derive label/selected from it.
-    final effectiveLabel = label ?? (habit!.frequencyType == 'weekly'
-        ? '${habit!.targetDaysPerWeek}× / week'
-        : 'Daily');
+    final effectiveLabel =
+        label ??
+        (habit!.frequencyType == 'weekly'
+            ? '${habit!.targetDaysPerWeek}× / week'
+            : 'Daily');
     final effectiveSelected = selected ?? false;
 
     return GestureDetector(
@@ -526,7 +572,10 @@ class HabitFreqChip extends StatelessWidget {
           color: effectiveSelected ? AppColors.terracotta : AppColors.glassBg,
           borderRadius: AppRadius.mdAll,
           border: Border.all(
-            color: effectiveSelected ? AppColors.terracotta : AppColors.glassBorder,
+            color:
+                effectiveSelected
+                    ? AppColors.terracotta
+                    : AppColors.glassBorder,
           ),
         ),
         child: Text(
@@ -608,8 +657,18 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
   @override
   Widget build(BuildContext context) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
 
     return Container(
@@ -628,7 +687,9 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
           Expanded(
             child: ListView(
               controller: widget.scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg - 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg - 4,
+              ),
               children: [
                 Text('Progress Calendar', style: AppTextStyles.headlineMedium),
                 const SizedBox(height: AppSpacing.md),
@@ -641,7 +702,8 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: widget.habits.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+                      separatorBuilder:
+                          (_, _) => const SizedBox(width: AppSpacing.sm),
                       itemBuilder: (ctx, i) {
                         final h = widget.habits[i];
                         final sel = h.habit.id == _selectedHabitId;
@@ -652,17 +714,21 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: AppSpacing.sm),
+                              horizontal: 14,
+                              vertical: AppSpacing.sm,
+                            ),
                             decoration: BoxDecoration(
-                              color: sel
-                                  ? AppColors.terracotta
-                                  : AppColors.glassBg,
+                              color:
+                                  sel
+                                      ? AppColors.terracotta
+                                      : AppColors.glassBg,
                               borderRadius: AppRadius.xlAll,
                             ),
                             child: Text(
                               h.habit.name,
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: sel ? Colors.white : AppColors.textOnDark,
+                                color:
+                                    sel ? Colors.white : AppColors.textOnDark,
                                 fontWeight:
                                     sel ? FontWeight.bold : FontWeight.normal,
                               ),
@@ -681,6 +747,7 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
                     IconButton(
                       onPressed: _prevMonth,
                       icon: const Icon(Icons.chevron_left),
+                      tooltip: 'Previous month',
                     ),
                     Text(
                       '${months[_displayMonth.month - 1]} ${_displayMonth.year}',
@@ -689,6 +756,7 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
                     IconButton(
                       onPressed: _nextMonth,
                       icon: const Icon(Icons.chevron_right),
+                      tooltip: 'Next month',
                     ),
                   ],
                 ),
@@ -696,16 +764,17 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                      .map(
-                        (l) => SizedBox(
-                          width: 36,
-                          child: Center(
-                            child: Text(l, style: AppTextStyles.labelSmall),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                          .map(
+                            (l) => SizedBox(
+                              width: 36,
+                              child: Center(
+                                child: Text(l, style: AppTextStyles.labelSmall),
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
@@ -753,7 +822,10 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
             }
 
             final date = DateTime.utc(
-                _displayMonth.year, _displayMonth.month, dayNum);
+              _displayMonth.year,
+              _displayMonth.month,
+              dayNum,
+            );
             final isToday = date == today;
             final isCompleted = _completedDates.contains(date);
             final isFuture = date.isAfter(today);
@@ -779,15 +851,16 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
               child: Container(
                 width: 36,
                 height: 36,
-                decoration:
-                    BoxDecoration(color: bgColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                ),
                 child: Center(
                   child: Text(
                     '$dayNum',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: textColor,
-                      fontWeight:
-                          isToday ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),

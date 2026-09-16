@@ -51,8 +51,8 @@ class NutritionScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.tune_outlined),
             tooltip: 'Edit goals',
-            onPressed: () =>
-                _showGoalsSheet(context, ref, nutritionAsync.value),
+            onPressed:
+                () => _showGoalsSheet(context, ref, nutritionAsync.value),
           ),
         ],
       ),
@@ -62,10 +62,14 @@ class NutritionScreen extends ConsumerWidget {
         label: const Text('Add Meal'),
       ),
       body: nutritionAsync.when(
-        loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.terracotta)),
-        error: (_, _) => const Center(
-            child: Text("Couldn't load nutrition. Pull down to retry.")),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: AppColors.terracotta),
+            ),
+        error:
+            (_, _) => const Center(
+              child: Text("Couldn't load nutrition. Pull down to retry."),
+            ),
         data: (nutrition) => _NutritionBody(nutrition: nutrition),
       ),
     );
@@ -84,7 +88,11 @@ class _NutritionBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md, 0, AppSpacing.md, AppSpacing.xxl),
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.xxl,
+      ),
       children: [
         // ── Calorie ring + macros ────────────────────────────────────────────
         NutritionCalorieSummary(nutrition: nutrition),
@@ -134,13 +142,18 @@ class _EmptyMeals extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         children: [
-          Icon(Icons.restaurant_menu_outlined,
-              size: 48, color: AppColors.glassBorder),
+          Icon(
+            Icons.restaurant_menu_outlined,
+            size: 48,
+            color: AppColors.glassBorder,
+          ),
           const SizedBox(height: AppSpacing.md),
           Text('No meals logged yet', style: AppTextStyles.titleMedium),
           const SizedBox(height: AppSpacing.xs),
-          Text('Tap + Add Meal to get started',
-              style: AppTextStyles.bodyMedium),
+          Text(
+            'Tap + Add Meal to get started',
+            style: AppTextStyles.bodyMedium,
+          ),
           const SizedBox(height: AppSpacing.lg),
           OutlinedButton.icon(
             icon: const Icon(Icons.history, size: 18),
@@ -179,20 +192,23 @@ class _WaterSection extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.water_drop_outlined,
-                      color: AppColors.waterColor, size: 20),
+                  const Icon(
+                    Icons.water_drop_outlined,
+                    color: AppColors.waterColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Text('Water', style: AppTextStyles.titleMedium),
                 ],
               ),
               Text(
-                '${_mlLabel(current)} / ${_mlLabel(goal)}',
+                '${formatWaterMl(current)} / ${formatWaterMl(goal)}',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isOver
-                      ? AppColors.eucalyptus
-                      : AppColors.textOnDarkSecondary,
-                  fontWeight:
-                      isOver ? FontWeight.w600 : FontWeight.normal,
+                  color:
+                      isOver
+                          ? AppColors.eucalyptus
+                          : AppColors.textOnDarkSecondary,
+                  fontWeight: isOver ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],
@@ -210,17 +226,11 @@ class _WaterSection extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              _WaterChip(
-                  label: '+250ml',
-                  onTap: () => notifier.logWater(250)),
+              _WaterChip(label: '+250ml', onTap: () => notifier.logWater(250)),
               const SizedBox(width: AppSpacing.sm),
-              _WaterChip(
-                  label: '+500ml',
-                  onTap: () => notifier.logWater(500)),
+              _WaterChip(label: '+500ml', onTap: () => notifier.logWater(500)),
               const SizedBox(width: AppSpacing.sm),
-              _WaterChip(
-                  label: '+1L',
-                  onTap: () => notifier.logWater(1000)),
+              _WaterChip(label: '+1L', onTap: () => notifier.logWater(1000)),
               const SizedBox(width: AppSpacing.sm),
               _WaterCustomChip(
                 onTap: () => _showWaterDialog(context, notifier),
@@ -232,38 +242,35 @@ class _WaterSection extends ConsumerWidget {
     );
   }
 
-  String _mlLabel(double ml) => ml >= 1000
-      ? '${(ml / 1000).toStringAsFixed(1)}L'
-      : '${ml.toInt()}ml';
-
-  void _showWaterDialog(
-      BuildContext context, NutritionNotifier notifier) {
+  void _showWaterDialog(BuildContext context, NutritionNotifier notifier) {
     final ctrl = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log Water'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          style: AppTextStyles.bodyLarge,
-          decoration: const InputDecoration(labelText: 'Amount (ml)'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              final ml = double.tryParse(ctrl.text);
-              if (ml != null && ml > 0) notifier.logWater(ml);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Log'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Log Water'),
+            content: TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              style: AppTextStyles.bodyLarge,
+              decoration: const InputDecoration(labelText: 'Amount (ml)'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final ml = double.tryParse(ctrl.text);
+                  if (ml != null && ml > 0) notifier.logWater(ml);
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Log'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -278,18 +285,20 @@ class _WaterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.waterColor.withValues(alpha: 0.15),
           borderRadius: AppRadius.mdAll,
           border: Border.all(
-              color: AppColors.waterColor.withValues(alpha: 0.4)),
+            color: AppColors.waterColor.withValues(alpha: 0.4),
+          ),
         ),
         child: Text(
           label,
           style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.waterColor, fontWeight: FontWeight.w700),
+            color: AppColors.waterColor,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -305,16 +314,16 @@ class _WaterCustomChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.glassBg,
           borderRadius: AppRadius.mdAll,
           border: Border.all(color: AppColors.glassBorder),
         ),
-        child: Text('Custom',
-            style: AppTextStyles.labelSmall
-                .copyWith(color: AppColors.textOnDark)),
+        child: Text(
+          'Custom',
+          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textOnDark),
+        ),
       ),
     );
   }
@@ -348,21 +357,23 @@ class _MealCardState extends ConsumerState<_MealCard> {
             onLongPress: () => _confirmDelete(context),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(m.meal.name,
-                            style: AppTextStyles.titleMedium),
+                        Text(m.meal.name, style: AppTextStyles.titleMedium),
                         const SizedBox(height: 2),
                         Text(
                           '${m.calories.toInt()} kcal'
                           '  ·  P ${m.protein.toInt()}g'
                           '  C ${m.carbs.toInt()}g'
-                          '  F ${m.fat.toInt()}g',
+                          '  F ${m.fat.toInt()}g'
+                          '  S ${m.sugar.toInt()}g',
                           style: AppTextStyles.bodyMedium,
                         ),
                       ],
@@ -371,8 +382,10 @@ class _MealCardState extends ConsumerState<_MealCard> {
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more,
-                        color: AppColors.textOnDarkSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textOnDarkSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -385,8 +398,10 @@ class _MealCardState extends ConsumerState<_MealCard> {
             if (m.entries.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text('No food added yet',
-                    style: AppTextStyles.bodyMedium),
+                child: Text(
+                  'No food added yet',
+                  style: AppTextStyles.bodyMedium,
+                ),
               )
             else
               ...m.entries.map((e) => _FoodEntryTile(entry: e)),
@@ -405,27 +420,31 @@ class _MealCardState extends ConsumerState<_MealCard> {
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete meal?'),
-        content: Text(
-            'Remove "${widget.mealWithEntries.meal.name}" and all its food entries?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(nutritionNotifierProvider.notifier)
-                  .deleteMeal(widget.mealWithEntries.meal.id);
-            },
-            child: Text('Delete',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete meal?'),
+            content: Text(
+              'Remove "${widget.mealWithEntries.meal.name}" and all its food entries?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref
+                      .read(nutritionNotifierProvider.notifier)
+                      .deleteMeal(widget.mealWithEntries.meal.id);
+                },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -447,23 +466,25 @@ class _FoodEntryTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.md),
         color: AppColors.terracotta.withValues(alpha: 0.2),
-        child:
-            const Icon(Icons.delete_outline, color: AppColors.terracotta),
+        child: const Icon(Icons.delete_outline, color: AppColors.terracotta),
       ),
-      onDismissed: (_) => ref
-          .read(nutritionNotifierProvider.notifier)
-          .deleteFoodEntry(entry.id),
+      onDismissed:
+          (_) => ref
+              .read(nutritionNotifierProvider.notifier)
+              .deleteFoodEntry(entry.id),
       child: ListTile(
         dense: true,
         title: Text(entry.name, style: AppTextStyles.bodyLarge),
         subtitle: Text(
-          'P ${entry.protein.toInt()}g  C ${entry.carbs.toInt()}g  F ${entry.fat.toInt()}g',
+          'P ${entry.protein.toInt()}g  C ${entry.carbs.toInt()}g  F ${entry.fat.toInt()}g  S ${entry.sugar.toInt()}g',
           style: AppTextStyles.bodyMedium,
         ),
         trailing: Text(
           '${entry.calories.toInt()} kcal',
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.khaki, fontWeight: FontWeight.w600),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.khaki,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -503,13 +524,7 @@ class _AddMealSheet extends ConsumerStatefulWidget {
 }
 
 class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
-  static const _presets = [
-    'Breakfast',
-    'Lunch',
-    'Dinner',
-    'Snack',
-    'Brunch'
-  ];
+  static const _presets = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Brunch'];
   String? _selected;
   final _ctrl = TextEditingController();
   bool _custom = false;
@@ -550,21 +565,25 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
-              ..._presets.map((p) => SelectableChip(
-                    label: p,
-                    selected: _selected == p && !_custom,
-                    onTap: () => setState(() {
-                      _selected = p;
-                      _custom = false;
-                    }),
-                  )),
+              ..._presets.map(
+                (p) => SelectableChip(
+                  label: p,
+                  selected: _selected == p && !_custom,
+                  onTap:
+                      () => setState(() {
+                        _selected = p;
+                        _custom = false;
+                      }),
+                ),
+              ),
               SelectableChip(
                 label: 'Custom',
                 selected: _custom,
-                onTap: () => setState(() {
-                  _selected = null;
-                  _custom = true;
-                }),
+                onTap:
+                    () => setState(() {
+                      _selected = null;
+                      _custom = true;
+                    }),
               ),
             ],
           ),
@@ -625,6 +644,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
   final _proCtrl = TextEditingController();
   final _carbCtrl = TextEditingController();
   final _fatCtrl = TextEditingController();
+  final _sugarCtrl = TextEditingController();
   String _query = '';
 
   @override
@@ -632,7 +652,8 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
     super.initState();
     _tab = TabController(length: 2, vsync: this);
     _searchCtrl.addListener(
-        () => setState(() => _query = _searchCtrl.text.toLowerCase()));
+      () => setState(() => _query = _searchCtrl.text.toLowerCase()),
+    );
   }
 
   @override
@@ -644,6 +665,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
     _proCtrl.dispose();
     _carbCtrl.dispose();
     _fatCtrl.dispose();
+    _sugarCtrl.dispose();
     super.dispose();
   }
 
@@ -654,57 +676,60 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
       initialChildSize: 0.75,
       minChildSize: 0.5,
       maxChildSize: 0.92,
-      builder: (_, scrollCtrl) => Container(
-        decoration: AppGlass.modal(),
-        child: Column(
-          children: [
-            const AppDragHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Add Food', style: AppTextStyles.headlineMedium),
-                  const SizedBox(height: AppSpacing.sm),
-                  TabBar(
-                    controller: _tab,
-                    tabs: const [
-                      Tab(text: 'Pantry'),
-                      Tab(text: 'Manual'),
+      builder:
+          (_, scrollCtrl) => Container(
+            decoration: AppGlass.modal(),
+            child: Column(
+              children: [
+                const AppDragHandle(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Add Food', style: AppTextStyles.headlineMedium),
+                      const SizedBox(height: AppSpacing.sm),
+                      TabBar(
+                        controller: _tab,
+                        tabs: const [Tab(text: 'Pantry'), Tab(text: 'Manual')],
+                        labelColor: AppColors.terracotta,
+                        unselectedLabelColor: AppColors.textOnDarkTertiary,
+                        indicatorColor: AppColors.terracotta,
+                        dividerColor: AppColors.glassBorder,
+                      ),
                     ],
-                    labelColor: AppColors.terracotta,
-                    unselectedLabelColor: AppColors.textOnDarkTertiary,
-                    indicatorColor: AppColors.terracotta,
-                    dividerColor: AppColors.glassBorder,
                   ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tab,
+                    children: [
+                      _PantrySearchTab(
+                        mealId: widget.mealId,
+                        searchCtrl: _searchCtrl,
+                        query: _query,
+                        scrollCtrl: scrollCtrl,
+                      ),
+                      _ManualEntryTab(
+                        mealId: widget.mealId,
+                        nameCtrl: _nameCtrl,
+                        calCtrl: _calCtrl,
+                        proCtrl: _proCtrl,
+                        carbCtrl: _carbCtrl,
+                        fatCtrl: _fatCtrl,
+                        sugarCtrl: _sugarCtrl,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tab,
-                children: [
-                  _PantrySearchTab(
-                    mealId: widget.mealId,
-                    searchCtrl: _searchCtrl,
-                    query: _query,
-                    scrollCtrl: scrollCtrl,
-                  ),
-                  _ManualEntryTab(
-                    mealId: widget.mealId,
-                    nameCtrl: _nameCtrl,
-                    calCtrl: _calCtrl,
-                    proCtrl: _proCtrl,
-                    carbCtrl: _carbCtrl,
-                    fatCtrl: _fatCtrl,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
@@ -726,52 +751,63 @@ class _PantrySearchTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pantry = ref.watch(pantryNotifierProvider).value ?? [];
-    final results = query.isEmpty
-        ? pantry
-        : pantry
-            .where((f) => f.name.toLowerCase().contains(query))
-            .toList();
+    final results =
+        query.isEmpty
+            ? pantry
+            : pantry
+                .where((f) => f.name.toLowerCase().contains(query))
+                .toList();
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
           child: TextField(
             controller: searchCtrl,
             style: AppTextStyles.bodyLarge,
             decoration: InputDecoration(
               hintText: 'Search foods...',
-              prefixIcon: const Icon(Icons.search_outlined,
-                  color: AppColors.textOnDarkTertiary),
-              suffixIcon: query.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear,
-                          color: AppColors.textOnDarkTertiary),
-                      onPressed: searchCtrl.clear,
-                    )
-                  : null,
+              prefixIcon: const Icon(
+                Icons.search_outlined,
+                color: AppColors.textOnDarkTertiary,
+              ),
+              suffixIcon:
+                  query.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: AppColors.textOnDarkTertiary,
+                        ),
+                        tooltip: 'Clear search',
+                        onPressed: searchCtrl.clear,
+                      )
+                      : null,
             ),
           ),
         ),
         Expanded(
-          child: results.isEmpty
-              ? Center(
-                  child: Text(
-                    query.isEmpty
-                        ? 'Pantry is empty'
-                        : 'No foods match "$query"',
-                    style: AppTextStyles.bodyMedium,
+          child:
+              results.isEmpty
+                  ? Center(
+                    child: Text(
+                      query.isEmpty
+                          ? 'Pantry is empty'
+                          : 'No foods match "$query"',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                  )
+                  : ListView.builder(
+                    controller: scrollCtrl,
+                    itemCount: results.length,
+                    itemBuilder:
+                        (_, i) =>
+                            _PantryFoodTile(food: results[i], mealId: mealId),
                   ),
-                )
-              : ListView.builder(
-                  controller: scrollCtrl,
-                  itemCount: results.length,
-                  itemBuilder: (_, i) => _PantryFoodTile(
-                    food: results[i],
-                    mealId: mealId,
-                  ),
-                ),
         ),
       ],
     );
@@ -807,69 +843,87 @@ class _PantryFoodTile extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (_, setSt) => AlertDialog(
-          title: Text(food.name),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(food.servingLabel, style: AppTextStyles.bodyMedium),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: servings > 0.5
-                        ? () => setSt(() => servings = double.parse(
-                            (servings - 0.5).toStringAsFixed(1)))
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  SizedBox(
-                    width: 56,
-                    child: Center(
-                      child: Text(
-                        '${servings.toStringAsFixed(servings == servings.truncateToDouble() ? 0 : 1)}×',
-                        style: AppTextStyles.titleLarge,
+      builder:
+          (dialogCtx) => StatefulBuilder(
+            builder:
+                (_, setSt) => AlertDialog(
+                  title: Text(food.name),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(food.servingLabel, style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed:
+                                servings > 0.5
+                                    ? () => setSt(
+                                      () =>
+                                          servings = double.parse(
+                                            (servings - 0.5).toStringAsFixed(1),
+                                          ),
+                                    )
+                                    : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                            tooltip: 'Fewer servings',
+                          ),
+                          SizedBox(
+                            width: 56,
+                            child: Center(
+                              child: Text(
+                                '${servings.toStringAsFixed(servings == servings.truncateToDouble() ? 0 : 1)}×',
+                                style: AppTextStyles.titleLarge,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed:
+                                () => setSt(
+                                  () =>
+                                      servings = double.parse(
+                                        (servings + 0.5).toStringAsFixed(1),
+                                      ),
+                                ),
+                            icon: const Icon(Icons.add_circle_outline),
+                            tooltip: 'More servings',
+                          ),
+                        ],
                       ),
+                      Text(
+                        '${(food.calories * servings).toInt()} kcal',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: AppColors.khaki,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx),
+                      child: const Text('Cancel'),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => setSt(() => servings = double.parse(
-                        (servings + 0.5).toStringAsFixed(1))),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                ],
-              ),
-              Text(
-                '${(food.calories * servings).toInt()} kcal',
-                style: AppTextStyles.bodyLarge
-                    .copyWith(color: AppColors.khaki),
-              ),
-            ],
+                    FilledButton(
+                      onPressed: () {
+                        ref
+                            .read(nutritionNotifierProvider.notifier)
+                            .addFoodEntry(
+                              mealId: mealId,
+                              name: food.name,
+                              calories: food.calories * servings,
+                              protein: food.protein * servings,
+                              carbs: food.carbs * servings,
+                              fat: food.fat * servings,
+                            );
+                        Navigator.pop(dialogCtx); // close dialog
+                        sheetNavigator.pop(); // close food sheet
+                      },
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                ref.read(nutritionNotifierProvider.notifier).addFoodEntry(
-                      mealId: mealId,
-                      name: food.name,
-                      calories: food.calories * servings,
-                      protein: food.protein * servings,
-                      carbs: food.carbs * servings,
-                      fat: food.fat * servings,
-                    );
-                Navigator.pop(dialogCtx); // close dialog
-                sheetNavigator.pop();     // close food sheet
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -884,6 +938,7 @@ class _ManualEntryTab extends ConsumerWidget {
     required this.proCtrl,
     required this.carbCtrl,
     required this.fatCtrl,
+    required this.sugarCtrl,
   });
   final String mealId;
   final TextEditingController nameCtrl;
@@ -891,12 +946,17 @@ class _ManualEntryTab extends ConsumerWidget {
   final TextEditingController proCtrl;
   final TextEditingController carbCtrl;
   final TextEditingController fatCtrl;
+  final TextEditingController sugarCtrl;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xl),
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       child: Column(
         children: [
           _FormField(ctrl: nameCtrl, label: 'Food name'),
@@ -904,18 +964,22 @@ class _ManualEntryTab extends ConsumerWidget {
           _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
           _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
           _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
+          _FormField(ctrl: sugarCtrl, label: 'Sugar', unit: 'g'),
           const SizedBox(height: AppSpacing.lg),
           FilledButton(
             onPressed: () {
               final name = nameCtrl.text.trim();
               if (name.isEmpty) return;
-              ref.read(nutritionNotifierProvider.notifier).addFoodEntry(
+              ref
+                  .read(nutritionNotifierProvider.notifier)
+                  .addFoodEntry(
                     mealId: mealId,
                     name: name,
                     calories: double.tryParse(calCtrl.text) ?? 0,
                     protein: double.tryParse(proCtrl.text) ?? 0,
                     carbs: double.tryParse(carbCtrl.text) ?? 0,
                     fat: double.tryParse(fatCtrl.text) ?? 0,
+                    sugar: double.tryParse(sugarCtrl.text) ?? 0,
                   );
               Navigator.pop(context);
             },
@@ -932,83 +996,94 @@ class _ManualEntryTab extends ConsumerWidget {
 // =============================================================================
 
 void _showGoalsSheet(
-    BuildContext context, WidgetRef ref, TodayNutrition? nutrition) {
+  BuildContext context,
+  WidgetRef ref,
+  TodayNutrition? nutrition,
+) {
   final goals = nutrition?.goals;
-  final calCtrl =
-      TextEditingController(text: '${goals?.calories.toInt() ?? 2000}');
-  final proCtrl =
-      TextEditingController(text: '${goals?.protein.toInt() ?? 150}');
-  final carbCtrl =
-      TextEditingController(text: '${goals?.carbs.toInt() ?? 250}');
-  final fatCtrl =
-      TextEditingController(text: '${goals?.fat.toInt() ?? 65}');
-  final waterCtrl =
-      TextEditingController(text: '${goals?.waterMl.toInt() ?? 2500}');
+  final calCtrl = TextEditingController(
+    text: '${goals?.calories.toInt() ?? 2000}',
+  );
+  final proCtrl = TextEditingController(
+    text: '${goals?.protein.toInt() ?? 150}',
+  );
+  final carbCtrl = TextEditingController(
+    text: '${goals?.carbs.toInt() ?? 250}',
+  );
+  final fatCtrl = TextEditingController(text: '${goals?.fat.toInt() ?? 65}');
+  final waterCtrl = TextEditingController(
+    text: '${goals?.waterMl.toInt() ?? 2500}',
+  );
   final curWeightCtrl = TextEditingController(
-      text: goals?.currentWeightKg?.toStringAsFixed(1) ?? '');
+    text: goals?.currentWeightKg?.toStringAsFixed(1) ?? '',
+  );
   final tgtWeightCtrl = TextEditingController(
-      text: goals?.targetWeightKg?.toStringAsFixed(1) ?? '');
+    text: goals?.targetWeightKg?.toStringAsFixed(1) ?? '',
+  );
 
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.lg,
-        right: AppSpacing.lg,
-        top: AppSpacing.lg,
-        bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const AppDragHandle(),
-            Text('Daily Goals', style: AppTextStyles.headlineMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Set your daily nutrition targets',
-                style: AppTextStyles.bodyMedium),
-            const SizedBox(height: AppSpacing.lg),
-            _FormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
-            _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
-            _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
-            _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
-            _FormField(ctrl: waterCtrl, label: 'Water', unit: 'ml'),
-            _FormField(
-                ctrl: curWeightCtrl,
-                label: 'Current Weight',
-                unit: 'kg',
-                decimal: true),
-            _FormField(
-                ctrl: tgtWeightCtrl,
-                label: 'Target Weight',
-                unit: 'kg',
-                decimal: true),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton(
-              onPressed: () {
-                ref.read(nutritionNotifierProvider.notifier).updateGoals(
-                      calories:
-                          double.tryParse(calCtrl.text) ?? 2000,
-                      protein: double.tryParse(proCtrl.text) ?? 150,
-                      carbs: double.tryParse(carbCtrl.text) ?? 250,
-                      fat: double.tryParse(fatCtrl.text) ?? 65,
-                      waterMl:
-                          double.tryParse(waterCtrl.text) ?? 2500,
-                      currentWeightKg:
-                          double.tryParse(curWeightCtrl.text),
-                      targetWeightKg:
-                          double.tryParse(tgtWeightCtrl.text),
-                    );
-                Navigator.pop(ctx);
-              },
-              child: const Text('Save Goals'),
+    builder:
+        (ctx) => Padding(
+          padding: EdgeInsets.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.lg,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const AppDragHandle(),
+                Text('Daily Goals', style: AppTextStyles.headlineMedium),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Set your daily nutrition targets',
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _FormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
+                _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
+                _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
+                _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
+                _FormField(ctrl: waterCtrl, label: 'Water', unit: 'ml'),
+                _FormField(
+                  ctrl: curWeightCtrl,
+                  label: 'Current Weight',
+                  unit: 'kg',
+                  decimal: true,
+                ),
+                _FormField(
+                  ctrl: tgtWeightCtrl,
+                  label: 'Target Weight',
+                  unit: 'kg',
+                  decimal: true,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton(
+                  onPressed: () {
+                    ref
+                        .read(nutritionNotifierProvider.notifier)
+                        .updateGoals(
+                          calories: double.tryParse(calCtrl.text) ?? 2000,
+                          protein: double.tryParse(proCtrl.text) ?? 150,
+                          carbs: double.tryParse(carbCtrl.text) ?? 250,
+                          fat: double.tryParse(fatCtrl.text) ?? 65,
+                          waterMl: double.tryParse(waterCtrl.text) ?? 2500,
+                          currentWeightKg: double.tryParse(curWeightCtrl.text),
+                          targetWeightKg: double.tryParse(tgtWeightCtrl.text),
+                        );
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Save Goals'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
   );
 }
 
@@ -1035,9 +1110,10 @@ class _FormField extends StatelessWidget {
       child: TextField(
         controller: ctrl,
         style: AppTextStyles.bodyLarge,
-        keyboardType: decimal
-            ? const TextInputType.numberWithOptions(decimal: true)
-            : TextInputType.number,
+        keyboardType:
+            decimal
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.number,
         decoration: InputDecoration(
           labelText: unit != null ? '$label ($unit)' : label,
         ),
@@ -1061,8 +1137,7 @@ class NutritionCalorieSummary extends StatelessWidget {
     final remaining = (goal - current).clamp(0, double.infinity);
     final progress = (current / goal).clamp(0.0, 1.0);
     final isOver = current > goal;
-    final barColor =
-        isOver ? AppColors.terracotta : AppColors.eucalyptus;
+    final barColor = isOver ? AppColors.terracotta : AppColors.eucalyptus;
 
     return AppGlass.card(
       padding: AppPaddings.card,
@@ -1085,8 +1160,10 @@ class NutritionCalorieSummary extends StatelessWidget {
                 Center(
                   child: Text(
                     '${(progress * 100).toInt()}%',
-                    style: AppTextStyles.titleMedium
-                        .copyWith(fontSize: 14, color: barColor),
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontSize: 14,
+                      color: barColor,
+                    ),
                   ),
                 ),
               ],
@@ -1101,20 +1178,19 @@ class NutritionCalorieSummary extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${current.toInt()}',
-                  style: AppTextStyles.displayLarge
-                      .copyWith(fontSize: 28),
+                  style: AppTextStyles.displayLarge.copyWith(fontSize: 28),
                 ),
-                Text('of ${goal.toInt()} kcal',
-                    style: AppTextStyles.bodyMedium),
+                Text(
+                  'of ${goal.toInt()} kcal',
+                  style: AppTextStyles.bodyMedium,
+                ),
                 const SizedBox(height: AppSpacing.sm - 2),
                 Text(
                   isOver
                       ? '${(current - goal).toInt()} kcal over'
                       : '${remaining.toInt()} kcal remaining',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: isOver
-                        ? AppColors.terracotta
-                        : AppColors.eucalyptus,
+                    color: isOver ? AppColors.terracotta : AppColors.eucalyptus,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1134,8 +1210,10 @@ class NutritionMacroRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final goals = nutrition.goals;
-    return Row(
-      children: [
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         Expanded(
           child: NutritionMacroPill(
             label: 'Protein',
@@ -1165,7 +1243,20 @@ class NutritionMacroRow extends StatelessWidget {
             color: AppColors.fatColor,
           ),
         ),
-      ],
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: NutritionMacroPill(
+            label: 'Sugar',
+            current: nutrition.totalSugar,
+            // No user-configurable goal for sugar yet — use the common
+            // recommended daily added-sugar limit as the default target.
+            goal: 50,
+            unit: 'g',
+            color: AppColors.sugarColor,
+          ),
+        ),
+        ],
+      ),
     );
   }
 }
@@ -1173,7 +1264,11 @@ class NutritionMacroRow extends StatelessWidget {
 class NutritionMacroPill extends StatelessWidget {
   final String label;
   final double current;
-  final double goal;
+
+  /// Target amount to show progress against. When null, the pill shows the
+  /// current total only (no progress bar or "/ goal" line) — used for
+  /// nutrients that are tracked but don't have a goal yet, like sugar.
+  final double? goal;
   final String unit;
   final Color color;
 
@@ -1188,8 +1283,10 @@ class NutritionMacroPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (current / goal).clamp(0.0, 1.0);
-    final isOver = current > goal;
+    final goal = this.goal;
+    final hasGoal = goal != null && goal > 0;
+    final progress = hasGoal ? (current / goal).clamp(0.0, 1.0) : 0.0;
+    final isOver = hasGoal && current > goal;
 
     return AppGlass.card(
       padding: const EdgeInsets.all(12),
@@ -1202,23 +1299,23 @@ class NutritionMacroPill extends StatelessWidget {
           Text(
             '${current.toInt()}$unit',
             style: AppTextStyles.titleMedium.copyWith(
-              color: isOver
-                  ? AppColors.terracotta
-                  : AppColors.textOnDark,
+              color: isOver ? AppColors.terracotta : AppColors.textOnDark,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm - 2),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 5,
-              color: isOver ? AppColors.terracotta : color,
-              backgroundColor: color.withValues(alpha: 0.15),
+          if (hasGoal) ...[
+            const SizedBox(height: AppSpacing.sm - 2),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 5,
+                color: isOver ? AppColors.terracotta : color,
+                backgroundColor: color.withValues(alpha: 0.15),
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text('/ ${goal.toInt()}$unit', style: AppTextStyles.labelSmall),
+            const SizedBox(height: AppSpacing.xs),
+            Text('/ ${goal.toInt()}$unit', style: AppTextStyles.labelSmall),
+          ],
         ],
       ),
     );

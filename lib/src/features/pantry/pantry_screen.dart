@@ -54,50 +54,65 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const AppLogoTitle(),
-      ),
+      appBar: AppBar(title: const AppLogoTitle()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFoodForm(context),
         icon: const Icon(Icons.add),
         label: const Text('Add Food'),
       ),
       body: foodsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.terracotta),
-        ),
-        error: (e, _) => const Center(child: Text("Couldn't load your pantry. Pull down to try again.")),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: AppColors.terracotta),
+            ),
+        error:
+            (e, _) => const Center(
+              child: Text("Couldn't load your pantry. Pull down to try again."),
+            ),
         data: (foods) {
-          final filtered = _query.isEmpty
-              ? foods
-              : foods
-                  .where((f) =>
-                      f.name.toLowerCase().contains(_query.toLowerCase()))
-                  .toList();
+          final filtered =
+              _query.isEmpty
+                  ? foods
+                  : foods
+                      .where(
+                        (f) =>
+                            f.name.toLowerCase().contains(_query.toLowerCase()),
+                      )
+                      .toList();
 
           return Column(
             children: [
               // Search bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs),
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
                 child: TextField(
                   controller: _searchCtrl,
                   style: AppTextStyles.bodyLarge,
                   decoration: InputDecoration(
                     hintText: 'Search foods…',
-                    prefixIcon: const Icon(Icons.search,
-                        color: AppColors.textOnDarkTertiary),
-                    suffixIcon: _query.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear,
-                                color: AppColors.textOnDarkTertiary),
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() => _query = '');
-                            },
-                          )
-                        : null,
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.textOnDarkTertiary,
+                    ),
+                    suffixIcon:
+                        _query.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.textOnDarkTertiary,
+                              ),
+                              tooltip: 'Clear search',
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _query = '');
+                              },
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -105,7 +120,9 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
               // Count label
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
                 child: Row(
                   children: [
                     Text(
@@ -118,40 +135,51 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
 
               // Food list
               Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.kitchen_outlined,
+                child:
+                    filtered.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.kitchen_outlined,
                                 size: 56,
-                                color: AppColors.textOnDarkTertiary),
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              _query.isEmpty
-                                  ? 'No foods yet'
-                                  : 'No results for "$_query"',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                  color: AppColors.textOnDarkSecondary),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
+                                color: AppColors.textOnDarkTertiary,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                _query.isEmpty
+                                    ? 'No foods yet'
+                                    : 'No results for "$_query"',
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: AppColors.textOnDarkSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(
                             AppSpacing.md,
                             AppSpacing.sm,
                             AppSpacing.md,
-                            120),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (ctx, i) => _FoodCard(
-                          food: filtered[i],
-                          onEdit: () => _showFoodForm(context, food: filtered[i]),
-                          onDelete: () => _confirmDelete(context, filtered[i]),
+                            120,
+                          ),
+                          itemCount: filtered.length,
+                          separatorBuilder:
+                              (_, _) => const SizedBox(height: AppSpacing.sm),
+                          itemBuilder:
+                              (ctx, i) => _FoodCard(
+                                food: filtered[i],
+                                onEdit:
+                                    () => _showFoodForm(
+                                      context,
+                                      food: filtered[i],
+                                    ),
+                                onDelete:
+                                    () => _confirmDelete(context, filtered[i]),
+                              ),
                         ),
-                      ),
               ),
             ],
           );
@@ -164,68 +192,72 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _FoodFormSheet(
-        food: food,
-        onSave: ({
-          required String name,
-          required double calories,
-          required double protein,
-          required double carbs,
-          required double fat,
-          required String servingLabel,
-        }) async {
-          final notifier = ref.read(pantryNotifierProvider.notifier);
-          if (food == null) {
-            await notifier.addFood(
-              name: name,
-              calories: calories,
-              protein: protein,
-              carbs: carbs,
-              fat: fat,
-              servingLabel: servingLabel,
-            );
-          } else {
-            await notifier.updateFood(
-              id: food.id,
-              name: name,
-              calories: calories,
-              protein: protein,
-              carbs: carbs,
-              fat: fat,
-              servingLabel: servingLabel,
-            );
-          }
-        },
-      ),
+      builder:
+          (ctx) => _FoodFormSheet(
+            food: food,
+            onSave: ({
+              required String name,
+              required double calories,
+              required double protein,
+              required double carbs,
+              required double fat,
+              required String servingLabel,
+            }) async {
+              final notifier = ref.read(pantryNotifierProvider.notifier);
+              if (food == null) {
+                await notifier.addFood(
+                  name: name,
+                  calories: calories,
+                  protein: protein,
+                  carbs: carbs,
+                  fat: fat,
+                  servingLabel: servingLabel,
+                );
+              } else {
+                await notifier.updateFood(
+                  id: food.id,
+                  name: name,
+                  calories: calories,
+                  protein: protein,
+                  carbs: carbs,
+                  fat: fat,
+                  servingLabel: servingLabel,
+                );
+              }
+            },
+          ),
     );
   }
 
   void _confirmDelete(BuildContext context, PantryFood food) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Delete "${food.name}"?', style: AppTextStyles.titleMedium),
-        content: Text(
-          'This food will be removed from your pantry.',
-          style: AppTextStyles.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(
+              'Delete "${food.name}"?',
+              style: AppTextStyles.titleMedium,
+            ),
+            content: Text(
+              'This food will be removed from your pantry.',
+              style: AppTextStyles.bodyMedium,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  ref.read(pantryNotifierProvider.notifier).deleteFood(food.id);
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              ref.read(pantryNotifierProvider.notifier).deleteFood(food.id);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -245,64 +277,83 @@ class _FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onEdit,
-        onLongPress: onDelete,
-        borderRadius: AppRadius.lgAll,
-        child: AppGlass.card(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: 14),
+    // Global presets are read-only — no edit/delete affordance for them.
+    final editable = !food.isPreset;
+    return Semantics(
+      button: editable,
+      label:
+          editable
+              ? '${food.name}, ${food.servingLabel}. Double tap to edit, double tap and hold to delete.'
+              : '${food.name}, ${food.servingLabel}. Preset, read-only.',
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: editable ? onEdit : null,
+          onLongPress: editable ? onDelete : null,
           borderRadius: AppRadius.lgAll,
-          child: Row(
-            children: [
-              // Icon badge
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.terracotta.withValues(alpha: 0.15),
-                  borderRadius: AppRadius.mdAll,
+          child: AppGlass.card(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 14,
+            ),
+            borderRadius: AppRadius.lgAll,
+            child: Row(
+              children: [
+                // Icon badge
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.terracotta.withValues(alpha: 0.15),
+                    borderRadius: AppRadius.mdAll,
+                  ),
+                  child: const Icon(
+                    Icons.set_meal_outlined,
+                    size: 20,
+                    color: AppColors.terracotta,
+                  ),
                 ),
-                child: const Icon(Icons.set_meal_outlined,
-                    size: 20, color: AppColors.terracotta),
-              ),
-              const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: AppSpacing.md),
 
-              // Name + serving
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Name + serving
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(food.name, style: AppTextStyles.titleMedium),
+                      const SizedBox(height: 2),
+                      Text(food.servingLabel, style: AppTextStyles.bodyMedium),
+                    ],
+                  ),
+                ),
+
+                // Macro summary
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(food.name, style: AppTextStyles.titleMedium),
+                    Text(
+                      '${food.calories.toInt()} kcal',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.terracotta,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(food.servingLabel, style: AppTextStyles.bodyMedium),
+                    Text(
+                      'P ${food.protein.toInt()}  C ${food.carbs.toInt()}  F ${food.fat.toInt()}',
+                      style: AppTextStyles.labelSmall,
+                    ),
                   ],
                 ),
-              ),
 
-              // Macro summary
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${food.calories.toInt()} kcal',
-                    style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.terracotta),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'P ${food.protein.toInt()}  C ${food.carbs.toInt()}  F ${food.fat.toInt()}',
-                    style: AppTextStyles.labelSmall,
-                  ),
-                ],
-              ),
-
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.chevron_right,
-                  size: 18, color: AppColors.textOnDarkTertiary),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                Icon(
+                  editable ? Icons.chevron_right : Icons.lock_outline,
+                  size: 18,
+                  color: AppColors.textOnDarkTertiary,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -314,14 +365,15 @@ class _FoodCard extends StatelessWidget {
 // Food form sheet (add + edit)
 // ---------------------------------------------------------------------------
 
-typedef _SaveCallback = Future<void> Function({
-  required String name,
-  required double calories,
-  required double protein,
-  required double carbs,
-  required double fat,
-  required String servingLabel,
-});
+typedef _SaveCallback =
+    Future<void> Function({
+      required String name,
+      required double calories,
+      required double protein,
+      required double carbs,
+      required double fat,
+      required String servingLabel,
+    });
 
 class _FoodFormSheet extends StatefulWidget {
   final PantryFood? food;
@@ -350,13 +402,17 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
     final f = widget.food;
     _nameCtrl = TextEditingController(text: f?.name ?? '');
     _calCtrl = TextEditingController(
-        text: f != null ? f.calories.toStringAsFixed(0) : '');
+      text: f != null ? f.calories.toStringAsFixed(0) : '',
+    );
     _proCtrl = TextEditingController(
-        text: f != null ? f.protein.toStringAsFixed(1) : '');
+      text: f != null ? f.protein.toStringAsFixed(1) : '',
+    );
     _carbCtrl = TextEditingController(
-        text: f != null ? f.carbs.toStringAsFixed(1) : '');
+      text: f != null ? f.carbs.toStringAsFixed(1) : '',
+    );
     _fatCtrl = TextEditingController(
-        text: f != null ? f.fat.toStringAsFixed(1) : '');
+      text: f != null ? f.fat.toStringAsFixed(1) : '',
+    );
     _servingCtrl = TextEditingController(text: f?.servingLabel ?? '1 serving');
   }
 
@@ -381,9 +437,10 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
       protein: double.tryParse(_proCtrl.text) ?? 0,
       carbs: double.tryParse(_carbCtrl.text) ?? 0,
       fat: double.tryParse(_fatCtrl.text) ?? 0,
-      servingLabel: _servingCtrl.text.trim().isEmpty
-          ? '1 serving'
-          : _servingCtrl.text.trim(),
+      servingLabel:
+          _servingCtrl.text.trim().isEmpty
+              ? '1 serving'
+              : _servingCtrl.text.trim(),
     );
     if (mounted) Navigator.pop(context);
   }
@@ -422,7 +479,11 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
             const SizedBox(height: AppSpacing.lg - 4),
 
             _Field(ctrl: _nameCtrl, label: 'Food name', autofocus: !_isEditing),
-            _Field(ctrl: _servingCtrl, label: 'Serving size', hint: 'e.g. 1 slice (28 g)'),
+            _Field(
+              ctrl: _servingCtrl,
+              label: 'Serving size',
+              hint: 'e.g. 1 slice (28 g)',
+            ),
             const SizedBox(height: AppSpacing.sm),
 
             Text('Macros per serving', style: AppTextStyles.labelSmall),
@@ -431,23 +492,43 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
             Row(
               children: [
                 Expanded(
-                    child: _Field(
-                        ctrl: _calCtrl, label: 'Calories', unit: 'kcal', numeric: true)),
+                  child: _Field(
+                    ctrl: _calCtrl,
+                    label: 'Calories',
+                    unit: 'kcal',
+                    numeric: true,
+                  ),
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                    child: _Field(
-                        ctrl: _proCtrl, label: 'Protein', unit: 'g', numeric: true)),
+                  child: _Field(
+                    ctrl: _proCtrl,
+                    label: 'Protein',
+                    unit: 'g',
+                    numeric: true,
+                  ),
+                ),
               ],
             ),
             Row(
               children: [
                 Expanded(
-                    child: _Field(
-                        ctrl: _carbCtrl, label: 'Carbs', unit: 'g', numeric: true)),
+                  child: _Field(
+                    ctrl: _carbCtrl,
+                    label: 'Carbs',
+                    unit: 'g',
+                    numeric: true,
+                  ),
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                    child: _Field(
-                        ctrl: _fatCtrl, label: 'Fat', unit: 'g', numeric: true)),
+                  child: _Field(
+                    ctrl: _fatCtrl,
+                    label: 'Fat',
+                    unit: 'g',
+                    numeric: true,
+                  ),
+                ),
               ],
             ),
 
@@ -455,14 +536,17 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
 
             FilledButton(
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(_isEditing ? 'Save Changes' : 'Add to Pantry'),
+              child:
+                  _saving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Text(_isEditing ? 'Save Changes' : 'Add to Pantry'),
             ),
           ],
         ),
@@ -496,9 +580,10 @@ class _Field extends StatelessWidget {
         controller: ctrl,
         style: AppTextStyles.bodyLarge,
         autofocus: autofocus,
-        keyboardType: numeric
-            ? const TextInputType.numberWithOptions(decimal: true)
-            : TextInputType.text,
+        keyboardType:
+            numeric
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.text,
         decoration: InputDecoration(
           labelText: unit != null ? '$label ($unit)' : label,
           hintText: hint,
@@ -507,4 +592,3 @@ class _Field extends StatelessWidget {
     );
   }
 }
-

@@ -37,6 +37,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
+  final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true;
   bool _loading = false;
@@ -48,6 +49,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -65,10 +67,26 @@ class _AuthScreenState extends State<AuthScreen> {
           password: _passwordController.text,
         );
       } else {
-        await _supabase.auth.signUp(
+        final response = await _supabase.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+        final name = _nameController.text.trim();
+        final userId = response.user?.id;
+        if (name.isNotEmpty && userId != null) {
+          try {
+            await _supabase.from('profiles').upsert({
+              'id': userId,
+              'full_name': name,
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          } catch (e) {
+            // Non-fatal: the account was created successfully even if the
+            // display name couldn't be saved right away.
+            // ignore: avoid_print
+            print('[Auth] failed to save display name: $e');
+          }
+        }
       }
     } on AuthException catch (e) {
       setState(() => _error = _friendlyAuthError(e.message));
@@ -154,7 +172,7 @@ class _AuthScreenState extends State<AuthScreen> {
               // Name (signup only)
               if (!_isLogin) ...[
                 TextField(
-                  controller: TextEditingController(),
+                  controller: _nameController,
                   style: AppTextStyles.bodyLarge,
                   decoration: const InputDecoration(
                     labelText: 'Name',
@@ -180,6 +198,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           : Icons.visibility_outlined,
                       color: AppColors.khaki,
                     ),
+                    tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),

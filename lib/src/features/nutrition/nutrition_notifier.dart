@@ -33,6 +33,7 @@
 //   agent_notifier.dart     — reads totals + calls logWater()
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -62,6 +63,7 @@ class TodayNutrition {
   final double totalProtein;
   final double totalCarbs;
   final double totalFat;
+  final double totalSugar;
   final double totalWaterMl;
 
   const TodayNutrition({
@@ -71,6 +73,7 @@ class TodayNutrition {
     required this.totalProtein,
     required this.totalCarbs,
     required this.totalFat,
+    required this.totalSugar,
     required this.totalWaterMl,
   });
 }
@@ -92,6 +95,7 @@ class MealWithEntries {
   double get protein => entries.fold(0, (s, e) => s + e.protein);
   double get carbs => entries.fold(0, (s, e) => s + e.carbs);
   double get fat => entries.fold(0, (s, e) => s + e.fat);
+  double get sugar => entries.fold(0, (s, e) => s + e.sugar);
 }
 
 // ---------------------------------------------------------------------------
@@ -107,16 +111,29 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     // Stream watchers are date-agnostic so they still fire after midnight
     // without needing to recreate the provider. The asyncMap recomputes the
     // current day's window fresh on every trigger.
+    //
+    // Only a cheap COUNT is watched (not the full rows) — Drift's watch()
+    // invalidation is table-level regardless of which columns are selected,
+    // so a COUNT still fires on every insert/update/delete to the table,
+    // but without materializing the user's entire history into Dart objects
+    // on every write just to immediately discard it.
     final mealsStream =
-        (db.select(db.meals)..where((m) => m.userId.equals(userId))).watch();
+        (db.selectOnly(db.meals)
+              ..addColumns([db.meals.id.count()])
+              ..where(db.meals.userId.equals(userId)))
+            .watchSingle();
 
     final entriesStream =
-        (db.select(db.foodEntries)
-          ..where((e) => e.userId.equals(userId))).watch();
+        (db.selectOnly(db.foodEntries)
+              ..addColumns([db.foodEntries.id.count()])
+              ..where(db.foodEntries.userId.equals(userId)))
+            .watchSingle();
 
     final waterStream =
-        (db.select(db.waterLogs)
-          ..where((w) => w.userId.equals(userId))).watch();
+        (db.selectOnly(db.waterLogs)
+              ..addColumns([db.waterLogs.id.count()])
+              ..where(db.waterLogs.userId.equals(userId)))
+            .watchSingle();
 
     final goalsStream =
         (db.select(db.dailyNutritionGoals)
@@ -137,64 +154,80 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
-
-      // re‑query everything each time any underlying table changes
-      final meals =
-          await (db.select(db.meals)..where(
-            (m) =>
-                m.userId.equals(userId) &
-                m.loggedAt.isBiggerOrEqualValue(startOfDay) &
-                m.loggedAt.isSmallerThanValue(endOfDay),
-          )).get();
-
-      final allEntries =
-          await (db.select(db.foodEntries)
-            ..where((e) => e.userId.equals(userId))).get();
-
-      final goals =
-          await (db.select(db.dailyNutritionGoals)
-            ..where((g) => g.userId.equals(userId))).getSingleOrNull();
-
-      final waterToday =
-          await (db.select(db.waterLogs)..where(
-            (w) =>
-                w.userId.equals(userId) &
-                w.loggedAt.isBiggerOrEqualValue(startOfDay) &
-                w.loggedAt.isSmallerThanValue(endOfDay),
-          )).get();
-
-      final mealsWithEntries =
-          meals.map((meal) {
-            final entries =
-                allEntries.where((e) => e.mealId == meal.id).toList();
-            return MealWithEntries(meal: meal, entries: entries);
-          }).toList();
-
-      double totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0;
-      for (final m in mealsWithEntries) {
-        totalCal += m.calories;
-        totalPro += m.protein;
-        totalCarb += m.carbs;
-        totalFat += m.fat;
-      }
-
-      final totalWater = waterToday.fold<double>(0, (s, w) => s + w.amountMl);
-
-      return TodayNutrition(
-        meals: mealsWithEntries,
-        goals: goals,
-        totalCalories: totalCal,
-        totalProtein: totalPro,
-        totalCarbs: totalCarb,
-        totalFat: totalFat,
-        totalWaterMl: totalWater,
-      );
+      return _computeNutrition(db, userId, startOfDay, endOfDay);
     });
+  }
+
+  /// Shared aggregation used by [build], [getNutritionForDate], and
+  /// [getNutritionForDateRange] — fetches meals/entries/goals/water for
+  /// [start, end) and folds them into a [TodayNutrition].
+  Future<TodayNutrition> _computeNutrition(
+    AppDatabase db,
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final meals =
+        await (db.select(db.meals)..where(
+          (m) =>
+              m.userId.equals(userId) &
+              m.loggedAt.isBiggerOrEqualValue(start) &
+              m.loggedAt.isSmallerThanValue(end),
+        )).get();
+
+    final allEntries =
+        await (db.select(db.foodEntries)
+          ..where((e) => e.userId.equals(userId))).get();
+
+    final goals =
+        await (db.select(db.dailyNutritionGoals)
+          ..where((g) => g.userId.equals(userId))).getSingleOrNull();
+
+    final waterLogs =
+        await (db.select(db.waterLogs)..where(
+          (w) =>
+              w.userId.equals(userId) &
+              w.loggedAt.isBiggerOrEqualValue(start) &
+              w.loggedAt.isSmallerThanValue(end),
+        )).get();
+
+    final mealsWithEntries =
+        meals.map((meal) {
+          final entries = allEntries.where((e) => e.mealId == meal.id).toList();
+          return MealWithEntries(meal: meal, entries: entries);
+        }).toList();
+
+    double totalCal = 0,
+        totalPro = 0,
+        totalCarb = 0,
+        totalFat = 0,
+        totalSugar = 0;
+    for (final m in mealsWithEntries) {
+      totalCal += m.calories;
+      totalPro += m.protein;
+      totalCarb += m.carbs;
+      totalFat += m.fat;
+      totalSugar += m.sugar;
+    }
+
+    return TodayNutrition(
+      meals: mealsWithEntries,
+      goals: goals,
+      totalCalories: totalCal,
+      totalProtein: totalPro,
+      totalCarbs: totalCarb,
+      totalFat: totalFat,
+      totalSugar: totalSugar,
+      totalWaterMl: waterLogs.fold<double>(0.0, (s, w) => s + w.amountMl),
+    );
   }
 
   Future<String> addMeal(String name) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('Cannot add a meal: no signed-in user.');
+    }
     final id = _uuid.v4();
 
     await db
@@ -223,9 +256,11 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     required double protein,
     required double carbs,
     required double fat,
+    double sugar = 0,
   }) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final id = _uuid.v4();
 
     await db
@@ -240,6 +275,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
             protein: Value(protein),
             carbs: Value(carbs),
             fat: Value(fat),
+            sugar: Value(sugar),
           ),
         );
 
@@ -253,6 +289,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'protein': protein,
         'carbs': carbs,
         'fat': fat,
+        'sugar': sugar,
       });
       await (db.update(db.foodEntries)..where(
         (e) => e.id.equals(id),
@@ -262,10 +299,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
 
   Future<void> deleteMeal(String mealId) async {
     final db = ref.read(databaseProvider);
-    await (db.delete(db.foodEntries)..where((e) => e.mealId.equals(mealId))).go();
+    await (db.delete(db.foodEntries)
+      ..where((e) => e.mealId.equals(mealId))).go();
     await (db.delete(db.meals)..where((m) => m.id.equals(mealId))).go();
     try {
-      await Supabase.instance.client.from('food_entries').delete().eq('meal_id', mealId);
+      await Supabase.instance.client
+          .from('food_entries')
+          .delete()
+          .eq('meal_id', mealId);
       await Supabase.instance.client.from('meals').delete().eq('id', mealId);
     } catch (_) {}
   }
@@ -296,18 +337,22 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     final db = ref.read(databaseProvider);
     await (db.update(db.meals)..where(
       (m) => m.id.equals(mealId),
-    )).write(MealsCompanion(name: Value(newName)));
+    )).write(MealsCompanion(name: Value(newName), synced: const Value(false)));
     try {
       await Supabase.instance.client
           .from('meals')
           .update({'name': newName})
           .eq('id', mealId);
+      await (db.update(db.meals)..where(
+        (m) => m.id.equals(mealId),
+      )).write(const MealsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
   Future<void> logWater(double amountMl) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final id = _uuid.v4();
 
     await db
@@ -339,7 +384,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     double? targetWeightKg,
   }) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
 
     await db
         .into(db.dailyNutritionGoals)
@@ -367,6 +413,9 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'current_weight_kg': currentWeightKg,
         'target_weight_kg': targetWeightKg,
       });
+      await (db.update(db.dailyNutritionGoals)..where(
+        (g) => g.userId.equals(userId),
+      )).write(const DailyNutritionGoalsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
@@ -376,54 +425,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
-
-    final meals =
-        await (db.select(db.meals)..where(
-          (m) =>
-              m.userId.equals(userId) &
-              m.loggedAt.isBiggerOrEqualValue(start) &
-              m.loggedAt.isSmallerThanValue(end),
-        )).get();
-
-    final allEntries =
-        await (db.select(db.foodEntries)
-          ..where((e) => e.userId.equals(userId))).get();
-
-    final goals =
-        await (db.select(db.dailyNutritionGoals)
-          ..where((g) => g.userId.equals(userId))).getSingleOrNull();
-
-    final waterLogs =
-        await (db.select(db.waterLogs)..where(
-          (w) =>
-              w.userId.equals(userId) &
-              w.loggedAt.isBiggerOrEqualValue(start) &
-              w.loggedAt.isSmallerThanValue(end),
-        )).get();
-
-    final mealsWithEntries =
-        meals.map((meal) {
-          final entries = allEntries.where((e) => e.mealId == meal.id).toList();
-          return MealWithEntries(meal: meal, entries: entries);
-        }).toList();
-
-    double cal = 0, pro = 0, carb = 0, fat = 0;
-    for (final m in mealsWithEntries) {
-      cal += m.calories;
-      pro += m.protein;
-      carb += m.carbs;
-      fat += m.fat;
-    }
-
-    return TodayNutrition(
-      meals: mealsWithEntries,
-      goals: goals,
-      totalCalories: cal,
-      totalProtein: pro,
-      totalCarbs: carb,
-      totalFat: fat,
-      totalWaterMl: waterLogs.fold<double>(0.0, (s, w) => s + w.amountMl),
-    );
+    return _computeNutrition(db, userId, start, end);
   }
 
   /// Aggregates nutrition data across a date range (used for weekly calendar summaries).
@@ -433,66 +435,30 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
   ) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-
-    final meals =
-        await (db.select(db.meals)..where(
-          (m) =>
-              m.userId.equals(userId) &
-              m.loggedAt.isBiggerOrEqualValue(start) &
-              m.loggedAt.isSmallerThanValue(end),
-        )).get();
-
-    final allEntries =
-        await (db.select(db.foodEntries)
-          ..where((e) => e.userId.equals(userId))).get();
-
-    final goals =
-        await (db.select(db.dailyNutritionGoals)
-          ..where((g) => g.userId.equals(userId))).getSingleOrNull();
-
-    final mealsWithEntries =
-        meals.map((meal) {
-          final entries = allEntries.where((e) => e.mealId == meal.id).toList();
-          return MealWithEntries(meal: meal, entries: entries);
-        }).toList();
-
-    double cal = 0, pro = 0, carb = 0, fat = 0;
-    for (final m in mealsWithEntries) {
-      cal += m.calories;
-      pro += m.protein;
-      carb += m.carbs;
-      fat += m.fat;
-    }
-
-    return TodayNutrition(
-      meals: mealsWithEntries,
-      goals: goals,
-      totalCalories: cal,
-      totalProtein: pro,
-      totalCarbs: carb,
-      totalFat: fat,
-      totalWaterMl: 0,
-    );
+    return _computeNutrition(db, userId, start, end);
   }
 
   /// Copies yesterday's meals and food entries into today.
   /// Returns true if any meals were copied, false if yesterday had none.
   Future<bool> copyYesterdaysMeals() async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return false;
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    final startOfYesterday =
-        DateTime(yesterday.year, yesterday.month, yesterday.day);
+    final startOfYesterday = DateTime(
+      yesterday.year,
+      yesterday.month,
+      yesterday.day,
+    );
     final endOfYesterday = startOfYesterday.add(const Duration(days: 1));
 
     final yesterdayMeals =
-        await (db.select(db.meals)
-          ..where(
-            (m) =>
-                m.userId.equals(userId) &
-                m.loggedAt.isBiggerOrEqualValue(startOfYesterday) &
-                m.loggedAt.isSmallerThanValue(endOfYesterday),
-          )).get();
+        await (db.select(db.meals)..where(
+          (m) =>
+              m.userId.equals(userId) &
+              m.loggedAt.isBiggerOrEqualValue(startOfYesterday) &
+              m.loggedAt.isSmallerThanValue(endOfYesterday),
+        )).get();
 
     if (yesterdayMeals.isEmpty) return false;
 
@@ -506,14 +472,16 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     for (final meal in yesterdayMeals) {
       final newMealId = _uuid.v4();
 
-      await db.into(db.meals).insert(
-        MealsCompanion.insert(
-          id: newMealId,
-          userId: userId,
-          name: meal.name,
-          loggedAt: Value(now),
-        ),
-      );
+      await db
+          .into(db.meals)
+          .insert(
+            MealsCompanion.insert(
+              id: newMealId,
+              userId: userId,
+              name: meal.name,
+              loggedAt: Value(now),
+            ),
+          );
 
       final mealEntries =
           yesterdayEntries.where((e) => e.mealId == meal.id).toList();
@@ -521,18 +489,21 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
 
       for (final entry in mealEntries) {
         final newEntryId = _uuid.v4();
-        await db.into(db.foodEntries).insert(
-          FoodEntriesCompanion.insert(
-            id: newEntryId,
-            mealId: newMealId,
-            userId: userId,
-            name: entry.name,
-            calories: Value(entry.calories),
-            protein: Value(entry.protein),
-            carbs: Value(entry.carbs),
-            fat: Value(entry.fat),
-          ),
-        );
+        await db
+            .into(db.foodEntries)
+            .insert(
+              FoodEntriesCompanion.insert(
+                id: newEntryId,
+                mealId: newMealId,
+                userId: userId,
+                name: entry.name,
+                calories: Value(entry.calories),
+                protein: Value(entry.protein),
+                carbs: Value(entry.carbs),
+                fat: Value(entry.fat),
+                sugar: Value(entry.sugar),
+              ),
+            );
         remoteEntries.add({
           'id': newEntryId,
           'meal_id': newMealId,
@@ -542,6 +513,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'protein': entry.protein,
           'carbs': entry.carbs,
           'fat': entry.fat,
+          'sugar': entry.sugar,
         });
       }
 
@@ -564,6 +536,107 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     }
 
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // pushUnsyncedChanges — retry local writes whose Supabase sync previously
+  // failed (e.g. made while offline). Uses upsert (not insert) since a prior
+  // attempt may have partially succeeded remotely before failing to update
+  // the local `synced` flag. Call this before syncFromRemote() on app launch.
+  // ---------------------------------------------------------------------------
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final unsyncedMeals =
+        await (db.select(db.meals)..where(
+          (m) => m.userId.equals(userId) & m.synced.equals(false),
+        )).get();
+    for (final m in unsyncedMeals) {
+      try {
+        await Supabase.instance.client.from('meals').upsert({
+          'id': m.id,
+          'user_id': m.userId,
+          'name': m.name,
+          'logged_at': m.loggedAt.toIso8601String(),
+        });
+        await (db.update(db.meals)..where(
+          (t) => t.id.equals(m.id),
+        )).write(const MealsCompanion(synced: Value(true)));
+      } catch (e) {
+        debugPrint('[Nutrition] pushUnsyncedChanges meal error: $e');
+      }
+    }
+
+    final unsyncedEntries =
+        await (db.select(db.foodEntries)..where(
+          (e) => e.userId.equals(userId) & e.synced.equals(false),
+        )).get();
+    for (final e in unsyncedEntries) {
+      try {
+        await Supabase.instance.client.from('food_entries').upsert({
+          'id': e.id,
+          'meal_id': e.mealId,
+          'user_id': e.userId,
+          'name': e.name,
+          'calories': e.calories,
+          'protein': e.protein,
+          'carbs': e.carbs,
+          'fat': e.fat,
+          'sugar': e.sugar,
+        });
+        await (db.update(db.foodEntries)..where(
+          (t) => t.id.equals(e.id),
+        )).write(const FoodEntriesCompanion(synced: Value(true)));
+      } catch (err) {
+        debugPrint('[Nutrition] pushUnsyncedChanges entry error: $err');
+      }
+    }
+
+    final unsyncedWater =
+        await (db.select(db.waterLogs)..where(
+          (w) => w.userId.equals(userId) & w.synced.equals(false),
+        )).get();
+    for (final w in unsyncedWater) {
+      try {
+        await Supabase.instance.client.from('water_logs').upsert({
+          'id': w.id,
+          'user_id': w.userId,
+          'amount_ml': w.amountMl,
+          'logged_at': w.loggedAt.toIso8601String(),
+        });
+        await (db.update(db.waterLogs)..where(
+          (t) => t.id.equals(w.id),
+        )).write(const WaterLogsCompanion(synced: Value(true)));
+      } catch (e) {
+        debugPrint('[Nutrition] pushUnsyncedChanges water error: $e');
+      }
+    }
+
+    final unsyncedGoals =
+        await (db.select(db.dailyNutritionGoals)..where(
+          (g) => g.userId.equals(userId) & g.synced.equals(false),
+        )).get();
+    for (final g in unsyncedGoals) {
+      try {
+        await Supabase.instance.client.from('daily_nutrition_goals').upsert({
+          'user_id': g.userId,
+          'calories': g.calories,
+          'protein': g.protein,
+          'carbs': g.carbs,
+          'fat': g.fat,
+          'water_ml': g.waterMl,
+          'current_weight_kg': g.currentWeightKg,
+          'target_weight_kg': g.targetWeightKg,
+        });
+        await (db.update(db.dailyNutritionGoals)..where(
+          (t) => t.userId.equals(g.userId),
+        )).write(const DailyNutritionGoalsCompanion(synced: Value(true)));
+      } catch (e) {
+        debugPrint('[Nutrition] pushUnsyncedChanges goals error: $e');
+      }
+    }
   }
 
   Future<void> syncFromRemote() async {
@@ -607,6 +680,7 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 protein: Value((e['protein'] as num).toDouble()),
                 carbs: Value((e['carbs'] as num).toDouble()),
                 fat: Value((e['fat'] as num).toDouble()),
+                sugar: Value((e['sugar'] as num?)?.toDouble() ?? 0.0),
                 synced: const Value(true),
               ),
             );
@@ -647,8 +721,12 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 carbs: Value((goals['carbs'] as num).toDouble()),
                 fat: Value((goals['fat'] as num).toDouble()),
                 waterMl: Value((goals['water_ml'] as num).toDouble()),
-                currentWeightKg: Value((goals['current_weight_kg'] as num?)?.toDouble()),
-                targetWeightKg: Value((goals['target_weight_kg'] as num?)?.toDouble()),
+                currentWeightKg: Value(
+                  (goals['current_weight_kg'] as num?)?.toDouble(),
+                ),
+                targetWeightKg: Value(
+                  (goals['target_weight_kg'] as num?)?.toDouble(),
+                ),
                 synced: const Value(true),
               ),
             );

@@ -27,33 +27,34 @@ class AppColors {
   AppColors._();
 
   static const terracotta = ui.Color.fromARGB(168, 158, 143, 138);
-  static const ochre      = ui.Color.fromARGB(155, 191, 121, 0);
+  static const ochre = ui.Color.fromARGB(155, 191, 121, 0);
   static const eucalyptus = ui.Color.fromARGB(255, 76, 156, 47);
-  static const sage       = Color(0xFF6E8260);
-  static const khaki      = Color(0xFFAF9878);
-  static const mahogany   = ui.Color.fromARGB(135, 161, 74, 56);
+  static const sage = Color(0xFF6E8260);
+  static const khaki = Color(0xFFAF9878);
+  static const mahogany = ui.Color.fromARGB(135, 161, 74, 56);
   static const silhouette = Color(0xFF1C1814);
-  static const olive      = Color(0xFF5A6A30);
-  static const plum       = Color(0xFF4E3052);
-  static const persimmon  = ui.Color.fromARGB(255, 137, 77, 64);
+  static const olive = Color(0xFF5A6A30);
+  static const plum = Color(0xFF4E3052);
+  static const persimmon = ui.Color.fromARGB(255, 137, 77, 64);
 
   // Legacy light-mode surfaces (kept for reference)
-  static const cream       = Color(0xFFE8DECA);
-  static const warmWhite   = Color(0xFFDDD0BA);
-  static const surface     = Color(0xFFD4C4A8);
+  static const cream = Color(0xFFE8DECA);
+  static const warmWhite = Color(0xFFDDD0BA);
+  static const surface = Color(0xFFD4C4A8);
   static const cardSurface = Color(0xFFD9CCB4);
-  static const divider     = Color(0xFFC0AE94);
+  static const divider = Color(0xFFC0AE94);
 
   static const success = eucalyptus;
   static const warning = ochre;
-  static const error   = terracotta;
+  static const error = terracotta;
 
   // Macro colors
-  static const calColor     = terracotta;
+  static const calColor = terracotta;
   static const proteinColor = Color(0xFF4A9ECC);
-  static const carbColor    = ochre;
-  static const fatColor     = Color(0xFFBF7800);
-  static const waterColor   = Color(0xFF5AAED4);
+  static const carbColor = ochre;
+  static const fatColor = Color(0xFFBF7800);
+  static const sugarColor = plum;
+  static const waterColor = Color(0xFF5AAED4);
 
   // ---------------------------------------------------------------------------
   // Dark glass palette
@@ -62,32 +63,36 @@ class AppColors {
   static const darkBase = Color(0xFF08051A);
 
   /// Glass card surface — rgba(255,255,255,0.18)
-  static const glassBg     = Color(0x2EFFFFFF);
+  static const glassBg = Color(0x2EFFFFFF);
+
   /// Glass border — rgba(255,255,255,0.15)
   static const glassBorder = Color(0x26FFFFFF);
+
   /// Heavier glass for modals/sheets — rgba(20,16,50,0.88)
-  static const glassModal  = Color(0xE0141032);
+  static const glassModal = Color(0xE0141032);
 
   /// White text primary (~78%)
-  static const textOnDark          = Color(0xC7FFFFFF);
+  static const textOnDark = Color(0xC7FFFFFF);
+
   /// White text secondary (~65%)
   static const textOnDarkSecondary = Color(0xA6FFFFFF);
+
   /// White text tertiary / labels (~50%)
-  static const textOnDarkTertiary  = Color(0x80FFFFFF);
+  static const textOnDarkTertiary = Color(0x80FFFFFF);
 
   // Gradient stop colours — from CSS spec
   static const gradientDeepPurple = Color(0x833900A3);
-  static const gradientDuskyRose  = Color(0x9F794949);
-  static const gradientNavyBlue   = Color(0x7E1324C4);
+  static const gradientDuskyRose = Color(0x9F794949);
+  static const gradientNavyBlue = Color(0x7E1324C4);
 
   // Activity tints
-  static const activityBg       = Color(0x800044FF);
-  static const habitsActivityBg  = Color(0x8034C759);
+  static const activityBg = Color(0x800044FF);
+  static const habitsActivityBg = Color(0x8034C759);
 
   // Glass button tints — from --btn* CSS vars
-  static const btnSmallBg     = Color(0x33FFFFFF);
+  static const btnSmallBg = Color(0x33FFFFFF);
   static const btnSmallBorder = Color(0x4DFFFFFF);
-  static const btnLargeBg     = Color(0x4DFFFFFF);
+  static const btnLargeBg = Color(0x4DFFFFFF);
   static const btnLargeBorder = Color(0x66FFFFFF);
 }
 
@@ -104,7 +109,6 @@ class AppTextStyles {
     letterSpacing: -1.0,
     height: 1.1,
     textBaseline: TextBaseline.alphabetic,
-    
   );
 
   static const headlineMedium = TextStyle(
@@ -197,16 +201,22 @@ class AppTheme {
         backgroundColor: const Color(0x1AFFFFFF),
         indicatorColor: const Color(0x33D04820),
         indicatorShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+          borderRadius: BorderRadius.circular(12),
+        ),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.terracotta, size: 22);
           }
-          return const IconThemeData(color: AppColors.textOnDarkTertiary, size: 22);
+          return const IconThemeData(
+            color: AppColors.textOnDarkTertiary,
+            size: 22,
+          );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppTextStyles.labelSmall.copyWith(color: AppColors.terracotta);
+            return AppTextStyles.labelSmall.copyWith(
+              color: AppColors.terracotta,
+            );
           }
           return AppTextStyles.labelSmall;
         }),
@@ -221,7 +231,9 @@ class AppTheme {
           backgroundColor: AppColors.terracotta,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           elevation: 0,
           textStyle: const TextStyle(
             fontSize: 15,
@@ -235,15 +247,15 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.terracotta,
           side: const BorderSide(color: AppColors.terracotta, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           minimumSize: const Size(double.infinity, 48),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-        ),
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
@@ -263,10 +275,15 @@ class AppTheme {
         ),
         labelStyle: AppTextStyles.bodyMedium,
         hintStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textOnDarkTertiary),
+          color: AppColors.textOnDarkTertiary,
+        ),
         floatingLabelStyle: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.terracotta),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          color: AppColors.terracotta,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
       ),
 
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -335,10 +352,10 @@ class AppPaddings {
   AppPaddings._();
 
   static const horizontal = EdgeInsets.symmetric(horizontal: 16);
-  static const vertical   = EdgeInsets.symmetric(vertical: 16);
-  static const all        = EdgeInsets.all(16);
-  static const card       = EdgeInsets.all(20);
-  static const section    = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  static const vertical = EdgeInsets.symmetric(vertical: 16);
+  static const all = EdgeInsets.all(16);
+  static const card = EdgeInsets.all(20);
+  static const section = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
   static const middle = EdgeInsets.all(50);
 }
 
@@ -348,11 +365,11 @@ class AppPaddings {
 class AppSpacing {
   AppSpacing._();
 
-  static const double xs  = 4;
-  static const double sm  = 8;
-  static const double md  = 16;
-  static const double lg  = 24;
-  static const double xl  = 32;
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
   static const double xxl = 60;
 }
 
@@ -362,18 +379,18 @@ class AppSpacing {
 class AppRadius {
   AppRadius._();
 
-  static const double sm   = 8;
-  static const double md   = 12;
-  static const double lg   = 16;
-  static const double xl   = 20;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
   static const double full = 9999;
 
   static BorderRadius circular(double r) => BorderRadius.circular(r);
 
-  static const smAll   = BorderRadius.all(Radius.circular(sm));
-  static const mdAll   = BorderRadius.all(Radius.circular(md));
-  static const lgAll   = BorderRadius.all(Radius.circular(lg));
-  static const xlAll   = BorderRadius.all(Radius.circular(xl));
+  static const smAll = BorderRadius.all(Radius.circular(sm));
+  static const mdAll = BorderRadius.all(Radius.circular(md));
+  static const lgAll = BorderRadius.all(Radius.circular(lg));
+  static const xlAll = BorderRadius.all(Radius.circular(xl));
   static const fullAll = BorderRadius.all(Radius.circular(full));
 }
 
@@ -414,13 +431,12 @@ class AppGlass {
     BorderRadius borderRadius = AppRadius.lgAll,
     Color bg = AppColors.glassBg,
     Color border = AppColors.glassBorder,
-  }) =>
-      BoxDecoration(
-        color: bg,
-        borderRadius: borderRadius,
-        border: Border.all(color: border, width: 1),
-        boxShadow: AppShadows.glass,
-      );
+  }) => BoxDecoration(
+    color: bg,
+    borderRadius: borderRadius,
+    border: Border.all(color: border, width: 1),
+    boxShadow: AppShadows.glass,
+  );
 
   /// Widget: blurred glass card. Wrap any content in this.
   static Widget card({
@@ -454,6 +470,7 @@ class AppGlass {
         boxShadow: AppShadows.xl,
       );
 }
+
 // ---------------------------------------------------------------------------
 // Gradient helpers
 // ---------------------------------------------------------------------------
@@ -468,12 +485,10 @@ class AppGradients {
       ui.Color.fromARGB(255, 64, 36, 117),
       ui.Color.fromARGB(255, 64, 36, 117),
       ui.Color.fromARGB(255, 20, 76, 139),
-      ui.Color.fromARGB(245, 119, 105, 105),   
+      ui.Color.fromARGB(245, 119, 105, 105),
       ui.Color.fromARGB(245, 119, 105, 105),
     ],
   );
-
-
 
   /// Linear accent gradient — matches CSS --backgroundgradialtwo
   static const accent = LinearGradient(

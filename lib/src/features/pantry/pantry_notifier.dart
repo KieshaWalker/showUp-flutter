@@ -96,7 +96,8 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     required String servingLabel,
   }) async {
     final db = ref.read(databaseProvider);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final id = _uuid.v4();
 
     // 1. Write locally first so the UI updates instantly.
@@ -133,7 +134,8 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
   }
 
   /// Update an existing personal food. Global presets cannot be edited from
-  /// the app — use the Supabase SQL editor for those.
+  /// the app — use the Supabase SQL editor for those. The `userId.equals`
+  /// clause enforces this: a preset's userId is NULL so it never matches.
   Future<void> updateFood({
     required String id,
     required String name,
@@ -144,8 +146,12 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     required String servingLabel,
   }) async {
     final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
 
-    await (db.update(db.pantryFoods)..where((t) => t.id.equals(id))).write(
+    final updated = await (db.update(db.pantryFoods)
+          ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+        .write(
       PantryFoodsCompanion(
         name: Value(name),
         calories: Value(calories),
@@ -156,31 +162,45 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         synced: const Value(false),
       ),
     );
+    if (updated == 0) return; // not owned by this user (e.g. a global preset)
 
     try {
-      await Supabase.instance.client.from('pantry_foods').update({
-        'name': name,
-        'calories': calories,
-        'protein': protein,
-        'carbs': carbs,
-        'fat': fat,
-        'serving_label': servingLabel,
-      }).eq('id', id);
+      await Supabase.instance.client
+          .from('pantry_foods')
+          .update({
+            'name': name,
+            'calories': calories,
+            'protein': protein,
+            'carbs': carbs,
+            'fat': fat,
+            'serving_label': servingLabel,
+          })
+          .eq('id', id)
+          .eq('user_id', userId);
       await (db.update(db.pantryFoods)..where((t) => t.id.equals(id)))
           .write(const PantryFoodsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
-  /// Delete a personal food. Global presets are protected by Supabase RLS and
-  /// cannot be deleted by regular users.
+  /// Delete a personal food. Global presets are protected here the same way
+  /// as [updateFood] — the `userId.equals` clause excludes rows with a NULL
+  /// userId (presets) and rows owned by a different user.
   Future<void> deleteFood(String id) async {
     final db = ref.read(databaseProvider);
-    await (db.delete(db.pantryFoods)..where((t) => t.id.equals(id))).go();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final deleted = await (db.delete(db.pantryFoods)
+          ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+        .go();
+    if (deleted == 0) return; // not owned by this user (e.g. a global preset)
+
     try {
       await Supabase.instance.client
           .from('pantry_foods')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .eq('user_id', userId);
     } catch (_) {}
   }
 
@@ -208,6 +228,38 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
   }
 
   // ── Remote sync ────────────────────────────────────────────────────────────
+
+  /// Retry personal-food writes whose Supabase sync previously failed (e.g.
+  /// made while offline). Presets are never written from the app, so only
+  /// personal foods (userId == current user) are ever unsynced here. Uses
+  /// upsert since a prior attempt may have partially succeeded remotely.
+  /// Call this before syncFromRemote() on app launch.
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final unsynced = await (db.select(db.pantryFoods)
+          ..where((t) => t.userId.equals(userId) & t.synced.equals(false)))
+        .get();
+    for (final f in unsynced) {
+      try {
+        await Supabase.instance.client.from('pantry_foods').upsert({
+          'id': f.id,
+          'user_id': f.userId,
+          'name': f.name,
+          'calories': f.calories,
+          'protein': f.protein,
+          'carbs': f.carbs,
+          'fat': f.fat,
+          'serving_label': f.servingLabel,
+          'is_preset': false,
+        });
+        await (db.update(db.pantryFoods)..where((t) => t.id.equals(f.id)))
+            .write(const PantryFoodsCompanion(synced: Value(true)));
+      } catch (_) {}
+    }
+  }
 
   /// Pull global presets and the current user's personal foods from Supabase
   /// into the local Drift DB. Called once on login.
