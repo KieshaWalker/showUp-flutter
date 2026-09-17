@@ -229,8 +229,8 @@ String _heroScoreSubtitle(double score) {
 // Arc geometry: 270° sweep starting at −135° (bottom-left to bottom-right).
 
 class _DualDial extends CustomPainter {
-  static const double _stroke = 10.0;
-  static const double _gap = 12.0;
+  static const double _stroke = 16.0;
+  static const double _gap = 10.0;
   static const double _start = -pi * 0.75; // −135°
   static const double _sweep = pi * 1.5; // 270°
 
@@ -263,10 +263,14 @@ class _DualDial extends CustomPainter {
     double pct,
     Color color,
   ) {
+    // Progress arcs render at full opacity so they stay bold and legible
+    // even when the base palette color (e.g. terracotta) is itself
+    // semi-transparent — only the background track stays faint.
+    final solid = color.withValues(alpha: 1.0);
     final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
     final track =
         Paint()
-          ..color = color.withValues(alpha: 0.18)
+          ..color = solid.withValues(alpha: 0.25)
           ..style = PaintingStyle.stroke
           ..strokeWidth = _stroke
           ..strokeCap = StrokeCap.round;
@@ -280,7 +284,7 @@ class _DualDial extends CustomPainter {
         _sweep * progress,
         false,
         Paint()
-          ..color = color
+          ..color = solid
           ..style = PaintingStyle.stroke
           ..strokeWidth = _stroke
           ..strokeCap = StrokeCap.round,
@@ -485,7 +489,10 @@ class _ArcLegend extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 1.0),
+            shape: BoxShape.circle,
+          ),
         ),
         const SizedBox(width: 4),
         Text(
