@@ -25,7 +25,9 @@ import 'src/features/calendar/calendar_screen.dart';
 //        • no session      → show AuthScreen (login / sign-up)
 //
 // AppShell:
-//   Renders the bottom nav bar and swaps between the 7 main screens.
+//   Renders the bottom nav bar (Overview, Nutrition, Habits, Calendar, More)
+//   and swaps between the 6 main screens. Pantry and Settings live behind
+//   the "More" tab's menu sheet instead of getting their own nav slot.
 //   On first mount it calls syncFromRemote() on all three notifiers so the
 //   app catches up with any data added on other devices.
 //
@@ -33,12 +35,12 @@ import 'src/features/calendar/calendar_screen.dart';
 //   env.dart              — provides SUPABASE_URL and SUPABASE_ANON_KEY
 //   auth_provider.dart    — authStateProvider drives the auth gate
 //   auth_screen.dart      — shown when logged out
-//   presentation_screen   — Overview tab (index 0)
-//   calendar_screen       — Calendar tab (index 1)
-//   nutrition_screen      — Nutrition tab (index 2)
-//   pantry_screen         — Pantry tab (index 3)
-//   habits_screen         — Habits tab (index 4)
-//   settings_screen       — Settings tab (index 6)
+//   presentation_screen   — Overview tab (screen index 0)
+//   nutrition_screen      — Nutrition tab (screen index 1)
+//   pantry_screen         — Pantry (screen index 2, in the "More" menu)
+//   habits_screen         — Habits tab (screen index 3)
+//   calendar_screen       — Calendar tab (screen index 4)
+//   settings_screen       — Settings (screen index 5, in the "More" menu)
 
 /// Entry point for the Show Up application.
 Future<void> main() async {
@@ -155,13 +157,19 @@ class _AppShellState extends ConsumerState<AppShell> {
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex == 0
               ? 0
-              : _currentIndex == 4
+              : _currentIndex == 1
                   ? 1
-                  : 2,
+                  : _currentIndex == 3
+                      ? 2
+                      : _currentIndex == 4
+                          ? 3
+                          : 4,
           onDestinationSelected: (i) {
-            if (i == 2) {
+            if (i == 4) {
               _openMenu();
-            } else if (i == 1) {
+            } else if (i == 2) {
+              setState(() => _currentIndex = 3); // Habits
+            } else if (i == 3) {
               setState(() => _currentIndex = 4); // Calendar
             } else {
               setState(() => _currentIndex = i);
@@ -172,6 +180,16 @@ class _AppShellState extends ConsumerState<AppShell> {
               icon: Icon(Icons.bar_chart_outlined),
               selectedIcon: Icon(Icons.bar_chart),
               label: 'Overview',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.restaurant_menu_outlined),
+              selectedIcon: Icon(Icons.restaurant_menu),
+              label: 'Nutrition',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.check_circle_outline),
+              selectedIcon: Icon(Icons.check_circle),
+              label: 'Habits',
             ),
             NavigationDestination(
               icon: Icon(Icons.calendar_month_outlined),
@@ -199,8 +217,6 @@ class _MenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      (index: 3, icon: Icons.check_circle_outline, label: 'Habits'),
-      (index: 1, icon: Icons.restaurant_menu_outlined, label: 'Nutrition'),
       (index: 2, icon: Icons.kitchen_outlined, label: 'Pantry'),
       (index: 5, icon: Icons.settings_outlined, label: 'Settings'),
     ];
