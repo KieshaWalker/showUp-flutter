@@ -862,6 +862,14 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
   final _carbCtrl = TextEditingController();
   final _fatCtrl = TextEditingController();
   final _sugarCtrl = TextEditingController();
+  final _fiberCtrl = TextEditingController();
+  final _sodiumCtrl = TextEditingController();
+  final _cholesterolCtrl = TextEditingController();
+  final _potassiumCtrl = TextEditingController();
+  final _calciumCtrl = TextEditingController();
+  final _ironCtrl = TextEditingController();
+  final _vitaminACtrl = TextEditingController();
+  final _vitaminCCtrl = TextEditingController();
   String _query = '';
 
   @override
@@ -883,6 +891,14 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
     _carbCtrl.dispose();
     _fatCtrl.dispose();
     _sugarCtrl.dispose();
+    _fiberCtrl.dispose();
+    _sodiumCtrl.dispose();
+    _cholesterolCtrl.dispose();
+    _potassiumCtrl.dispose();
+    _calciumCtrl.dispose();
+    _ironCtrl.dispose();
+    _vitaminACtrl.dispose();
+    _vitaminCCtrl.dispose();
     super.dispose();
   }
 
@@ -940,6 +956,14 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet>
                         carbCtrl: _carbCtrl,
                         fatCtrl: _fatCtrl,
                         sugarCtrl: _sugarCtrl,
+                        fiberCtrl: _fiberCtrl,
+                        sodiumCtrl: _sodiumCtrl,
+                        cholesterolCtrl: _cholesterolCtrl,
+                        potassiumCtrl: _potassiumCtrl,
+                        calciumCtrl: _calciumCtrl,
+                        ironCtrl: _ironCtrl,
+                        vitaminACtrl: _vitaminACtrl,
+                        vitaminCCtrl: _vitaminCCtrl,
                       ),
                     ],
                   ),
@@ -1165,6 +1189,14 @@ class _ManualEntryTab extends ConsumerWidget {
     required this.carbCtrl,
     required this.fatCtrl,
     required this.sugarCtrl,
+    required this.fiberCtrl,
+    required this.sodiumCtrl,
+    required this.cholesterolCtrl,
+    required this.potassiumCtrl,
+    required this.calciumCtrl,
+    required this.ironCtrl,
+    required this.vitaminACtrl,
+    required this.vitaminCCtrl,
   });
   final String mealId;
   final TextEditingController nameCtrl;
@@ -1173,6 +1205,14 @@ class _ManualEntryTab extends ConsumerWidget {
   final TextEditingController carbCtrl;
   final TextEditingController fatCtrl;
   final TextEditingController sugarCtrl;
+  final TextEditingController fiberCtrl;
+  final TextEditingController sodiumCtrl;
+  final TextEditingController cholesterolCtrl;
+  final TextEditingController potassiumCtrl;
+  final TextEditingController calciumCtrl;
+  final TextEditingController ironCtrl;
+  final TextEditingController vitaminACtrl;
+  final TextEditingController vitaminCCtrl;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1191,6 +1231,23 @@ class _ManualEntryTab extends ConsumerWidget {
           _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
           _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
           _FormField(ctrl: sugarCtrl, label: 'Sugar', unit: 'g'),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Micronutrients (optional)',
+              style: AppTextStyles.labelSmall,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _FormField(ctrl: fiberCtrl, label: 'Fiber', unit: 'g'),
+          _FormField(ctrl: sodiumCtrl, label: 'Sodium', unit: 'mg'),
+          _FormField(ctrl: cholesterolCtrl, label: 'Cholesterol', unit: 'mg'),
+          _FormField(ctrl: potassiumCtrl, label: 'Potassium', unit: 'mg'),
+          _FormField(ctrl: calciumCtrl, label: 'Calcium', unit: 'mg'),
+          _FormField(ctrl: ironCtrl, label: 'Iron', unit: 'mg'),
+          _FormField(ctrl: vitaminACtrl, label: 'Vitamin A', unit: 'mcg'),
+          _FormField(ctrl: vitaminCCtrl, label: 'Vitamin C', unit: 'mg'),
           const SizedBox(height: AppSpacing.lg),
           FilledButton(
             onPressed: () {
@@ -1206,6 +1263,14 @@ class _ManualEntryTab extends ConsumerWidget {
                     carbs: double.tryParse(carbCtrl.text) ?? 0,
                     fat: double.tryParse(fatCtrl.text) ?? 0,
                     sugar: double.tryParse(sugarCtrl.text) ?? 0,
+                    fiber: double.tryParse(fiberCtrl.text) ?? 0,
+                    sodium: double.tryParse(sodiumCtrl.text) ?? 0,
+                    cholesterol: double.tryParse(cholesterolCtrl.text) ?? 0,
+                    potassium: double.tryParse(potassiumCtrl.text) ?? 0,
+                    calcium: double.tryParse(calciumCtrl.text) ?? 0,
+                    iron: double.tryParse(ironCtrl.text) ?? 0,
+                    vitaminA: double.tryParse(vitaminACtrl.text) ?? 0,
+                    vitaminC: double.tryParse(vitaminCCtrl.text) ?? 0,
                   );
               Navigator.pop(context);
             },
