@@ -174,19 +174,20 @@ class _AuthScreenState extends State<AuthScreen> {
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 38),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
               // Logo — sized as a fraction of the available width (instead
               // of a fixed 333×400px) so it scales down on the narrowest
               // iPhones instead of overflowing past the screen edge.
               Center(
                 child: FractionallySizedBox(
-                  widthFactor: 0.55,
+  
+                  widthFactor: 1,
                   child: AspectRatio(
-                    aspectRatio: 333 / 400,
+                    aspectRatio: 90 / 100,
                     child: SvgPicture.asset(
                       'assets/images/logo.svg',
                       colorFilter: const ColorFilter.mode(
@@ -197,9 +198,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10), // this box is for spacing between logo and text, not the top padding
-
-              const SizedBox(height: 48),
               // Email
               TextField(
                 controller: _emailController,
