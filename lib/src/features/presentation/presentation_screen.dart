@@ -197,9 +197,9 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
 
 Color _heroScoreColor(double score) {
   if (score >= 80) return AppColors.eucalyptus;
-  if (score >= 60) return AppColors.ochre;
-  if (score >= 40) return AppColors.terracotta;
-  return AppColors.mahogany;
+  if (score >= 60) return const Color.fromARGB(199, 191, 121, 0);
+  if (score >= 40) return const Color.fromARGB(211, 158, 143, 138);
+  return const Color.fromARGB(228, 161, 73, 56);
 }
 
 String _heroScoreLabel(double score) {
