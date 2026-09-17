@@ -18,9 +18,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
+import '../../shared/widgets.dart' show AppLogoTitle;
 import 'profile_notifier.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -54,39 +54,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await ref.read(profileProvider.notifier).save(
-        fullName: _fullNameCtrl.text.trim(),
-        username: _usernameCtrl.text.trim().toLowerCase(),
-      );
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Saved'),
-            content: const Text('Profile updated successfully.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      await ref
+          .read(profileProvider.notifier)
+          .save(
+            fullName: _fullNameCtrl.text.trim(),
+            username: _usernameCtrl.text.trim().toLowerCase(),
+          );
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
+        final message =
+            e is UsernameTakenException
+                ? e.toString()
+                : 'Something went wrong saving your profile. Check your connection and try again.';
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Oops, we couldn\'t save that'),
-            content: const Text('Something went wrong saving your profile. Check your connection and try again.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+          builder:
+              (_) => AlertDialog(
+                title: const Text('Oops, we couldn\'t save that'),
+                content: Text(message),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } finally {
@@ -97,23 +90,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAvatar() async {
     final choice = await showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Photo Library'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+      builder:
+          (ctx) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text('Photo Library'),
+                  onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: const Text('Camera'),
+                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Camera'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (choice == null) return;
@@ -135,16 +129,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Photo didn\'t upload'),
-            content: const Text('We couldn\'t save your photo. Make sure you have a connection and try again.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+          builder:
+              (_) => AlertDialog(
+                title: const Text('Photo didn\'t upload'),
+                content: const Text(
+                  'We couldn\'t save your photo. Make sure you have a connection and try again.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } finally {
@@ -158,105 +155,101 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = profileAsync.value;
     final initials = _initials(profile);
 
-    return Scaffold(
-      backgroundColor: const Color(0x66000000),
-      appBar: AppBar(
-        title: Padding(
-          padding: const EdgeInsets.only(top: 50.0, left: 0, right: 20.0, bottom: 20.0),
-          child: SvgPicture.asset(
-            'assets/images/logo.svg',
-            height: 100,
-            width: 150,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: AppPaddings.all,
-        children: [
-          // ── Avatar ──────────────────────────────────────────────────────
-          Center(
-            child: GestureDetector(
-              onTap: _pickAvatar,
-              child: Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  _AvatarCircle(
-                    avatarUrl: profile?.avatarUrl,
-                    initials: initials,
-                    uploading: _uploadingAvatar,
-                  ),
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: AppColors.terracotta,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.darkBase, width: 2),
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: const Color(0x66000000),
+        appBar: AppBar(title: const AppLogoTitle()),
+        body: ListView(
+          padding: AppPaddings.all,
+          children: [
+            // ── Avatar ──────────────────────────────────────────────────────
+            Center(
+              child: GestureDetector(
+                onTap: _pickAvatar,
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    _AvatarCircle(
+                      avatarUrl: profile?.avatarUrl,
+                      initials: initials,
+                      uploading: _uploadingAvatar,
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_outlined,
-                      size: 14,
-                      color: Colors.white,
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: AppColors.terracotta,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.darkBase, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_outlined,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // ── Fields ──────────────────────────────────────────────────────
+            AppGlass.card(
+              padding: AppPaddings.section,
+              borderRadius: AppRadius.lgAll,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Full Name', style: AppTextStyles.labelSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: _fullNameCtrl,
+                    style: AppTextStyles.bodyLarge,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Alex Jordan',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Username', style: AppTextStyles.labelSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: _usernameCtrl,
+                    style: AppTextStyles.bodyLarge,
+                    keyboardType: TextInputType.text,
+                    autocorrect: false,
+                    maxLength: 30,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. alexjordan',
+                      prefixText: '@',
+                      counterText: '',
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
 
-          // ── Fields ──────────────────────────────────────────────────────
-          AppGlass.card(
-            padding: AppPaddings.section,
-            borderRadius: AppRadius.lgAll,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Full Name', style: AppTextStyles.labelSmall),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: _fullNameCtrl,
-                  style: AppTextStyles.bodyLarge,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. Alex Jordan',
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('Username', style: AppTextStyles.labelSmall),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: _usernameCtrl,
-                  style: AppTextStyles.bodyLarge,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. alexjordan',
-                    prefixText: '@',
-                  ),
-                ),
-              ],
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Save ────────────────────────────────────────────────────────
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child:
+                  _saving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Save Profile'),
             ),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // ── Save ────────────────────────────────────────────────────────
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Save Profile'),
-          ),
-          const SizedBox(height: 40),
-        ],
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
@@ -295,20 +288,24 @@ class _AvatarCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.terracotta.withValues(alpha: 0.15),
-        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.5), width: 2),
+        border: Border.all(
+          color: AppColors.terracotta.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
       child: ClipOval(
-        child: uploading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.terracotta),
-              )
-            : avatarUrl != null
-            ? Image.network(
-                avatarUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _InitialsText(initials),
-              )
-            : _InitialsText(initials),
+        child:
+            uploading
+                ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.terracotta),
+                )
+                : avatarUrl != null
+                ? Image.network(
+                  avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _InitialsText(initials),
+                )
+                : _InitialsText(initials),
       ),
     );
   }
@@ -351,16 +348,20 @@ class ProfileAvatar extends ConsumerWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.terracotta.withValues(alpha: 0.15),
-        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: AppColors.terracotta.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
       ),
       child: ClipOval(
-        child: profile?.avatarUrl != null
-            ? Image.network(
-                profile!.avatarUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _InitialsText(initials),
-              )
-            : _InitialsText(initials),
+        child:
+            profile?.avatarUrl != null
+                ? Image.network(
+                  profile!.avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _InitialsText(initials),
+                )
+                : _InitialsText(initials),
       ),
     );
   }

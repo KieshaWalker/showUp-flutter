@@ -35,6 +35,7 @@ import '../../core/app_theme.dart';
 import '../../database/db.dart';
 import '../../shared/widgets.dart';
 import '../pantry/pantry_notifier.dart';
+import '../settings/settings_screen.dart';
 import 'nutrition_notifier.dart';
 
 // =============================================================================
@@ -89,6 +90,11 @@ class NutritionScreen extends ConsumerWidget {
             tooltip: 'Edit goals',
             onPressed:
                 () => _showGoalsSheet(context, ref, nutritionAsync.value),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => openSettingsScreen(context),
           ),
         ],
       ),

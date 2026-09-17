@@ -78,6 +78,56 @@ class StreakBadge extends StatelessWidget {
   }
 }
 
+// Circular +/- stepper button used by numeric counters (habit target days,
+// food servings). The tappable area is a fixed 44x44 — Apple HIG's minimum
+// touch target — even though the visible circle is smaller, so it stays easy
+// to tap on a phone without looking oversized next to the number it steps.
+class AppStepButton extends StatelessWidget {
+  const AppStepButton({
+    super.key,
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: enabled
+                  ? AppColors.terracotta.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: enabled
+                    ? AppColors.terracotta.withValues(alpha: 0.4)
+                    : AppColors.glassBorder.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: enabled ? AppColors.terracotta : AppColors.textOnDarkTertiary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // A selectable chip used in meal pickers and similar selectors.
 class SelectableChip extends StatelessWidget {
   const SelectableChip({

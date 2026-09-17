@@ -8,7 +8,10 @@
 //
 // _submit():
 //   Login mode  → calls supabase.auth.signInWithPassword()
-//   Sign-up mode → calls supabase.auth.signUp()
+//   Sign-up mode → calls supabase.auth.signUp(), then upserts full_name (if
+//     given) and terms_accepted_at/terms_version (always — sign-up is
+//     gated on the "I agree to the Terms" checkbox, _agreedToTerms) to the
+//     profiles table
 //   On AuthException (bad credentials, email not confirmed, etc.)
 //     → _friendlyAuthError() converts raw Supabase messages to plain English
 //   On any other exception (network failure, etc.)
@@ -22,11 +25,16 @@
 //   supabase_client.dart — Supabase.instance.client used for auth calls
 //   main.dart            — _AuthGate shows/hides this screen based on session
 //   app_theme.dart       — AppBackground, AppColors, AppTextStyles
+//   terms_screen.dart    — full Terms & Agreement text, opened by tapping
+//                          the sign-up checkbox's "Terms & Agreement" link
+//   terms_content.dart   — kTermsVersion, recorded with terms_accepted_at
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/app_theme.dart';
+import '../legal/terms_content.dart' show kTermsVersion;
+import '../legal/terms_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -39,9 +47,11 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _inviteCodeController = TextEditingController();
   bool _isLogin = true;
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _agreedToTerms = false;
   String? _error;
 
   final _supabase = Supabase.instance.client;
@@ -51,6 +61,7 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailController.dispose();
     _nameController.dispose();
     _passwordController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -73,18 +84,46 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         final name = _nameController.text.trim();
         final userId = response.user?.id;
-        if (name.isNotEmpty && userId != null) {
+        if (userId != null) {
           try {
             await _supabase.from('profiles').upsert({
               'id': userId,
-              'full_name': name,
+              if (name.isNotEmpty) 'full_name': name,
+              // Sign-up is gated on _agreedToTerms (see the checkbox
+              // below), so reaching here always means the user accepted.
+              'terms_accepted_at': DateTime.now().toIso8601String(),
+              'terms_version': kTermsVersion,
               'updated_at': DateTime.now().toIso8601String(),
             });
           } catch (e) {
             // Non-fatal: the account was created successfully even if the
-            // display name couldn't be saved right away.
+            // profile row couldn't be saved right away.
             // ignore: avoid_print
-            print('[Auth] failed to save display name: $e');
+            print('[Auth] failed to save profile: $e');
+          }
+
+          final inviteCode = _inviteCodeController.text.trim();
+          if (inviteCode.isNotEmpty) {
+            // An invalid/already-used code never blocks account creation —
+            // it just means the account stays a regular (non-admin) user.
+            try {
+              final granted = await _supabase.rpc(
+                'redeem_admin_invite',
+                params: {'invite_code': inviteCode},
+              ) as bool;
+              if (mounted && !granted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Invite code not recognized — account created as a regular user.',
+                    ),
+                  ),
+                );
+              }
+            } catch (e) {
+              // ignore: avoid_print
+              print('[Auth] failed to redeem invite code: $e');
+            }
           }
         }
       }
@@ -140,15 +179,21 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              // Logo
+              // Logo — sized as a fraction of the available width (instead
+              // of a fixed 333×400px) so it scales down on the narrowest
+              // iPhones instead of overflowing past the screen edge.
               Center(
-                child: SvgPicture.asset(
-                  'assets/images/logo.svg',
-                  width: 333,
-                  height: 400,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
+                child: FractionallySizedBox(
+                  widthFactor: 0.55,
+                  child: AspectRatio(
+                    aspectRatio: 333 / 400,
+                    child: SvgPicture.asset(
+                      'assets/images/logo.svg',
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -180,6 +225,16 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
+                TextField(
+                  controller: _inviteCodeController,
+                  textCapitalization: TextCapitalization.characters,
+                  style: AppTextStyles.bodyLarge,
+                  decoration: const InputDecoration(
+                    labelText: 'Admin invite code (optional)',
+                    prefixIcon: Icon(Icons.key_outlined, color: AppColors.khaki),
+                  ),
+                ),
+                const SizedBox(height: 14),
               ],
 
               // Password
@@ -206,6 +261,56 @@ class _AuthScreenState extends State<AuthScreen> {
                 onSubmitted: (_) => _submit(),
               ),
 
+              // Terms & Agreement acceptance (signup only) — required to
+              // create an account; login doesn't need it since acceptance
+              // is already on file from when the account was created.
+              if (!_isLogin) ...[
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _agreedToTerms,
+                      activeColor: AppColors.terracotta,
+                      onChanged: (v) =>
+                          setState(() => _agreedToTerms = v ?? false),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: RichText(
+                          text: TextSpan(
+                            style: AppTextStyles.bodyMedium,
+                            children: [
+                              const TextSpan(text: 'I agree to the '),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const TermsScreen(),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Terms & Agreement',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.terracotta,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const TextSpan(text: '.'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               // Error
               if (_error != null) ...[
                 const SizedBox(height: 14),
@@ -231,7 +336,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
               // Submit
               FilledButton(
-                onPressed: _loading ? null : _submit,
+                onPressed: (_loading || (!_isLogin && !_agreedToTerms))
+                    ? null
+                    : _submit,
                 child: _loading
                     ? const SizedBox(
                         height: 20,

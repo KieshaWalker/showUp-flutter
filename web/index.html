@@ -20,8 +20,15 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
+  <!-- Renders at the device's actual CSS pixel width instead of Safari's
+       default desktop-width viewport, so layout matches what Flutter lays
+       out for — without this, mobile Safari shrinks the whole page to fit
+       a ~980px virtual viewport and everything looks tiny until pinch-zoomed. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="show_up">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">

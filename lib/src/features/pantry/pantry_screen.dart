@@ -1,8 +1,10 @@
 // pantry_screen.dart — The Pantry tab: browse and manage the food library.
 //
 // Shows:
-//   • A searchable list of all pantry foods (global presets + personal foods)
-//   • Each row shows the food name, serving size, and calorie count
+//   • A searchable 2-column grid of all pantry foods (global presets +
+//     personal foods) — same card language as the Overview tab's Quick Add
+//     chips (icon badge, name, calories), just full-width-per-column
+//   • Each card shows the food name, serving size, and calorie count
 //   • FAB to add a personal food (opens a form bottom sheet)
 //   • Long-press or swipe a personal food to edit or delete it
 //   • Global preset foods (isPreset = true) are read-only — no edit/delete
@@ -23,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../shared/widgets.dart';
 import '../../database/db.dart';
+import '../settings/settings_screen.dart';
 import 'pantry_notifier.dart';
 
 class PantryScreen extends ConsumerStatefulWidget {
@@ -54,7 +57,16 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const AppLogoTitle()),
+      appBar: AppBar(
+        title: const AppLogoTitle(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => openSettingsScreen(context),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFoodForm(context),
         icon: const Icon(Icons.add),
@@ -158,16 +170,21 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                             ],
                           ),
                         )
-                        : ListView.separated(
+                        : GridView.builder(
                           padding: const EdgeInsets.fromLTRB(
                             AppSpacing.md,
                             AppSpacing.sm,
                             AppSpacing.md,
                             120,
                           ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: AppSpacing.sm,
+                                crossAxisSpacing: AppSpacing.sm,
+                                mainAxisExtent: 158,
+                              ),
                           itemCount: filtered.length,
-                          separatorBuilder:
-                              (_, _) => const SizedBox(height: AppSpacing.sm),
                           itemBuilder:
                               (ctx, i) => _FoodCard(
                                 food: filtered[i],
@@ -321,63 +338,67 @@ class _FoodCard extends StatelessWidget {
           borderRadius: AppRadius.lgAll,
           child: AppGlass.card(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 14,
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
             ),
             borderRadius: AppRadius.lgAll,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Icon badge
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.terracotta.withValues(alpha: 0.15),
-                    borderRadius: AppRadius.mdAll,
-                  ),
-                  child: const Icon(
-                    Icons.set_meal_outlined,
-                    size: 20,
-                    color: AppColors.terracotta,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-
-                // Name + serving
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(food.name, style: AppTextStyles.titleMedium),
-                      const SizedBox(height: 2),
-                      Text(food.servingLabel, style: AppTextStyles.bodyMedium),
-                    ],
-                  ),
-                ),
-
-                // Macro summary
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                // Icon badge + edit/lock indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${food.calories.toInt()} kcal',
-                      style: AppTextStyles.titleMedium.copyWith(
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.terracotta.withValues(alpha: 0.15),
+                        borderRadius: AppRadius.mdAll,
+                      ),
+                      child: const Icon(
+                        Icons.set_meal_outlined,
+                        size: 14,
                         color: AppColors.terracotta,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'P ${food.protein.toInt()}  C ${food.carbs.toInt()}  F ${food.fat.toInt()}  Sug ${food.sugar.toInt()}',
-                      style: AppTextStyles.labelSmall,
+                    Icon(
+                      editable ? Icons.chevron_right : Icons.lock_outline,
+                      size: 14,
+                      color: AppColors.textOnDarkTertiary,
                     ),
                   ],
                 ),
 
-                const SizedBox(width: AppSpacing.sm),
-                Icon(
-                  editable ? Icons.chevron_right : Icons.lock_outline,
-                  size: 18,
-                  color: AppColors.textOnDarkTertiary,
+                // Name + serving
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      food.name,
+                      style: AppTextStyles.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      food.servingLabel,
+                      style: AppTextStyles.labelSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+
+                // Calories
+                Text(
+                  '${food.calories.toInt()} kcal',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.terracotta,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

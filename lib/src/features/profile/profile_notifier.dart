@@ -4,10 +4,13 @@
 // display info like full name, username, and avatar URL.
 //
 // UserProfile model:
-//   id          — matches the Supabase auth user UUID
-//   username    — optional @handle chosen by the user
-//   fullName    — optional display name
-//   avatarUrl   — public URL to the user's photo in Supabase Storage
+//   id              — matches the Supabase auth user UUID
+//   username        — optional @handle chosen by the user
+//   fullName        — optional display name
+//   avatarUrl       — public URL to the user's photo in Supabase Storage
+//   termsAcceptedAt — when the user accepted the Terms & Agreement (set at
+//                     sign-up, see auth_screen.dart); null if never recorded
+//   termsVersion    — which kTermsVersion (terms_content.dart) they accepted
 //
 // profileProvider (AsyncNotifierProvider):
 //   build()       — fetches the profile for the current user on startup
@@ -21,11 +24,23 @@
 //                         profile to load; returns null if not logged in
 //   profile_screen.dart — the UI that calls save() and uploadAvatar()
 //   settings_screen.dart— reads profileProvider to show the user's name
+//                         and terms-acceptance date
+//   terms_content.dart  — kTermsVersion, recorded alongside termsAcceptedAt
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/auth_provider.dart';
+import '../legal/terms_content.dart' show kTermsVersion;
+
+/// Thrown by [ProfileNotifier.save] when the chosen username is already
+/// taken by another account (`profiles_username_key` unique constraint).
+class UsernameTakenException implements Exception {
+  const UsernameTakenException();
+  @override
+  String toString() => 'That username is already taken.';
+}
 
 // ---------------------------------------------------------------------------
 // Model
@@ -36,23 +51,31 @@ class UserProfile {
   final String? username;
   final String? fullName;
   final String? avatarUrl;
+  final DateTime? termsAcceptedAt;
+  final String? termsVersion;
 
   const UserProfile({
     required this.id,
     this.username,
     this.fullName,
     this.avatarUrl,
+    this.termsAcceptedAt,
+    this.termsVersion,
   });
 
   UserProfile copyWith({
     String? username,
     String? fullName,
     String? avatarUrl,
+    DateTime? termsAcceptedAt,
+    String? termsVersion,
   }) => UserProfile(
     id: id,
     username: username ?? this.username,
     fullName: fullName ?? this.fullName,
     avatarUrl: avatarUrl ?? this.avatarUrl,
+    termsAcceptedAt: termsAcceptedAt ?? this.termsAcceptedAt,
+    termsVersion: termsVersion ?? this.termsVersion,
   );
 
   factory UserProfile.fromMap(Map<String, dynamic> map) => UserProfile(
@@ -60,6 +83,10 @@ class UserProfile {
     username: map['username'] as String?,
     fullName: map['full_name'] as String?,
     avatarUrl: map['avatar_url'] as String?,
+    termsAcceptedAt: map['terms_accepted_at'] == null
+        ? null
+        : DateTime.parse(map['terms_accepted_at'] as String),
+    termsVersion: map['terms_version'] as String?,
   );
 
   /// Display name: prefers fullName, falls back to username, then empty string.
@@ -97,26 +124,70 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     }
   }
 
-  /// Persist full name and/or username to Supabase.
+  /// Persist full name and/or username to Supabase. Blank strings are
+  /// treated as "leave unset" (null) rather than being written as `''` —
+  /// `username` has a unique constraint, so writing `''` would lock every
+  /// other user out of ever leaving their own username blank.
   Future<void> save({String? fullName, String? username}) async {
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) return;
 
+    final cleanFullName = (fullName?.trim().isEmpty ?? true)
+        ? null
+        : fullName!.trim();
+    final cleanUsername = (username?.trim().isEmpty ?? true)
+        ? null
+        : username!.trim();
+
     try {
       await Supabase.instance.client.from('profiles').upsert({
         'id': userId,
-        if (fullName != null) 'full_name': fullName,
-        if (username != null) 'username': username,
+        'full_name': cleanFullName,
+        'username': cleanUsername,
         'updated_at': DateTime.now().toIso8601String(),
       });
-    } on PostgrestException {
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw const UsernameTakenException();
+      }
       rethrow; // surface to UI so the save button can show an error
     }
 
+    // Built directly rather than via copyWith: copyWith's `x ?? this.x`
+    // pattern can't express "clear this field", which a cleared name/
+    // username needs to do here.
+    final prev = state.value ?? UserProfile(id: userId);
+    state = AsyncData(
+      UserProfile(
+        id: userId,
+        fullName: cleanFullName,
+        username: cleanUsername,
+        avatarUrl: prev.avatarUrl,
+        termsAcceptedAt: prev.termsAcceptedAt,
+        termsVersion: prev.termsVersion,
+      ),
+    );
+  }
+
+  /// Records acceptance of the current Terms & Agreement (terms_content.dart).
+  /// Called at sign-up (auth_screen.dart) and, for accounts created before
+  /// this flow existed, from Settings > Terms & Agreement.
+  Future<void> acceptTerms() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+
+    final acceptedAt = DateTime.now();
+    await Supabase.instance.client.from('profiles').upsert({
+      'id': userId,
+      'terms_accepted_at': acceptedAt.toIso8601String(),
+      'terms_version': kTermsVersion,
+      'updated_at': acceptedAt.toIso8601String(),
+    });
+
     state = AsyncData(
       (state.value ?? UserProfile(id: userId)).copyWith(
-        fullName: fullName,
-        username: username,
+        termsAcceptedAt: acceptedAt,
+        termsVersion: kTermsVersion,
       ),
     );
   }
@@ -134,8 +205,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     final ext = mime.split('/').last.replaceAll('jpeg', 'jpg');
     final path = '$userId/avatar.$ext';
 
-    // ignore: avoid_print
-    print('[Avatar] uploading $path (${bytes.length} bytes, $mime)');
+    debugPrint('[Avatar] uploading $path (${bytes.length} bytes, $mime)');
 
     // Step 1: upload binary to storage
     final storageResponse = await Supabase.instance.client.storage
@@ -146,8 +216,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
           fileOptions: FileOptions(upsert: true, contentType: mime),
         );
 
-    // ignore: avoid_print
-    print('[Avatar] storage response: $storageResponse');
+    debugPrint('[Avatar] storage response: $storageResponse');
 
     if (storageResponse.isEmpty) {
       throw Exception('Storage upload returned empty path');
@@ -173,8 +242,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       'updated_at': DateTime.now().toIso8601String(),
     });
 
-    // ignore: avoid_print
-    print('[Avatar] public url: $avatarUrl');
+    debugPrint('[Avatar] public url: $avatarUrl');
 
     state = AsyncData(
       (state.value ?? UserProfile(id: userId)).copyWith(avatarUrl: avatarUrl),

@@ -720,7 +720,17 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           (t) => t.id.equals(e.id),
         )).write(const FoodEntriesCompanion(synced: Value(true)));
       } catch (err) {
-        debugPrint('[Nutrition] pushUnsyncedChanges entry error: $err');
+        if (err is PostgrestException && err.code == '23503') {
+          // Parent meal no longer exists remotely (deleted from another
+          // device/session before this entry ever synced) — the meal-entry
+          // link is unrecoverable, so drop the orphaned local entry instead
+          // of retrying forever.
+          await (db.delete(
+            db.foodEntries,
+          )..where((t) => t.id.equals(e.id))).go();
+        } else {
+          debugPrint('[Nutrition] pushUnsyncedChanges entry error: $err');
+        }
       }
     }
 

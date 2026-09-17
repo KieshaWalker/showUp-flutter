@@ -53,6 +53,8 @@ import '../nutrition/nutrition_screen.dart'
         confirmDeleteFoodEntry,
         confirmDeleteMeal;
 import '../../database/db.dart' show Habit;
+import '../../shared/widgets.dart' show AppLogoTitle, AppDragHandle;
+import '../settings/settings_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -241,6 +243,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const AppLogoTitle(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => openSettingsScreen(context),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -821,14 +833,9 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
         child: Column(
           children: [
             // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: AppSpacing.xs),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.glassBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: AppDragHandle(bottomMargin: AppSpacing.xs),
             ),
 
             // Header

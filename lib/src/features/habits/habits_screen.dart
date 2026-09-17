@@ -1,7 +1,9 @@
 // habits_screen.dart — The Habits tab where users manage their habits.
 //
 // Shows:
-//   • A list of all habits with completion status for today/this week
+//   • A 2-column grid of all habits with completion status for today/this
+//     week — same card height (150) and left streak-accent-bar language as
+//     the Overview tab's "To Do" habit chips, for visual consistency
 //   • Tap a habit to open its edit sheet; long-press to delete it
 //     (completion toggling happens elsewhere, e.g. the Overview screen)
 //   • FAB to add a new habit (opens a bottom sheet)
@@ -24,6 +26,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../shared/widgets.dart';
 import '../../database/db.dart';
+import '../settings/settings_screen.dart';
 import 'habits_notifier.dart';
 
 // =============================================================================
@@ -43,7 +46,16 @@ class HabitsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const AppLogoTitle()),
+      appBar: AppBar(
+        title: const AppLogoTitle(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => openSettingsScreen(context),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddHabitSheet(context, ref),
         icon: const Icon(Icons.add),
@@ -74,10 +86,15 @@ class HabitsScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.separated(
+          return GridView.builder(
             padding: AppPaddings.all,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisExtent: 150,
+            ),
             itemCount: habits.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (_, i) => _HabitManageCard(item: habits[i]),
           );
         },
@@ -138,7 +155,7 @@ void _showAddHabitSheet(
 }
 
 // ---------------------------------------------------------------------------
-// _HabitManageCard — simple list tile for CRUD management
+// _HabitManageCard — grid card for CRUD management
 // ---------------------------------------------------------------------------
 
 class _HabitManageCard extends ConsumerWidget {
@@ -157,37 +174,53 @@ class _HabitManageCard extends ConsumerWidget {
         borderRadius: AppRadius.lgAll,
         child: Stack(
           children: [
-            AppGlass.card(
-              borderRadius: AppRadius.lgAll,
-              child: ListTile(
-                contentPadding: EdgeInsets.only(
-                  left: hasStreak ? AppSpacing.md + 6 : AppSpacing.md,
-                  right: AppSpacing.md,
-                  top: AppSpacing.xs,
-                  bottom: AppSpacing.xs,
-                ),
-                title: Text(item.habit.name, style: AppTextStyles.titleMedium),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: HabitFreqChip(habit: item.habit),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hasStreak) ...[
-                      StreakBadge(item.streak),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                    const Icon(
-                      Icons.chevron_right,
-                      color: AppColors.textOnDarkSecondary,
-                    ),
-                  ],
-                ),
-                onTap:
-                    () =>
-                        _showAddHabitSheet(context, ref, existing: item.habit),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () =>
+                    _showAddHabitSheet(context, ref, existing: item.habit),
                 onLongPress: () => _confirmDelete(context, ref, item.habit),
+                child: AppGlass.card(
+                  padding: EdgeInsets.only(
+                    left: hasStreak ? AppSpacing.sm + 6 : AppSpacing.sm,
+                    right: AppSpacing.sm,
+                    top: AppSpacing.sm,
+                    bottom: AppSpacing.sm,
+                  ),
+                  borderRadius: AppRadius.lgAll,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (hasStreak)
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: StreakBadge(item.streak),
+                              ),
+                            )
+                          else
+                            const SizedBox.shrink(),
+                          const Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: AppColors.textOnDarkSecondary,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        item.habit.name,
+                        style: AppTextStyles.titleMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      HabitFreqChip(habit: item.habit, dense: true),
+                    ],
+                  ),
+                ),
               ),
             ),
             if (hasStreak)
@@ -317,18 +350,7 @@ class _HabitFormSheetState extends State<_HabitFormSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.glassBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const AppDragHandle(),
 
           Text(
             _isEditing ? 'Edit Habit' : 'New Habit',
@@ -477,7 +499,7 @@ class _Counter extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _CounterBtn(
+        AppStepButton(
           icon: Icons.remove,
           enabled: value > min,
           onTap: () => onChanged(value - 1),
@@ -488,50 +510,12 @@ class _Counter extends StatelessWidget {
             child: Text('$value', style: AppTextStyles.titleMedium),
           ),
         ),
-        _CounterBtn(
+        AppStepButton(
           icon: Icons.add,
           enabled: value < max,
           onTap: () => onChanged(value + 1),
         ),
       ],
-    );
-  }
-}
-
-class _CounterBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _CounterBtn({
-    required this.icon,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: enabled ? AppColors.glassBg : Colors.transparent,
-          border: Border.all(
-            color:
-                enabled
-                    ? AppColors.glassBorder
-                    : AppColors.glassBorder.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: enabled ? AppColors.textOnDark : AppColors.textOnDarkTertiary,
-        ),
-      ),
     );
   }
 }
@@ -545,12 +529,21 @@ class HabitFreqChip extends StatelessWidget {
   final bool? selected;
   final VoidCallback? onTap;
   final Habit? habit;
+
+  /// Tighter padding + a shrink-to-fit label, for narrow contexts (e.g. a
+  /// 4-column grid card) where the default padding would overflow. The
+  /// FittedBox guarantees no RenderFlex overflow regardless of how little
+  /// width is actually available, rather than relying on getting the
+  /// padding numbers exactly right for every possible column count.
+  final bool dense;
+
   const HabitFreqChip({
     super.key,
     this.label,
     this.selected,
     this.onTap,
     this.habit,
+    this.dense = false,
   });
 
   @override
@@ -559,33 +552,41 @@ class HabitFreqChip extends StatelessWidget {
     final effectiveLabel =
         label ??
         (habit!.frequencyType == 'weekly'
-            ? '${habit!.targetDaysPerWeek}× / week'
+            ? (dense
+                ? '${habit!.targetDaysPerWeek}×/wk'
+                : '${habit!.targetDaysPerWeek}× / week')
             : 'Daily');
     final effectiveSelected = selected ?? false;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: effectiveSelected ? AppColors.terracotta : AppColors.glassBg,
-          borderRadius: AppRadius.mdAll,
-          border: Border.all(
-            color:
-                effectiveSelected
-                    ? AppColors.terracotta
-                    : AppColors.glassBorder,
-          ),
-        ),
-        child: Text(
-          effectiveLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: effectiveSelected ? Colors.white : AppColors.textOnDark,
-            fontWeight: effectiveSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+    final chip = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: dense
+          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
+          : const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: effectiveSelected ? AppColors.terracotta : AppColors.glassBg,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(
+          color:
+              effectiveSelected
+                  ? AppColors.terracotta
+                  : AppColors.glassBorder,
         ),
       ),
+      child: Text(
+        effectiveLabel,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: effectiveSelected ? Colors.white : AppColors.textOnDark,
+          fontWeight: effectiveSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+    );
+
+    return GestureDetector(
+      onTap: onTap,
+      child: dense ? FittedBox(fit: BoxFit.scaleDown, child: chip) : chip,
     );
   }
 }
@@ -675,14 +676,9 @@ class _CalendarSheetState extends State<HabitCalendarSheet> {
       color: AppColors.glassModal,
       child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: AppSpacing.sm),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.glassBorder,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: AppDragHandle(bottomMargin: AppSpacing.sm),
           ),
           Expanded(
             child: ListView(

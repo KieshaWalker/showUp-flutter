@@ -47,6 +47,8 @@ dependencies:
 
   # Utilities
   uuid: ^4.0.0
+  shared_preferences: ^2.3.3
+  showcaseview: ^5.1.0
 
   # Image picking (profile avatars)
   image_picker: ^1.1.2

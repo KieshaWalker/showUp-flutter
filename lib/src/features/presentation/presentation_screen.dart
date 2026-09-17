@@ -27,12 +27,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../database/db.dart';
 import '../../shared/widgets.dart'
-    show AppLogoTitle, AppDragHandle, StreakBadge, formatWaterMl;
+    show
+        AppLogoTitle,
+        AppDragHandle,
+        AppStepButton,
+        SelectableChip,
+        StreakBadge,
+        formatWaterMl;
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
 import '../nutrition/nutrition_screen.dart';
+import '../onboarding/app_tour.dart';
+import '../onboarding/app_tour_keys.dart';
 import '../pantry/pantry_notifier.dart';
 import '../profile/profile_notifier.dart';
+import '../settings/settings_screen.dart';
 
 const List<String> _months = [
   'January',
@@ -120,6 +129,19 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
           appBar: AppBar(
             title: const AppLogoTitle(),
             titleTextStyle: AppTextStyles.displayLarge,
+            actions: [
+              IconButton(
+                icon: appTourTarget(
+                  key: settingsIconKey,
+                  title: 'Settings',
+                  description:
+                      'Manage your profile, account, and preferences.',
+                  child: const Icon(Icons.settings_outlined),
+                ),
+                tooltip: 'Settings',
+                onPressed: () => openSettingsScreen(context),
+              ),
+            ],
           ),
           body: ListView(
             padding: AppPaddings.all,
@@ -143,7 +165,13 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              const _HeroCard(),
+              appTourTarget(
+                key: heroCardKey,
+                title: 'Your daily progress',
+                description:
+                    'This ring tracks today\'s habits and nutrition at a glance.',
+                child: const _HeroCard(),
+              ),
               const SizedBox(height: AppSpacing.sm),
               const _StatsRow(),
               const SizedBox(height: AppSpacing.lg),
@@ -155,7 +183,12 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
               const SizedBox(height: AppSpacing.lg),
               const _IncompleteHabitsListForDay(),
               const SizedBox(height: AppSpacing.lg),
-              const _QuickAddSection(),
+              appTourTarget(
+                key: quickAddKey,
+                title: 'Quick add',
+                description: 'Tap a food to log it in one step.',
+                child: const _QuickAddSection(),
+              ),
               const SizedBox(height: AppSpacing.lg),
               const _ShowFoodsToday(),
               const SizedBox(height: AppSpacing.lg),
@@ -389,7 +422,7 @@ class _HeroCardState extends ConsumerState<_HeroCard>
                             Text(
                               _heroScoreLabel(score),
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: scoreColor.withValues(alpha: 0.8),
+                                color: scoreColor.withValues(alpha: 1),
                               ),
                             ),
                           ],
@@ -717,6 +750,13 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.zero,
                   itemCount: filtered.length,
+                  // crossAxisCount here is ROW count, not visual columns —
+                  // this grid scrolls sideways, so its "cross axis" is
+                  // vertical. It must stay 2 to match the SizedBox height
+                  // above (96 * 2 rows + 1 gap); raising it (e.g. to 4)
+                  // squeezes each chip's cell far below the fixed 110px
+                  // width the chip's internal layout assumes, which is
+                  // what caused the RenderFlex overflow errors.
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -906,8 +946,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: AppSpacing.lg,
-        right: AppSpacing.lg,
+        left: AppSpacing.sm,
+        right: AppSpacing.sm,
         top: AppSpacing.lg - 4,
         bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
       ),
@@ -921,7 +961,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
           Text(widget.food.name, style: AppTextStyles.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           Text(widget.food.servingLabel, style: AppTextStyles.bodyMedium),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xs),
 
           // Serving counter + live macro row
           Row(
@@ -986,7 +1026,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                   // First chip is always "Quick Add" (auto)
                   if (i == 0) {
                     final selected = _selectedMealId == null;
-                    return _MealChip(
+                    return SelectableChip(
                       label: 'Quick Add',
                       selected: selected,
                       onTap: () => setState(() => _selectedMealId = null),
@@ -994,7 +1034,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                   }
                   final meal = meals[i - 1];
                   final selected = _selectedMealId == meal.meal.id;
-                  return _MealChip(
+                  return SelectableChip(
                     label: meal.meal.name,
                     selected: selected,
                     onTap: () => setState(() => _selectedMealId = meal.meal.id),
@@ -1047,7 +1087,7 @@ class _ServingCounter extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StepBtn(
+          AppStepButton(
             icon: Icons.remove,
             enabled: value > 0.5,
             onTap: () => onChanged((value - 0.5).clamp(0.5, 99)),
@@ -1063,56 +1103,12 @@ class _ServingCounter extends StatelessWidget {
               ),
             ),
           ),
-          _StepBtn(
+          AppStepButton(
             icon: Icons.add,
             enabled: value < 99,
             onTap: () => onChanged((value + 0.5).clamp(0.5, 99)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Circular +/- button used in the serving counter
-// ---------------------------------------------------------------------------
-class _StepBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _StepBtn({
-    required this.icon,
-    required this.enabled,
-    required this.onTap,
-  });
-  // A circular button with a +/- icon, used in the serving counter
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color:
-              enabled
-                  ? AppColors.terracotta.withValues(alpha: 0.15)
-                  : Colors.transparent,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color:
-                enabled
-                    ? AppColors.terracotta.withValues(alpha: 0.4)
-                    : AppColors.glassBorder.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: enabled ? AppColors.terracotta : AppColors.textOnDarkTertiary,
-        ),
       ),
     );
   }
@@ -1140,52 +1136,6 @@ class _MacroLabel extends StatelessWidget {
         Text('$value', style: AppTextStyles.titleMedium.copyWith(color: color)),
         Text(unit, style: AppTextStyles.labelSmall.copyWith(color: color)),
       ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Meal selector chip
-// ---------------------------------------------------------------------------
-
-class _MealChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _MealChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 180,
-        ), // duration of the color transition
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.terracotta : AppColors.glassBg,
-          borderRadius: AppRadius.xlAll,
-          border: Border.all(
-            color: selected ? AppColors.terracotta : AppColors.glassBorder,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: selected ? Colors.white : AppColors.textOnDark,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1390,7 +1340,7 @@ class _IncompleteHabitsListForDay extends ConsumerWidget {
                   itemCount: remaining.length,
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
+                        crossAxisCount: 4,
                         mainAxisSpacing: AppSpacing.sm,
                         crossAxisSpacing: AppSpacing.sm,
                         mainAxisExtent: 150,
@@ -1443,10 +1393,10 @@ class _HabitTodayChip extends StatelessWidget {
             children: [
               AppGlass.card(
                 padding: EdgeInsets.only(
-                  left: h.streak > 0 ? AppSpacing.md + 6 : AppSpacing.md,
-                  right: AppSpacing.md,
-                  top: AppSpacing.md,
-                  bottom: AppSpacing.md,
+                  left: h.streak > 0 ? AppSpacing.sm + 6 : AppSpacing.sm,
+                  right: AppSpacing.sm,
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.sm,
                 ),
                 borderRadius: AppRadius.lgAll,
                 child: Column(
@@ -1456,12 +1406,17 @@ class _HabitTodayChip extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         if (h.streak > 0) ...[
-                          StreakBadge(h.streak),
-                          const SizedBox(width: AppSpacing.sm),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: StreakBadge(h.streak),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
                         ],
                         const Icon(
                           Icons.radio_button_unchecked,
-                          size: 20,
+                          size: 16,
                           color: AppColors.textOnDarkTertiary,
                         ),
                       ],
@@ -1716,17 +1671,7 @@ class _QuickCompleteHabitForDayState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(9, 255, 255, 255),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const AppDragHandle(bottomMargin: AppSpacing.lg),
           Text(widget.habit.name, style: AppTextStyles.titleLarge),
           const SizedBox(height: AppSpacing.xl),
           FilledButton(
