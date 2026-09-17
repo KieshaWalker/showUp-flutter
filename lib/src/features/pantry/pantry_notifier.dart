@@ -27,7 +27,6 @@
 //   auth_provider.dart      — currentUserIdProvider to scope personal foods
 //   pantry_screen.dart      — search/browse UI, calls addFood/updateFood/deleteFood
 //   nutrition_screen.dart   — "add from pantry" flow calls pantryNotifierProvider
-//   agent_notifier.dart     — reads pantry list for food search by the assistant
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';

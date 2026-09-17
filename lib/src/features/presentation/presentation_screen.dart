@@ -7,7 +7,6 @@
 //   • Today's habit completion ring / count
 //   • Nutrition calorie + macro summary for today
 //   • Habits completed today (cards)
-//   • AI assistant chat panel (uses agentProvider from agent_notifier.dart)
 //
 // Reused nutrition widgets (defined here, imported by nutrition_screen.dart):
 //   NutritionCalorieSummary — calorie ring summary card
@@ -17,7 +16,6 @@
 // Connections:
 //   habits_notifier.dart    — habitsNotifierProvider for today's habit status
 //   nutrition_notifier.dart — nutritionNotifierProvider for today's calorie/macro totals
-//   agent_notifier.dart     — agentProvider for the AI assistant chat
 //   nutrition_screen.dart   — imports NutritionCalorieSummary, NutritionMacroRow,
 //                             NutritionMacroPill for reuse in the nutrition tab
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
@@ -30,13 +28,11 @@ import '../../core/app_theme.dart';
 import '../../database/db.dart';
 import '../../shared/widgets.dart'
     show AppLogoTitle, AppDragHandle, StreakBadge, formatWaterMl;
-import '../agent/agent_notifier.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
 import '../nutrition/nutrition_screen.dart';
 import '../pantry/pantry_notifier.dart';
 import '../profile/profile_notifier.dart';
-import '../readiness/readiness_notifier.dart';
 
 const List<String> _months = [
   'January',
@@ -164,8 +160,6 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
               const _ShowFoodsToday(),
               const SizedBox(height: AppSpacing.lg),
               const _HabitsCompletedToday(),
-              const SizedBox(height: AppSpacing.lg),
-              const _AgentSection(),
               const SizedBox(height: 100),
             ],
           ),
@@ -198,7 +192,7 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Score helpers (mirrored from readiness_screen — same semantics)
+// Score helpers
 // ---------------------------------------------------------------------------
 
 Color _heroScoreColor(double score) {
@@ -209,50 +203,45 @@ Color _heroScoreColor(double score) {
 }
 
 String _heroScoreLabel(double score) {
-  if (score >= 80) return 'Peak';
+  if (score >= 80) return 'Great';
   if (score >= 65) return 'Good';
   if (score >= 50) return 'Moderate';
   if (score >= 35) return 'Low';
-  return 'Depleted';
+  return 'Getting started';
 }
 
 String _heroScoreSubtitle(double score) {
-  if (score >= 80) return "You're firing on all cylinders today.";
-  if (score >= 65) return "Solid baseline. Good day to push.";
-  if (score >= 50) return "You've got enough — pace yourself.";
-  if (score >= 35) return "Take it easy. Recovery is progress.";
-  return "Rest is the move today.";
+  if (score >= 80) return "You're on top of it today.";
+  if (score >= 65) return "Solid progress so far.";
+  if (score >= 50) return "Halfway there — keep going.";
+  if (score >= 35) return "A few more things to check off.";
+  return "Let's get today started.";
 }
 
 // ---------------------------------------------------------------------------
-// _TripleDial — three concentric arcs: readiness / habits / nutrition
+// _DualDial — two concentric arcs: habits / nutrition
 // ---------------------------------------------------------------------------
 //
-// Outer arc  → readiness score (0–100), color tracks score state
-// Middle arc → habit completion (done / total)
-// Inner arc  → calorie goal progress (logged / goal)
+// Outer arc → habit completion (done / total)
+// Inner arc → calorie goal progress (logged / goal)
 //
-// All three arcs animate from 0 → target over 1400 ms on first paint.
+// Both arcs animate from 0 → target over 1400 ms on first paint.
 // Arc geometry: 270° sweep starting at −135° (bottom-left to bottom-right).
 
-class _TripleDial extends CustomPainter {
+class _DualDial extends CustomPainter {
   static const double _stroke = 10.0;
   static const double _gap = 12.0;
   static const double _start = -pi * 0.75; // −135°
   static const double _sweep = pi * 1.5; // 270°
 
-  final double readinessPct;
   final double habitsPct;
   final double nutritionPct;
   final double animValue;
-  final Color readinessColor;
 
-  const _TripleDial({
-    required this.readinessPct,
+  const _DualDial({
     required this.habitsPct,
     required this.nutritionPct,
     required this.animValue,
-    required this.readinessColor,
   });
 
   @override
@@ -260,11 +249,9 @@ class _TripleDial extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
     final outerR = cx - _stroke / 2;
-    final midR = outerR - _stroke - _gap;
-    final innerR = midR - _stroke - _gap;
+    final innerR = outerR - _stroke - _gap;
 
-    _arc(canvas, cx, cy, outerR, readinessPct, readinessColor);
-    _arc(canvas, cx, cy, midR, habitsPct, AppColors.terracotta);
+    _arc(canvas, cx, cy, outerR, habitsPct, AppColors.terracotta);
     _arc(canvas, cx, cy, innerR, nutritionPct, AppColors.waterColor);
   }
 
@@ -302,9 +289,8 @@ class _TripleDial extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TripleDial o) =>
+  bool shouldRepaint(_DualDial o) =>
       o.animValue != animValue ||
-      o.readinessPct != readinessPct ||
       o.habitsPct != habitsPct ||
       o.nutritionPct != nutritionPct;
 }
@@ -324,7 +310,6 @@ class _HeroCardState extends ConsumerState<_HeroCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _anim;
-  DailyReadinessData? _readinessRow;
 
   @override
   void initState() {
@@ -334,12 +319,8 @@ class _HeroCardState extends ConsumerState<_HeroCard>
       vsync: this,
     );
     _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final row = await ref.read(readinessProvider.notifier).todaysReadiness();
-      if (mounted) {
-        setState(() => _readinessRow = row);
-        _ctrl.forward();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ctrl.forward();
     });
   }
 
@@ -365,7 +346,7 @@ class _HeroCardState extends ConsumerState<_HeroCard>
     );
     final calPct = (calories / calGoal).clamp(0.0, 1.0);
 
-    final score = _readinessRow?.computedScore ?? 70.0;
+    final score = ((habitPct + calPct) / 2) * 100;
     final scoreColor = _heroScoreColor(score);
 
     return AppGlass.card(
@@ -374,7 +355,7 @@ class _HeroCardState extends ConsumerState<_HeroCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Triple arc dial
+          // Dual arc dial
           Center(
             child: SizedBox(
               width: 240,
@@ -383,12 +364,10 @@ class _HeroCardState extends ConsumerState<_HeroCard>
                 animation: _anim,
                 builder:
                     (context, _) => CustomPaint(
-                      painter: _TripleDial(
-                        readinessPct: score / 100,
+                      painter: _DualDial(
                         habitsPct: habitPct,
                         nutritionPct: calPct,
                         animValue: _anim.value,
-                        readinessColor: scoreColor,
                       ),
                       child: Center(
                         child: Column(
@@ -434,8 +413,6 @@ class _HeroCardState extends ConsumerState<_HeroCard>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _ArcLegend('Readiness', scoreColor),
-              const SizedBox(width: AppSpacing.md),
               _ArcLegend('Habits', AppColors.terracotta),
               const SizedBox(width: AppSpacing.md),
               _ArcLegend('Nutrition', AppColors.waterColor),
@@ -861,6 +838,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
   double get _pro => widget.food.protein * _servings;
   double get _carb => widget.food.carbs * _servings;
   double get _fat => widget.food.fat * _servings;
+  double get _sugar => widget.food.sugar * _servings;
 
   Future<void> _add() async {
     setState(() => _adding = true);
@@ -892,6 +870,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
       protein: _pro,
       carbs: _carb,
       fat: _fat,
+      sugar: _sugar,
     );
 
     if (mounted) Navigator.pop(context);
@@ -1854,222 +1833,3 @@ class _QuickCompleteHabitForDayState
   }
 }
 
-// ---------------------------------------------------------------------------
-// _AgentSection — coach chat panel at the bottom of the overview screen
-// ---------------------------------------------------------------------------
-
-class _AgentSection extends ConsumerStatefulWidget {
-  const _AgentSection();
-
-  @override
-  ConsumerState<_AgentSection> createState() => _AgentSectionState();
-}
-
-class _AgentSectionState extends ConsumerState<_AgentSection> {
-  final _controller = TextEditingController();
-  final _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _send() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    _controller.clear();
-    ref.read(agentProvider.notifier).sendMessage(text);
-    // Scroll to bottom after the new messages are rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(agentProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Row(
-          children: [
-            const Icon(
-              Icons.auto_awesome,
-              size: 16,
-              color: AppColors.terracotta,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text('Coach', style: AppTextStyles.titleMedium),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // Message history
-        if (state.messages.isNotEmpty)
-          AppGlass.card(
-            padding: AppPaddings.card,
-            borderRadius: AppRadius.xlAll,
-            child: SizedBox(
-              height: 240,
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: state.messages.length,
-                itemBuilder:
-                    (ctx, i) => _ChatBubble(message: state.messages[i]),
-              ),
-            ),
-          ),
-
-        // Thinking indicator
-        if (state.loading)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: Row(
-              children: [
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.terracotta,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  'Thinking…',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnDarkTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-        const SizedBox(height: AppSpacing.md),
-
-        // Input row
-        AppGlass.card(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          borderRadius: AppRadius.lgAll,
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  onSubmitted: (_) => _send(),
-                  style: AppTextStyles.bodyMedium,
-                  decoration: InputDecoration(
-                    hintText: 'Ask your coach…',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textOnDarkTertiary,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _send,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.terracotta.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.send_rounded,
-                    size: 14,
-                    color: AppColors.terracotta,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _ChatBubble
-// ---------------------------------------------------------------------------
-
-class _ChatBubble extends StatelessWidget {
-  final AgentMessage message;
-  const _ChatBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.isUser;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: AppColors.terracotta.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.auto_awesome,
-                size: 12,
-                color: AppColors.terracotta,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    isUser
-                        ? AppColors.terracotta.withValues(alpha: 0.2)
-                        : AppColors.glassBg,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(12),
-                  topRight: const Radius.circular(12),
-                  bottomLeft: Radius.circular(isUser ? 12 : 2),
-                  bottomRight: Radius.circular(isUser ? 2 : 12),
-                ),
-                border: Border.all(
-                  color:
-                      isUser
-                          ? AppColors.terracotta.withValues(alpha: 0.3)
-                          : AppColors.glassBorder,
-                ),
-              ),
-              child: Text(message.text, style: AppTextStyles.bodyMedium),
-            ),
-          ),
-          if (isUser) const SizedBox(width: AppSpacing.xl),
-        ],
-      ),
-    );
-  }
-}

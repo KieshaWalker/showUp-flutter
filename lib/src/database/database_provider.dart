@@ -2,7 +2,7 @@
 //
 // AppDatabase (defined in db.dart) is the Drift-powered local database that
 // stores everything offline-first: habits, meals, food entries, water logs,
-// nutrition goals, pantry foods, and agent memories.
+// nutrition goals, and pantry foods.
 //
 // Why a provider? Riverpod manages the lifetime of the database — it creates
 // one instance when first accessed and calls db.close() when the app shuts

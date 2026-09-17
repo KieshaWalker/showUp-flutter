@@ -12,8 +12,6 @@ import 'src/features/nutrition/nutrition_screen.dart';
 import 'src/features/pantry/pantry_notifier.dart';
 import 'src/features/pantry/pantry_screen.dart';
 import 'src/features/presentation/presentation_screen.dart';
-import 'src/features/readiness/readiness_notifier.dart';
-import 'src/features/readiness/readiness_screen.dart';
 import 'src/features/settings/settings_screen.dart';
 import 'src/features/calendar/calendar_screen.dart';
 
@@ -40,7 +38,6 @@ import 'src/features/calendar/calendar_screen.dart';
 //   nutrition_screen      — Nutrition tab (index 2)
 //   pantry_screen         — Pantry tab (index 3)
 //   habits_screen         — Habits tab (index 4)
-//   readiness_screen      — Readiness tab (index 5)
 //   settings_screen       — Settings tab (index 6)
 
 /// Entry point for the Show Up application.
@@ -105,7 +102,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  // 0=Overview, 1=Readiness, 2=Nutrition, 3=Pantry, 4=Habits, 5=Calendar, 6=Settings
+  // 0=Overview, 1=Nutrition, 2=Pantry, 3=Habits, 4=Calendar, 5=Settings
   int _currentIndex = 0;
 
   @override
@@ -120,24 +117,15 @@ class _AppShellState extends ConsumerState<AppShell> {
       await ref.read(habitsNotifierProvider.notifier).pushUnsyncedChanges();
       await ref.read(nutritionNotifierProvider.notifier).pushUnsyncedChanges();
       await ref.read(pantryNotifierProvider.notifier).pushUnsyncedChanges();
-      await ref.read(userSubstancesProvider.notifier).pushUnsyncedChanges();
-      await ref.read(substanceLogsProvider.notifier).pushUnsyncedChanges();
-      await ref.read(checkInsProvider.notifier).pushUnsyncedChanges();
-      await ref.read(readinessProvider.notifier).pushUnsyncedChanges();
 
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
-      ref.read(userSubstancesProvider.notifier).syncFromRemote();
-      ref.read(substanceLogsProvider.notifier).syncFromRemote();
-      ref.read(checkInsProvider.notifier).syncFromRemote();
-      ref.read(readinessProvider.notifier).syncFromRemote();
     });
   }
 
   static const _screens = [
     PresentationScreen(),
-    ReadinessScreen(),
     NutritionScreen(),
     PantryScreen(),
     HabitsScreen(),
@@ -167,16 +155,14 @@ class _AppShellState extends ConsumerState<AppShell> {
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex == 0
               ? 0
-              : _currentIndex == 1
+              : _currentIndex == 4
                   ? 1
-                  : _currentIndex == 5
-                      ? 2
-                      : 3,
+                  : 2,
           onDestinationSelected: (i) {
-            if (i == 3) {
+            if (i == 2) {
               _openMenu();
-            } else if (i == 2) {
-              setState(() => _currentIndex = 5); // Calendar
+            } else if (i == 1) {
+              setState(() => _currentIndex = 4); // Calendar
             } else {
               setState(() => _currentIndex = i);
             }
@@ -186,11 +172,6 @@ class _AppShellState extends ConsumerState<AppShell> {
               icon: Icon(Icons.bar_chart_outlined),
               selectedIcon: Icon(Icons.bar_chart),
               label: 'Overview',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bolt_outlined),
-              selectedIcon: Icon(Icons.bolt),
-              label: 'Readiness',
             ),
             NavigationDestination(
               icon: Icon(Icons.calendar_month_outlined),
@@ -218,10 +199,10 @@ class _MenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      (index: 4, icon: Icons.check_circle_outline, label: 'Habits'),
-      (index: 2, icon: Icons.restaurant_menu_outlined, label: 'Nutrition'),
-      (index: 3, icon: Icons.kitchen_outlined, label: 'Pantry'),
-      (index: 6, icon: Icons.settings_outlined, label: 'Settings'),
+      (index: 3, icon: Icons.check_circle_outline, label: 'Habits'),
+      (index: 1, icon: Icons.restaurant_menu_outlined, label: 'Nutrition'),
+      (index: 2, icon: Icons.kitchen_outlined, label: 'Pantry'),
+      (index: 5, icon: Icons.settings_outlined, label: 'Settings'),
     ];
 
     return Container(

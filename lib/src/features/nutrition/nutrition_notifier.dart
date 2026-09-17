@@ -30,7 +30,6 @@
 //   auth_provider.dart      — currentUserIdProvider to scope to logged-in user
 //   nutrition_screen.dart   — the UI for logging meals and viewing macros
 //   presentation_screen.dart— reads totals for the overview dashboard
-//   agent_notifier.dart     — reads totals + calls logWater()
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';

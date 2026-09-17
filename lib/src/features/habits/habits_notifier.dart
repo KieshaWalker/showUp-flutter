@@ -29,7 +29,6 @@
 //   database_provider.dart  — ref.watch(databaseProvider) for SQLite access
 //   auth_provider.dart      — reads currentUserIdProvider to scope queries
 //   habits_screen.dart      — the UI that shows this data and triggers actions
-//   agent_notifier.dart     — reads habitsNotifierProvider + calls toggleCompletion
 //   calendar_screen.dart    — reads habitsNotifierProvider for history view
 
 import 'package:drift/drift.dart' hide Column;
