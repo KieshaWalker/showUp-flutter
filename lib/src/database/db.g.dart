@@ -1713,6 +1713,96 @@ class $FoodEntriesTable extends FoodEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _cholesterolMeta = const VerificationMeta(
+    'cholesterol',
+  );
+  @override
+  late final GeneratedColumn<double> cholesterol = GeneratedColumn<double>(
+    'cholesterol',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _potassiumMeta = const VerificationMeta(
+    'potassium',
+  );
+  @override
+  late final GeneratedColumn<double> potassium = GeneratedColumn<double>(
+    'potassium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _calciumMeta = const VerificationMeta(
+    'calcium',
+  );
+  @override
+  late final GeneratedColumn<double> calcium = GeneratedColumn<double>(
+    'calcium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _ironMeta = const VerificationMeta('iron');
+  @override
+  late final GeneratedColumn<double> iron = GeneratedColumn<double>(
+    'iron',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _vitaminAMeta = const VerificationMeta(
+    'vitaminA',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminA = GeneratedColumn<double>(
+    'vitamin_a',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _vitaminCMeta = const VerificationMeta(
+    'vitaminC',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminC = GeneratedColumn<double>(
+    'vitamin_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
   @override
   late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
@@ -1737,6 +1827,14 @@ class $FoodEntriesTable extends FoodEntries
     carbs,
     fat,
     sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     synced,
   ];
   @override
@@ -1810,6 +1908,57 @@ class $FoodEntriesTable extends FoodEntries
         sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
       );
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
+    if (data.containsKey('cholesterol')) {
+      context.handle(
+        _cholesterolMeta,
+        cholesterol.isAcceptableOrUnknown(
+          data['cholesterol']!,
+          _cholesterolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('potassium')) {
+      context.handle(
+        _potassiumMeta,
+        potassium.isAcceptableOrUnknown(data['potassium']!, _potassiumMeta),
+      );
+    }
+    if (data.containsKey('calcium')) {
+      context.handle(
+        _calciumMeta,
+        calcium.isAcceptableOrUnknown(data['calcium']!, _calciumMeta),
+      );
+    }
+    if (data.containsKey('iron')) {
+      context.handle(
+        _ironMeta,
+        iron.isAcceptableOrUnknown(data['iron']!, _ironMeta),
+      );
+    }
+    if (data.containsKey('vitamin_a')) {
+      context.handle(
+        _vitaminAMeta,
+        vitaminA.isAcceptableOrUnknown(data['vitamin_a']!, _vitaminAMeta),
+      );
+    }
+    if (data.containsKey('vitamin_c')) {
+      context.handle(
+        _vitaminCMeta,
+        vitaminC.isAcceptableOrUnknown(data['vitamin_c']!, _vitaminCMeta),
+      );
+    }
     if (data.containsKey('synced')) {
       context.handle(
         _syncedMeta,
@@ -1870,6 +2019,46 @@ class $FoodEntriesTable extends FoodEntries
             DriftSqlType.double,
             data['${effectivePrefix}sugar'],
           )!,
+      fiber:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}fiber'],
+          )!,
+      sodium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}sodium'],
+          )!,
+      cholesterol:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}cholesterol'],
+          )!,
+      potassium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}potassium'],
+          )!,
+      calcium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}calcium'],
+          )!,
+      iron:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}iron'],
+          )!,
+      vitaminA:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_a'],
+          )!,
+      vitaminC:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_c'],
+          )!,
       synced:
           attachedDatabase.typeMapping.read(
             DriftSqlType.bool,
@@ -1894,6 +2083,30 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   final double carbs;
   final double fat;
   final double sugar;
+
+  /// Fiber (g)
+  final double fiber;
+
+  /// Sodium (mg)
+  final double sodium;
+
+  /// Cholesterol (mg)
+  final double cholesterol;
+
+  /// Potassium (mg)
+  final double potassium;
+
+  /// Calcium (mg)
+  final double calcium;
+
+  /// Iron (mg)
+  final double iron;
+
+  /// Vitamin A (mcg)
+  final double vitaminA;
+
+  /// Vitamin C (mg)
+  final double vitaminC;
   final bool synced;
   const FoodEntry({
     required this.id,
@@ -1905,6 +2118,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     required this.carbs,
     required this.fat,
     required this.sugar,
+    required this.fiber,
+    required this.sodium,
+    required this.cholesterol,
+    required this.potassium,
+    required this.calcium,
+    required this.iron,
+    required this.vitaminA,
+    required this.vitaminC,
     required this.synced,
   });
   @override
@@ -1919,6 +2140,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
     map['sugar'] = Variable<double>(sugar);
+    map['fiber'] = Variable<double>(fiber);
+    map['sodium'] = Variable<double>(sodium);
+    map['cholesterol'] = Variable<double>(cholesterol);
+    map['potassium'] = Variable<double>(potassium);
+    map['calcium'] = Variable<double>(calcium);
+    map['iron'] = Variable<double>(iron);
+    map['vitamin_a'] = Variable<double>(vitaminA);
+    map['vitamin_c'] = Variable<double>(vitaminC);
     map['synced'] = Variable<bool>(synced);
     return map;
   }
@@ -1934,6 +2163,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       carbs: Value(carbs),
       fat: Value(fat),
       sugar: Value(sugar),
+      fiber: Value(fiber),
+      sodium: Value(sodium),
+      cholesterol: Value(cholesterol),
+      potassium: Value(potassium),
+      calcium: Value(calcium),
+      iron: Value(iron),
+      vitaminA: Value(vitaminA),
+      vitaminC: Value(vitaminC),
       synced: Value(synced),
     );
   }
@@ -1953,6 +2190,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
       sugar: serializer.fromJson<double>(json['sugar']),
+      fiber: serializer.fromJson<double>(json['fiber']),
+      sodium: serializer.fromJson<double>(json['sodium']),
+      cholesterol: serializer.fromJson<double>(json['cholesterol']),
+      potassium: serializer.fromJson<double>(json['potassium']),
+      calcium: serializer.fromJson<double>(json['calcium']),
+      iron: serializer.fromJson<double>(json['iron']),
+      vitaminA: serializer.fromJson<double>(json['vitaminA']),
+      vitaminC: serializer.fromJson<double>(json['vitaminC']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
   }
@@ -1969,6 +2214,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
       'sugar': serializer.toJson<double>(sugar),
+      'fiber': serializer.toJson<double>(fiber),
+      'sodium': serializer.toJson<double>(sodium),
+      'cholesterol': serializer.toJson<double>(cholesterol),
+      'potassium': serializer.toJson<double>(potassium),
+      'calcium': serializer.toJson<double>(calcium),
+      'iron': serializer.toJson<double>(iron),
+      'vitaminA': serializer.toJson<double>(vitaminA),
+      'vitaminC': serializer.toJson<double>(vitaminC),
       'synced': serializer.toJson<bool>(synced),
     };
   }
@@ -1983,6 +2236,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     double? carbs,
     double? fat,
     double? sugar,
+    double? fiber,
+    double? sodium,
+    double? cholesterol,
+    double? potassium,
+    double? calcium,
+    double? iron,
+    double? vitaminA,
+    double? vitaminC,
     bool? synced,
   }) => FoodEntry(
     id: id ?? this.id,
@@ -1994,6 +2255,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
     sugar: sugar ?? this.sugar,
+    fiber: fiber ?? this.fiber,
+    sodium: sodium ?? this.sodium,
+    cholesterol: cholesterol ?? this.cholesterol,
+    potassium: potassium ?? this.potassium,
+    calcium: calcium ?? this.calcium,
+    iron: iron ?? this.iron,
+    vitaminA: vitaminA ?? this.vitaminA,
+    vitaminC: vitaminC ?? this.vitaminC,
     synced: synced ?? this.synced,
   );
   FoodEntry copyWithCompanion(FoodEntriesCompanion data) {
@@ -2007,6 +2276,15 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
       sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
+      cholesterol:
+          data.cholesterol.present ? data.cholesterol.value : this.cholesterol,
+      potassium: data.potassium.present ? data.potassium.value : this.potassium,
+      calcium: data.calcium.present ? data.calcium.value : this.calcium,
+      iron: data.iron.present ? data.iron.value : this.iron,
+      vitaminA: data.vitaminA.present ? data.vitaminA.value : this.vitaminA,
+      vitaminC: data.vitaminC.present ? data.vitaminC.value : this.vitaminC,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
   }
@@ -2023,6 +2301,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('synced: $synced')
           ..write(')'))
         .toString();
@@ -2039,6 +2325,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     carbs,
     fat,
     sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     synced,
   );
   @override
@@ -2054,6 +2348,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.carbs == this.carbs &&
           other.fat == this.fat &&
           other.sugar == this.sugar &&
+          other.fiber == this.fiber &&
+          other.sodium == this.sodium &&
+          other.cholesterol == this.cholesterol &&
+          other.potassium == this.potassium &&
+          other.calcium == this.calcium &&
+          other.iron == this.iron &&
+          other.vitaminA == this.vitaminA &&
+          other.vitaminC == this.vitaminC &&
           other.synced == this.synced);
 }
 
@@ -2067,6 +2369,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
   final Value<double> carbs;
   final Value<double> fat;
   final Value<double> sugar;
+  final Value<double> fiber;
+  final Value<double> sodium;
+  final Value<double> cholesterol;
+  final Value<double> potassium;
+  final Value<double> calcium;
+  final Value<double> iron;
+  final Value<double> vitaminA;
+  final Value<double> vitaminC;
   final Value<bool> synced;
   final Value<int> rowid;
   const FoodEntriesCompanion({
@@ -2079,6 +2389,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2092,6 +2410,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2108,6 +2434,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     Expression<double>? carbs,
     Expression<double>? fat,
     Expression<double>? sugar,
+    Expression<double>? fiber,
+    Expression<double>? sodium,
+    Expression<double>? cholesterol,
+    Expression<double>? potassium,
+    Expression<double>? calcium,
+    Expression<double>? iron,
+    Expression<double>? vitaminA,
+    Expression<double>? vitaminC,
     Expression<bool>? synced,
     Expression<int>? rowid,
   }) {
@@ -2121,6 +2455,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
       if (sugar != null) 'sugar': sugar,
+      if (fiber != null) 'fiber': fiber,
+      if (sodium != null) 'sodium': sodium,
+      if (cholesterol != null) 'cholesterol': cholesterol,
+      if (potassium != null) 'potassium': potassium,
+      if (calcium != null) 'calcium': calcium,
+      if (iron != null) 'iron': iron,
+      if (vitaminA != null) 'vitamin_a': vitaminA,
+      if (vitaminC != null) 'vitamin_c': vitaminC,
       if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2136,6 +2478,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     Value<double>? carbs,
     Value<double>? fat,
     Value<double>? sugar,
+    Value<double>? fiber,
+    Value<double>? sodium,
+    Value<double>? cholesterol,
+    Value<double>? potassium,
+    Value<double>? calcium,
+    Value<double>? iron,
+    Value<double>? vitaminA,
+    Value<double>? vitaminC,
     Value<bool>? synced,
     Value<int>? rowid,
   }) {
@@ -2149,6 +2499,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
       sugar: sugar ?? this.sugar,
+      fiber: fiber ?? this.fiber,
+      sodium: sodium ?? this.sodium,
+      cholesterol: cholesterol ?? this.cholesterol,
+      potassium: potassium ?? this.potassium,
+      calcium: calcium ?? this.calcium,
+      iron: iron ?? this.iron,
+      vitaminA: vitaminA ?? this.vitaminA,
+      vitaminC: vitaminC ?? this.vitaminC,
       synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
     );
@@ -2184,6 +2542,30 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
     if (sugar.present) {
       map['sugar'] = Variable<double>(sugar.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
+    if (cholesterol.present) {
+      map['cholesterol'] = Variable<double>(cholesterol.value);
+    }
+    if (potassium.present) {
+      map['potassium'] = Variable<double>(potassium.value);
+    }
+    if (calcium.present) {
+      map['calcium'] = Variable<double>(calcium.value);
+    }
+    if (iron.present) {
+      map['iron'] = Variable<double>(iron.value);
+    }
+    if (vitaminA.present) {
+      map['vitamin_a'] = Variable<double>(vitaminA.value);
+    }
+    if (vitaminC.present) {
+      map['vitamin_c'] = Variable<double>(vitaminC.value);
+    }
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
@@ -2205,6 +2587,14 @@ class FoodEntriesCompanion extends UpdateCompanion<FoodEntry> {
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2645,6 +3035,96 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
     requiredDuringInsert: false,
     defaultValue: const Constant(2500.0),
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(28.0),
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2300.0),
+  );
+  static const VerificationMeta _cholesterolMeta = const VerificationMeta(
+    'cholesterol',
+  );
+  @override
+  late final GeneratedColumn<double> cholesterol = GeneratedColumn<double>(
+    'cholesterol',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(300.0),
+  );
+  static const VerificationMeta _potassiumMeta = const VerificationMeta(
+    'potassium',
+  );
+  @override
+  late final GeneratedColumn<double> potassium = GeneratedColumn<double>(
+    'potassium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(4700.0),
+  );
+  static const VerificationMeta _calciumMeta = const VerificationMeta(
+    'calcium',
+  );
+  @override
+  late final GeneratedColumn<double> calcium = GeneratedColumn<double>(
+    'calcium',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1300.0),
+  );
+  static const VerificationMeta _ironMeta = const VerificationMeta('iron');
+  @override
+  late final GeneratedColumn<double> iron = GeneratedColumn<double>(
+    'iron',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(18.0),
+  );
+  static const VerificationMeta _vitaminAMeta = const VerificationMeta(
+    'vitaminA',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminA = GeneratedColumn<double>(
+    'vitamin_a',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(900.0),
+  );
+  static const VerificationMeta _vitaminCMeta = const VerificationMeta(
+    'vitaminC',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminC = GeneratedColumn<double>(
+    'vitamin_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(90.0),
+  );
   static const VerificationMeta _currentWeightKgMeta = const VerificationMeta(
     'currentWeightKg',
   );
@@ -2688,6 +3168,14 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
     carbs,
     fat,
     waterMl,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     currentWeightKg,
     targetWeightKg,
     synced,
@@ -2740,6 +3228,57 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
       context.handle(
         _waterMlMeta,
         waterMl.isAcceptableOrUnknown(data['water_ml']!, _waterMlMeta),
+      );
+    }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
+    if (data.containsKey('cholesterol')) {
+      context.handle(
+        _cholesterolMeta,
+        cholesterol.isAcceptableOrUnknown(
+          data['cholesterol']!,
+          _cholesterolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('potassium')) {
+      context.handle(
+        _potassiumMeta,
+        potassium.isAcceptableOrUnknown(data['potassium']!, _potassiumMeta),
+      );
+    }
+    if (data.containsKey('calcium')) {
+      context.handle(
+        _calciumMeta,
+        calcium.isAcceptableOrUnknown(data['calcium']!, _calciumMeta),
+      );
+    }
+    if (data.containsKey('iron')) {
+      context.handle(
+        _ironMeta,
+        iron.isAcceptableOrUnknown(data['iron']!, _ironMeta),
+      );
+    }
+    if (data.containsKey('vitamin_a')) {
+      context.handle(
+        _vitaminAMeta,
+        vitaminA.isAcceptableOrUnknown(data['vitamin_a']!, _vitaminAMeta),
+      );
+    }
+    if (data.containsKey('vitamin_c')) {
+      context.handle(
+        _vitaminCMeta,
+        vitaminC.isAcceptableOrUnknown(data['vitamin_c']!, _vitaminCMeta),
       );
     }
     if (data.containsKey('current_weight_kg')) {
@@ -2805,6 +3344,46 @@ class $DailyNutritionGoalsTable extends DailyNutritionGoals
             DriftSqlType.double,
             data['${effectivePrefix}water_ml'],
           )!,
+      fiber:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}fiber'],
+          )!,
+      sodium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}sodium'],
+          )!,
+      cholesterol:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}cholesterol'],
+          )!,
+      potassium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}potassium'],
+          )!,
+      calcium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}calcium'],
+          )!,
+      iron:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}iron'],
+          )!,
+      vitaminA:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_a'],
+          )!,
+      vitaminC:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}vitamin_c'],
+          )!,
       currentWeightKg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}current_weight_kg'],
@@ -2835,6 +3414,30 @@ class DailyNutritionGoal extends DataClass
   final double carbs;
   final double fat;
   final double waterMl;
+
+  /// Fiber (g)
+  final double fiber;
+
+  /// Sodium (mg)
+  final double sodium;
+
+  /// Cholesterol (mg)
+  final double cholesterol;
+
+  /// Potassium (mg)
+  final double potassium;
+
+  /// Calcium (mg)
+  final double calcium;
+
+  /// Iron (mg)
+  final double iron;
+
+  /// Vitamin A (mcg)
+  final double vitaminA;
+
+  /// Vitamin C (mg)
+  final double vitaminC;
   final double? currentWeightKg;
   final double? targetWeightKg;
   final bool synced;
@@ -2845,6 +3448,14 @@ class DailyNutritionGoal extends DataClass
     required this.carbs,
     required this.fat,
     required this.waterMl,
+    required this.fiber,
+    required this.sodium,
+    required this.cholesterol,
+    required this.potassium,
+    required this.calcium,
+    required this.iron,
+    required this.vitaminA,
+    required this.vitaminC,
     this.currentWeightKg,
     this.targetWeightKg,
     required this.synced,
@@ -2858,6 +3469,14 @@ class DailyNutritionGoal extends DataClass
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
     map['water_ml'] = Variable<double>(waterMl);
+    map['fiber'] = Variable<double>(fiber);
+    map['sodium'] = Variable<double>(sodium);
+    map['cholesterol'] = Variable<double>(cholesterol);
+    map['potassium'] = Variable<double>(potassium);
+    map['calcium'] = Variable<double>(calcium);
+    map['iron'] = Variable<double>(iron);
+    map['vitamin_a'] = Variable<double>(vitaminA);
+    map['vitamin_c'] = Variable<double>(vitaminC);
     if (!nullToAbsent || currentWeightKg != null) {
       map['current_weight_kg'] = Variable<double>(currentWeightKg);
     }
@@ -2876,6 +3495,14 @@ class DailyNutritionGoal extends DataClass
       carbs: Value(carbs),
       fat: Value(fat),
       waterMl: Value(waterMl),
+      fiber: Value(fiber),
+      sodium: Value(sodium),
+      cholesterol: Value(cholesterol),
+      potassium: Value(potassium),
+      calcium: Value(calcium),
+      iron: Value(iron),
+      vitaminA: Value(vitaminA),
+      vitaminC: Value(vitaminC),
       currentWeightKg:
           currentWeightKg == null && nullToAbsent
               ? const Value.absent()
@@ -2900,6 +3527,14 @@ class DailyNutritionGoal extends DataClass
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
       waterMl: serializer.fromJson<double>(json['waterMl']),
+      fiber: serializer.fromJson<double>(json['fiber']),
+      sodium: serializer.fromJson<double>(json['sodium']),
+      cholesterol: serializer.fromJson<double>(json['cholesterol']),
+      potassium: serializer.fromJson<double>(json['potassium']),
+      calcium: serializer.fromJson<double>(json['calcium']),
+      iron: serializer.fromJson<double>(json['iron']),
+      vitaminA: serializer.fromJson<double>(json['vitaminA']),
+      vitaminC: serializer.fromJson<double>(json['vitaminC']),
       currentWeightKg: serializer.fromJson<double?>(json['currentWeightKg']),
       targetWeightKg: serializer.fromJson<double?>(json['targetWeightKg']),
       synced: serializer.fromJson<bool>(json['synced']),
@@ -2915,6 +3550,14 @@ class DailyNutritionGoal extends DataClass
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
       'waterMl': serializer.toJson<double>(waterMl),
+      'fiber': serializer.toJson<double>(fiber),
+      'sodium': serializer.toJson<double>(sodium),
+      'cholesterol': serializer.toJson<double>(cholesterol),
+      'potassium': serializer.toJson<double>(potassium),
+      'calcium': serializer.toJson<double>(calcium),
+      'iron': serializer.toJson<double>(iron),
+      'vitaminA': serializer.toJson<double>(vitaminA),
+      'vitaminC': serializer.toJson<double>(vitaminC),
       'currentWeightKg': serializer.toJson<double?>(currentWeightKg),
       'targetWeightKg': serializer.toJson<double?>(targetWeightKg),
       'synced': serializer.toJson<bool>(synced),
@@ -2928,6 +3571,14 @@ class DailyNutritionGoal extends DataClass
     double? carbs,
     double? fat,
     double? waterMl,
+    double? fiber,
+    double? sodium,
+    double? cholesterol,
+    double? potassium,
+    double? calcium,
+    double? iron,
+    double? vitaminA,
+    double? vitaminC,
     Value<double?> currentWeightKg = const Value.absent(),
     Value<double?> targetWeightKg = const Value.absent(),
     bool? synced,
@@ -2938,6 +3589,14 @@ class DailyNutritionGoal extends DataClass
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
     waterMl: waterMl ?? this.waterMl,
+    fiber: fiber ?? this.fiber,
+    sodium: sodium ?? this.sodium,
+    cholesterol: cholesterol ?? this.cholesterol,
+    potassium: potassium ?? this.potassium,
+    calcium: calcium ?? this.calcium,
+    iron: iron ?? this.iron,
+    vitaminA: vitaminA ?? this.vitaminA,
+    vitaminC: vitaminC ?? this.vitaminC,
     currentWeightKg:
         currentWeightKg.present ? currentWeightKg.value : this.currentWeightKg,
     targetWeightKg:
@@ -2952,6 +3611,15 @@ class DailyNutritionGoal extends DataClass
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
       waterMl: data.waterMl.present ? data.waterMl.value : this.waterMl,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
+      cholesterol:
+          data.cholesterol.present ? data.cholesterol.value : this.cholesterol,
+      potassium: data.potassium.present ? data.potassium.value : this.potassium,
+      calcium: data.calcium.present ? data.calcium.value : this.calcium,
+      iron: data.iron.present ? data.iron.value : this.iron,
+      vitaminA: data.vitaminA.present ? data.vitaminA.value : this.vitaminA,
+      vitaminC: data.vitaminC.present ? data.vitaminC.value : this.vitaminC,
       currentWeightKg:
           data.currentWeightKg.present
               ? data.currentWeightKg.value
@@ -2973,6 +3641,14 @@ class DailyNutritionGoal extends DataClass
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('waterMl: $waterMl, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('currentWeightKg: $currentWeightKg, ')
           ..write('targetWeightKg: $targetWeightKg, ')
           ..write('synced: $synced')
@@ -2988,6 +3664,14 @@ class DailyNutritionGoal extends DataClass
     carbs,
     fat,
     waterMl,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
     currentWeightKg,
     targetWeightKg,
     synced,
@@ -3002,6 +3686,14 @@ class DailyNutritionGoal extends DataClass
           other.carbs == this.carbs &&
           other.fat == this.fat &&
           other.waterMl == this.waterMl &&
+          other.fiber == this.fiber &&
+          other.sodium == this.sodium &&
+          other.cholesterol == this.cholesterol &&
+          other.potassium == this.potassium &&
+          other.calcium == this.calcium &&
+          other.iron == this.iron &&
+          other.vitaminA == this.vitaminA &&
+          other.vitaminC == this.vitaminC &&
           other.currentWeightKg == this.currentWeightKg &&
           other.targetWeightKg == this.targetWeightKg &&
           other.synced == this.synced);
@@ -3014,6 +3706,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
   final Value<double> carbs;
   final Value<double> fat;
   final Value<double> waterMl;
+  final Value<double> fiber;
+  final Value<double> sodium;
+  final Value<double> cholesterol;
+  final Value<double> potassium;
+  final Value<double> calcium;
+  final Value<double> iron;
+  final Value<double> vitaminA;
+  final Value<double> vitaminC;
   final Value<double?> currentWeightKg;
   final Value<double?> targetWeightKg;
   final Value<bool> synced;
@@ -3025,6 +3725,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.waterMl = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.currentWeightKg = const Value.absent(),
     this.targetWeightKg = const Value.absent(),
     this.synced = const Value.absent(),
@@ -3037,6 +3745,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.waterMl = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.currentWeightKg = const Value.absent(),
     this.targetWeightKg = const Value.absent(),
     this.synced = const Value.absent(),
@@ -3049,6 +3765,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     Expression<double>? carbs,
     Expression<double>? fat,
     Expression<double>? waterMl,
+    Expression<double>? fiber,
+    Expression<double>? sodium,
+    Expression<double>? cholesterol,
+    Expression<double>? potassium,
+    Expression<double>? calcium,
+    Expression<double>? iron,
+    Expression<double>? vitaminA,
+    Expression<double>? vitaminC,
     Expression<double>? currentWeightKg,
     Expression<double>? targetWeightKg,
     Expression<bool>? synced,
@@ -3061,6 +3785,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
       if (waterMl != null) 'water_ml': waterMl,
+      if (fiber != null) 'fiber': fiber,
+      if (sodium != null) 'sodium': sodium,
+      if (cholesterol != null) 'cholesterol': cholesterol,
+      if (potassium != null) 'potassium': potassium,
+      if (calcium != null) 'calcium': calcium,
+      if (iron != null) 'iron': iron,
+      if (vitaminA != null) 'vitamin_a': vitaminA,
+      if (vitaminC != null) 'vitamin_c': vitaminC,
       if (currentWeightKg != null) 'current_weight_kg': currentWeightKg,
       if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
       if (synced != null) 'synced': synced,
@@ -3075,6 +3807,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     Value<double>? carbs,
     Value<double>? fat,
     Value<double>? waterMl,
+    Value<double>? fiber,
+    Value<double>? sodium,
+    Value<double>? cholesterol,
+    Value<double>? potassium,
+    Value<double>? calcium,
+    Value<double>? iron,
+    Value<double>? vitaminA,
+    Value<double>? vitaminC,
     Value<double?>? currentWeightKg,
     Value<double?>? targetWeightKg,
     Value<bool>? synced,
@@ -3087,6 +3827,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
       waterMl: waterMl ?? this.waterMl,
+      fiber: fiber ?? this.fiber,
+      sodium: sodium ?? this.sodium,
+      cholesterol: cholesterol ?? this.cholesterol,
+      potassium: potassium ?? this.potassium,
+      calcium: calcium ?? this.calcium,
+      iron: iron ?? this.iron,
+      vitaminA: vitaminA ?? this.vitaminA,
+      vitaminC: vitaminC ?? this.vitaminC,
       currentWeightKg: currentWeightKg ?? this.currentWeightKg,
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       synced: synced ?? this.synced,
@@ -3115,6 +3863,30 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
     if (waterMl.present) {
       map['water_ml'] = Variable<double>(waterMl.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
+    if (cholesterol.present) {
+      map['cholesterol'] = Variable<double>(cholesterol.value);
+    }
+    if (potassium.present) {
+      map['potassium'] = Variable<double>(potassium.value);
+    }
+    if (calcium.present) {
+      map['calcium'] = Variable<double>(calcium.value);
+    }
+    if (iron.present) {
+      map['iron'] = Variable<double>(iron.value);
+    }
+    if (vitaminA.present) {
+      map['vitamin_a'] = Variable<double>(vitaminA.value);
+    }
+    if (vitaminC.present) {
+      map['vitamin_c'] = Variable<double>(vitaminC.value);
+    }
     if (currentWeightKg.present) {
       map['current_weight_kg'] = Variable<double>(currentWeightKg.value);
     }
@@ -3139,6 +3911,14 @@ class DailyNutritionGoalsCompanion extends UpdateCompanion<DailyNutritionGoal> {
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('waterMl: $waterMl, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
           ..write('currentWeightKg: $currentWeightKg, ')
           ..write('targetWeightKg: $targetWeightKg, ')
           ..write('synced: $synced, ')
@@ -5183,6 +5963,14 @@ typedef $$FoodEntriesTableCreateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> sugar,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -5197,6 +5985,14 @@ typedef $$FoodEntriesTableUpdateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> sugar,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<bool> synced,
       Value<int> rowid,
     });
@@ -5252,6 +6048,46 @@ class $$FoodEntriesTableFilterComposer
 
   ColumnFilters<double> get sugar => $composableBuilder(
     column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5315,6 +6151,46 @@ class $$FoodEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get synced => $composableBuilder(
     column: $table.synced,
     builder: (column) => ColumnOrderings(column),
@@ -5356,6 +6232,32 @@ class $$FoodEntriesTableAnnotationComposer
 
   GeneratedColumn<double> get sugar =>
       $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
+
+  GeneratedColumn<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get potassium =>
+      $composableBuilder(column: $table.potassium, builder: (column) => column);
+
+  GeneratedColumn<double> get calcium =>
+      $composableBuilder(column: $table.calcium, builder: (column) => column);
+
+  GeneratedColumn<double> get iron =>
+      $composableBuilder(column: $table.iron, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminA =>
+      $composableBuilder(column: $table.vitaminA, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminC =>
+      $composableBuilder(column: $table.vitaminC, builder: (column) => column);
 
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
@@ -5402,6 +6304,14 @@ class $$FoodEntriesTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> sugar = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodEntriesCompanion(
@@ -5414,6 +6324,14 @@ class $$FoodEntriesTableTableManager
                 carbs: carbs,
                 fat: fat,
                 sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 synced: synced,
                 rowid: rowid,
               ),
@@ -5428,6 +6346,14 @@ class $$FoodEntriesTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> sugar = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodEntriesCompanion.insert(
@@ -5440,6 +6366,14 @@ class $$FoodEntriesTableTableManager
                 carbs: carbs,
                 fat: fat,
                 sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 synced: synced,
                 rowid: rowid,
               ),
@@ -5681,6 +6615,14 @@ typedef $$DailyNutritionGoalsTableCreateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> waterMl,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<double?> currentWeightKg,
       Value<double?> targetWeightKg,
       Value<bool> synced,
@@ -5694,6 +6636,14 @@ typedef $$DailyNutritionGoalsTableUpdateCompanionBuilder =
       Value<double> carbs,
       Value<double> fat,
       Value<double> waterMl,
+      Value<double> fiber,
+      Value<double> sodium,
+      Value<double> cholesterol,
+      Value<double> potassium,
+      Value<double> calcium,
+      Value<double> iron,
+      Value<double> vitaminA,
+      Value<double> vitaminC,
       Value<double?> currentWeightKg,
       Value<double?> targetWeightKg,
       Value<bool> synced,
@@ -5736,6 +6686,46 @@ class $$DailyNutritionGoalsTableFilterComposer
 
   ColumnFilters<double> get waterMl => $composableBuilder(
     column: $table.waterMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5794,6 +6784,46 @@ class $$DailyNutritionGoalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get currentWeightKg => $composableBuilder(
     column: $table.currentWeightKg,
     builder: (column) => ColumnOrderings(column),
@@ -5836,6 +6866,32 @@ class $$DailyNutritionGoalsTableAnnotationComposer
 
   GeneratedColumn<double> get waterMl =>
       $composableBuilder(column: $table.waterMl, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
+
+  GeneratedColumn<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get potassium =>
+      $composableBuilder(column: $table.potassium, builder: (column) => column);
+
+  GeneratedColumn<double> get calcium =>
+      $composableBuilder(column: $table.calcium, builder: (column) => column);
+
+  GeneratedColumn<double> get iron =>
+      $composableBuilder(column: $table.iron, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminA =>
+      $composableBuilder(column: $table.vitaminA, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminC =>
+      $composableBuilder(column: $table.vitaminC, builder: (column) => column);
 
   GeneratedColumn<double> get currentWeightKg => $composableBuilder(
     column: $table.currentWeightKg,
@@ -5903,6 +6959,14 @@ class $$DailyNutritionGoalsTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> waterMl = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<double?> currentWeightKg = const Value.absent(),
                 Value<double?> targetWeightKg = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
@@ -5914,6 +6978,14 @@ class $$DailyNutritionGoalsTableTableManager
                 carbs: carbs,
                 fat: fat,
                 waterMl: waterMl,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 currentWeightKg: currentWeightKg,
                 targetWeightKg: targetWeightKg,
                 synced: synced,
@@ -5927,6 +6999,14 @@ class $$DailyNutritionGoalsTableTableManager
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
                 Value<double> waterMl = const Value.absent(),
+                Value<double> fiber = const Value.absent(),
+                Value<double> sodium = const Value.absent(),
+                Value<double> cholesterol = const Value.absent(),
+                Value<double> potassium = const Value.absent(),
+                Value<double> calcium = const Value.absent(),
+                Value<double> iron = const Value.absent(),
+                Value<double> vitaminA = const Value.absent(),
+                Value<double> vitaminC = const Value.absent(),
                 Value<double?> currentWeightKg = const Value.absent(),
                 Value<double?> targetWeightKg = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
@@ -5938,6 +7018,14 @@ class $$DailyNutritionGoalsTableTableManager
                 carbs: carbs,
                 fat: fat,
                 waterMl: waterMl,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 currentWeightKg: currentWeightKg,
                 targetWeightKg: targetWeightKg,
                 synced: synced,

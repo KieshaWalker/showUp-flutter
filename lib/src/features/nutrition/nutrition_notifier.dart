@@ -63,6 +63,14 @@ class TodayNutrition {
   final double totalCarbs;
   final double totalFat;
   final double totalSugar;
+  final double totalFiber;
+  final double totalSodium;
+  final double totalCholesterol;
+  final double totalPotassium;
+  final double totalCalcium;
+  final double totalIron;
+  final double totalVitaminA;
+  final double totalVitaminC;
   final double totalWaterMl;
 
   const TodayNutrition({
@@ -73,6 +81,14 @@ class TodayNutrition {
     required this.totalCarbs,
     required this.totalFat,
     required this.totalSugar,
+    required this.totalFiber,
+    required this.totalSodium,
+    required this.totalCholesterol,
+    required this.totalPotassium,
+    required this.totalCalcium,
+    required this.totalIron,
+    required this.totalVitaminA,
+    required this.totalVitaminC,
     required this.totalWaterMl,
   });
 }
@@ -95,6 +111,14 @@ class MealWithEntries {
   double get carbs => entries.fold(0, (s, e) => s + e.carbs);
   double get fat => entries.fold(0, (s, e) => s + e.fat);
   double get sugar => entries.fold(0, (s, e) => s + e.sugar);
+  double get fiber => entries.fold(0, (s, e) => s + e.fiber);
+  double get sodium => entries.fold(0, (s, e) => s + e.sodium);
+  double get cholesterol => entries.fold(0, (s, e) => s + e.cholesterol);
+  double get potassium => entries.fold(0, (s, e) => s + e.potassium);
+  double get calcium => entries.fold(0, (s, e) => s + e.calcium);
+  double get iron => entries.fold(0, (s, e) => s + e.iron);
+  double get vitaminA => entries.fold(0, (s, e) => s + e.vitaminA);
+  double get vitaminC => entries.fold(0, (s, e) => s + e.vitaminC);
 }
 
 // ---------------------------------------------------------------------------
@@ -200,13 +224,29 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         totalPro = 0,
         totalCarb = 0,
         totalFat = 0,
-        totalSugar = 0;
+        totalSugar = 0,
+        totalFiber = 0,
+        totalSodium = 0,
+        totalCholesterol = 0,
+        totalPotassium = 0,
+        totalCalcium = 0,
+        totalIron = 0,
+        totalVitaminA = 0,
+        totalVitaminC = 0;
     for (final m in mealsWithEntries) {
       totalCal += m.calories;
       totalPro += m.protein;
       totalCarb += m.carbs;
       totalFat += m.fat;
       totalSugar += m.sugar;
+      totalFiber += m.fiber;
+      totalSodium += m.sodium;
+      totalCholesterol += m.cholesterol;
+      totalPotassium += m.potassium;
+      totalCalcium += m.calcium;
+      totalIron += m.iron;
+      totalVitaminA += m.vitaminA;
+      totalVitaminC += m.vitaminC;
     }
 
     return TodayNutrition(
@@ -217,6 +257,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
       totalCarbs: totalCarb,
       totalFat: totalFat,
       totalSugar: totalSugar,
+      totalFiber: totalFiber,
+      totalSodium: totalSodium,
+      totalCholesterol: totalCholesterol,
+      totalPotassium: totalPotassium,
+      totalCalcium: totalCalcium,
+      totalIron: totalIron,
+      totalVitaminA: totalVitaminA,
+      totalVitaminC: totalVitaminC,
       totalWaterMl: waterLogs.fold<double>(0.0, (s, w) => s + w.amountMl),
     );
   }
@@ -256,6 +304,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     required double carbs,
     required double fat,
     double sugar = 0,
+    double fiber = 0,
+    double sodium = 0,
+    double cholesterol = 0,
+    double potassium = 0,
+    double calcium = 0,
+    double iron = 0,
+    double vitaminA = 0,
+    double vitaminC = 0,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -275,6 +331,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
             carbs: Value(carbs),
             fat: Value(fat),
             sugar: Value(sugar),
+            fiber: Value(fiber),
+            sodium: Value(sodium),
+            cholesterol: Value(cholesterol),
+            potassium: Value(potassium),
+            calcium: Value(calcium),
+            iron: Value(iron),
+            vitaminA: Value(vitaminA),
+            vitaminC: Value(vitaminC),
           ),
         );
 
@@ -289,6 +353,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'carbs': carbs,
         'fat': fat,
         'sugar': sugar,
+        'fiber': fiber,
+        'sodium': sodium,
+        'cholesterol': cholesterol,
+        'potassium': potassium,
+        'calcium': calcium,
+        'iron': iron,
+        'vitamin_a': vitaminA,
+        'vitamin_c': vitaminC,
       });
       await (db.update(db.foodEntries)..where(
         (e) => e.id.equals(id),
@@ -379,6 +451,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     required double carbs,
     required double fat,
     required double waterMl,
+    double fiber = 28,
+    double sodium = 2300,
+    double cholesterol = 300,
+    double potassium = 4700,
+    double calcium = 1300,
+    double iron = 18,
+    double vitaminA = 900,
+    double vitaminC = 90,
     double? currentWeightKg,
     double? targetWeightKg,
   }) async {
@@ -396,6 +476,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
             carbs: Value(carbs),
             fat: Value(fat),
             waterMl: Value(waterMl),
+            fiber: Value(fiber),
+            sodium: Value(sodium),
+            cholesterol: Value(cholesterol),
+            potassium: Value(potassium),
+            calcium: Value(calcium),
+            iron: Value(iron),
+            vitaminA: Value(vitaminA),
+            vitaminC: Value(vitaminC),
             currentWeightKg: Value(currentWeightKg),
             targetWeightKg: Value(targetWeightKg),
           ),
@@ -409,6 +497,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'carbs': carbs,
         'fat': fat,
         'water_ml': waterMl,
+        'fiber': fiber,
+        'sodium': sodium,
+        'cholesterol': cholesterol,
+        'potassium': potassium,
+        'calcium': calcium,
+        'iron': iron,
+        'vitamin_a': vitaminA,
+        'vitamin_c': vitaminC,
         'current_weight_kg': currentWeightKg,
         'target_weight_kg': targetWeightKg,
       });
@@ -501,6 +597,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 carbs: Value(entry.carbs),
                 fat: Value(entry.fat),
                 sugar: Value(entry.sugar),
+                fiber: Value(entry.fiber),
+                sodium: Value(entry.sodium),
+                cholesterol: Value(entry.cholesterol),
+                potassium: Value(entry.potassium),
+                calcium: Value(entry.calcium),
+                iron: Value(entry.iron),
+                vitaminA: Value(entry.vitaminA),
+                vitaminC: Value(entry.vitaminC),
               ),
             );
         remoteEntries.add({
@@ -513,6 +617,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'carbs': entry.carbs,
           'fat': entry.fat,
           'sugar': entry.sugar,
+          'fiber': entry.fiber,
+          'sodium': entry.sodium,
+          'cholesterol': entry.cholesterol,
+          'potassium': entry.potassium,
+          'calcium': entry.calcium,
+          'iron': entry.iron,
+          'vitamin_a': entry.vitaminA,
+          'vitamin_c': entry.vitaminC,
         });
       }
 
@@ -584,6 +696,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'carbs': e.carbs,
           'fat': e.fat,
           'sugar': e.sugar,
+          'fiber': e.fiber,
+          'sodium': e.sodium,
+          'cholesterol': e.cholesterol,
+          'potassium': e.potassium,
+          'calcium': e.calcium,
+          'iron': e.iron,
+          'vitamin_a': e.vitaminA,
+          'vitamin_c': e.vitaminC,
         });
         await (db.update(db.foodEntries)..where(
           (t) => t.id.equals(e.id),
@@ -626,6 +746,14 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'carbs': g.carbs,
           'fat': g.fat,
           'water_ml': g.waterMl,
+          'fiber': g.fiber,
+          'sodium': g.sodium,
+          'cholesterol': g.cholesterol,
+          'potassium': g.potassium,
+          'calcium': g.calcium,
+          'iron': g.iron,
+          'vitamin_a': g.vitaminA,
+          'vitamin_c': g.vitaminC,
           'current_weight_kg': g.currentWeightKg,
           'target_weight_kg': g.targetWeightKg,
         });
@@ -680,6 +808,16 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 carbs: Value((e['carbs'] as num).toDouble()),
                 fat: Value((e['fat'] as num).toDouble()),
                 sugar: Value((e['sugar'] as num?)?.toDouble() ?? 0.0),
+                fiber: Value((e['fiber'] as num?)?.toDouble() ?? 0.0),
+                sodium: Value((e['sodium'] as num?)?.toDouble() ?? 0.0),
+                cholesterol: Value(
+                  (e['cholesterol'] as num?)?.toDouble() ?? 0.0,
+                ),
+                potassium: Value((e['potassium'] as num?)?.toDouble() ?? 0.0),
+                calcium: Value((e['calcium'] as num?)?.toDouble() ?? 0.0),
+                iron: Value((e['iron'] as num?)?.toDouble() ?? 0.0),
+                vitaminA: Value((e['vitamin_a'] as num?)?.toDouble() ?? 0.0),
+                vitaminC: Value((e['vitamin_c'] as num?)?.toDouble() ?? 0.0),
                 synced: const Value(true),
               ),
             );
@@ -720,6 +858,26 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 carbs: Value((goals['carbs'] as num).toDouble()),
                 fat: Value((goals['fat'] as num).toDouble()),
                 waterMl: Value((goals['water_ml'] as num).toDouble()),
+                fiber: Value((goals['fiber'] as num?)?.toDouble() ?? 28.0),
+                sodium: Value(
+                  (goals['sodium'] as num?)?.toDouble() ?? 2300.0,
+                ),
+                cholesterol: Value(
+                  (goals['cholesterol'] as num?)?.toDouble() ?? 300.0,
+                ),
+                potassium: Value(
+                  (goals['potassium'] as num?)?.toDouble() ?? 4700.0,
+                ),
+                calcium: Value(
+                  (goals['calcium'] as num?)?.toDouble() ?? 1300.0,
+                ),
+                iron: Value((goals['iron'] as num?)?.toDouble() ?? 18.0),
+                vitaminA: Value(
+                  (goals['vitamin_a'] as num?)?.toDouble() ?? 900.0,
+                ),
+                vitaminC: Value(
+                  (goals['vitamin_c'] as num?)?.toDouble() ?? 90.0,
+                ),
                 currentWeightKg: Value(
                   (goals['current_weight_kg'] as num?)?.toDouble(),
                 ),

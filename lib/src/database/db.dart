@@ -31,6 +31,10 @@
 //         potassium, calcium, iron, vitaminA, vitaminC) to PantryFoods
 //   v10 — removed the readiness system (UserSubstances, SubstanceLogs,
 //         ReadinessCheckIns, DailyReadiness) and the unused AgentMemory table
+//   v11 — added micronutrients (fiber, sodium, cholesterol, potassium,
+//         calcium, iron, vitaminA, vitaminC) to FoodEntries, and matching
+//         per-user goal columns (defaulted to FDA daily values) to
+//         DailyNutritionGoals
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -114,6 +118,31 @@ class FoodEntries extends Table {
   RealColumn get carbs => real().withDefault(const Constant(0.0))();
   RealColumn get fat => real().withDefault(const Constant(0.0))();
   RealColumn get sugar => real().withDefault(const Constant(0.0))();
+
+  /// Fiber (g)
+  RealColumn get fiber => real().withDefault(const Constant(0.0))();
+
+  /// Sodium (mg)
+  RealColumn get sodium => real().withDefault(const Constant(0.0))();
+
+  /// Cholesterol (mg)
+  RealColumn get cholesterol => real().withDefault(const Constant(0.0))();
+
+  /// Potassium (mg)
+  RealColumn get potassium => real().withDefault(const Constant(0.0))();
+
+  /// Calcium (mg)
+  RealColumn get calcium => real().withDefault(const Constant(0.0))();
+
+  /// Iron (mg)
+  RealColumn get iron => real().withDefault(const Constant(0.0))();
+
+  /// Vitamin A (mcg)
+  RealColumn get vitaminA => real().withDefault(const Constant(0.0))();
+
+  /// Vitamin C (mg)
+  RealColumn get vitaminC => real().withDefault(const Constant(0.0))();
+
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
   @override
@@ -139,6 +168,33 @@ class DailyNutritionGoals extends Table {
   RealColumn get carbs => real().withDefault(const Constant(250.0))();
   RealColumn get fat => real().withDefault(const Constant(65.0))();
   RealColumn get waterMl => real().withDefault(const Constant(2500.0))();
+
+  // Micronutrient targets — default to the FDA's general adult Daily Values
+  // (used as the "recommended" reference shown in the goals editor too).
+  /// Fiber (g)
+  RealColumn get fiber => real().withDefault(const Constant(28.0))();
+
+  /// Sodium (mg)
+  RealColumn get sodium => real().withDefault(const Constant(2300.0))();
+
+  /// Cholesterol (mg)
+  RealColumn get cholesterol => real().withDefault(const Constant(300.0))();
+
+  /// Potassium (mg)
+  RealColumn get potassium => real().withDefault(const Constant(4700.0))();
+
+  /// Calcium (mg)
+  RealColumn get calcium => real().withDefault(const Constant(1300.0))();
+
+  /// Iron (mg)
+  RealColumn get iron => real().withDefault(const Constant(18.0))();
+
+  /// Vitamin A (mcg)
+  RealColumn get vitaminA => real().withDefault(const Constant(900.0))();
+
+  /// Vitamin C (mg)
+  RealColumn get vitaminC => real().withDefault(const Constant(90.0))();
+
   RealColumn get currentWeightKg => real().nullable()();
   RealColumn get targetWeightKg => real().nullable()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
@@ -233,7 +289,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -298,6 +354,36 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('DROP TABLE IF EXISTS substance_logs');
         await customStatement('DROP TABLE IF EXISTS readiness_check_ins');
         await customStatement('DROP TABLE IF EXISTS daily_readiness');
+      }
+      if (from < 11) {
+        for (final column in [
+          'fiber',
+          'sodium',
+          'cholesterol',
+          'potassium',
+          'calcium',
+          'iron',
+          'vitamin_a',
+          'vitamin_c',
+        ]) {
+          await customStatement(
+            'ALTER TABLE food_entries ADD COLUMN $column REAL NOT NULL DEFAULT 0.0',
+          );
+        }
+        for (final entry in {
+          'fiber': 28.0,
+          'sodium': 2300.0,
+          'cholesterol': 300.0,
+          'potassium': 4700.0,
+          'calcium': 1300.0,
+          'iron': 18.0,
+          'vitamin_a': 900.0,
+          'vitamin_c': 90.0,
+        }.entries) {
+          await customStatement(
+            'ALTER TABLE daily_nutrition_goals ADD COLUMN ${entry.key} REAL NOT NULL DEFAULT ${entry.value}',
+          );
+        }
       }
     },
   );

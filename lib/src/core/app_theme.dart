@@ -56,6 +56,16 @@ class AppColors {
   static const sugarColor = plum;
   static const waterColor = Color(0xFF5AAED4);
 
+  // Micronutrient colors
+  static const fiberColor = olive;
+  static const sodiumColor = waterColor;
+  static const cholesterolColor = mahogany;
+  static const potassiumColor = khaki;
+  static const calciumColor = sage;
+  static const ironColor = persimmon;
+  static const vitaminAColor = ochre;
+  static const vitaminCColor = eucalyptus;
+
   // ---------------------------------------------------------------------------
   // Dark glass palette
   // ---------------------------------------------------------------------------

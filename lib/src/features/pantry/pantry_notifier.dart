@@ -277,6 +277,14 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         carbs: s.food.carbs * s.servings,
         fat: s.food.fat * s.servings,
         sugar: s.food.sugar * s.servings,
+        fiber: s.food.fiber * s.servings,
+        sodium: s.food.sodium * s.servings,
+        cholesterol: s.food.cholesterol * s.servings,
+        potassium: s.food.potassium * s.servings,
+        calcium: s.food.calcium * s.servings,
+        iron: s.food.iron * s.servings,
+        vitaminA: s.food.vitaminA * s.servings,
+        vitaminC: s.food.vitaminC * s.servings,
       );
     }
   }
