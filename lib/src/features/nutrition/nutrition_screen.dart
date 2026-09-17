@@ -11,16 +11,22 @@
 //   • Long-press a meal to delete it and all its entries
 //   • Edit daily goals — including micronutrient targets — via the tune icon
 //
-// Exported widgets/functions (used by presentation_screen.dart):
+// Exported widgets/functions (used by presentation_screen.dart and
+// calendar_screen.dart, so meal/food editing looks and behaves identically
+// across all three tabs):
 //   NutritionCalorieSummary   — calorie ring progress card
 //   NutritionMacroRow         — row of macro progress pills
 //   NutritionMacroPill        — individual macro/micro pill
+//   showAddMealSheet()        — "Add Meal" sheet; pass `date:` to log onto a past day
+//   showAddFoodSheet()        — "Add Food" sheet (pantry search + manual entry) for a meal
 //   showFoodNutritionDialog() — tap-to-view nutrition breakdown dialog
 //   confirmDeleteFoodEntry()  — long-press-to-delete confirmation dialog
+//   confirmDeleteMeal()       — long-press-to-delete confirmation dialog (whole meal)
 //
 // Connections:
 //   nutrition_notifier.dart — all state + mutations
 //   pantry_notifier.dart    — powers the pantry food search in _AddFoodSheet
+//   calendar_screen.dart    — reuses the sheets/dialogs above for the day-detail editor
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'package:flutter/material.dart';
@@ -87,7 +93,7 @@ class NutritionScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddMealSheet(context, ref),
+        onPressed: () => showAddMealSheet(context, ref),
         icon: const Icon(Icons.add),
         label: const Text('Add Meal'),
       ),
@@ -443,7 +449,7 @@ class _MealCardState extends ConsumerState<_MealCard> {
               ...m.entries.map((e) => _FoodEntryTile(entry: e)),
             const Divider(height: 1),
             TextButton.icon(
-              onPressed: () => _showAddFoodSheet(context, m.meal.id),
+              onPressed: () => showAddFoodSheet(context, m.meal.id),
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Add Food'),
             ),
@@ -454,35 +460,39 @@ class _MealCardState extends ConsumerState<_MealCard> {
   }
 
   void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete meal?'),
-            content: Text(
-              'Remove "${widget.mealWithEntries.meal.name}" and all its food entries?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ref
-                      .read(nutritionNotifierProvider.notifier)
-                      .deleteMeal(widget.mealWithEntries.meal.id);
-                },
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ],
-          ),
-    );
+    confirmDeleteMeal(context, ref, widget.mealWithEntries.meal);
   }
+}
+
+/// Shared "delete meal?" confirmation — used by the Nutrition tab's meal
+/// cards and the Calendar tab's day editor so both stay in sync.
+void confirmDeleteMeal(BuildContext context, WidgetRef ref, Meal meal) {
+  showDialog(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          title: const Text('Delete meal?'),
+          content: Text(
+            'Remove "${meal.name}" and all its food entries?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                ref.read(nutritionNotifierProvider.notifier).deleteMeal(meal.id);
+              },
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+  );
 }
 
 // =============================================================================
@@ -725,16 +735,19 @@ Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
   );
 }
 
-void _showAddMealSheet(BuildContext context, WidgetRef ref) {
+/// Shows the "Add Meal" sheet. [date] defaults to today; pass a past date
+/// (e.g. from the Calendar tab's day editor) to log the meal onto that day.
+void showAddMealSheet(BuildContext context, WidgetRef ref, {DateTime? date}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => const _AddMealSheet(),
+    builder: (_) => _AddMealSheet(date: date),
   );
 }
 
 class _AddMealSheet extends ConsumerStatefulWidget {
-  const _AddMealSheet();
+  const _AddMealSheet({this.date});
+  final DateTime? date;
 
   @override
   ConsumerState<_AddMealSheet> createState() => _AddMealSheetState();
@@ -826,7 +839,9 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
 
   void _save() {
     final name = _custom ? _ctrl.text.trim() : _selected!;
-    ref.read(nutritionNotifierProvider.notifier).addMeal(name);
+    ref
+        .read(nutritionNotifierProvider.notifier)
+        .addMeal(name, loggedAt: widget.date);
     Navigator.pop(context);
   }
 }
@@ -835,7 +850,7 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
 // Add food sheet — pantry search + manual entry
 // =============================================================================
 
-void _showAddFoodSheet(BuildContext context, String mealId) {
+void showAddFoodSheet(BuildContext context, String mealId) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,

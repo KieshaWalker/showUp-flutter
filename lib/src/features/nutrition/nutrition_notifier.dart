@@ -269,24 +269,35 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     );
   }
 
-  Future<String> addMeal(String name) async {
+  /// Creates a meal logged at [loggedAt] (defaults to now) — pass an
+  /// explicit date to log a meal onto a past day, e.g. from the Calendar
+  /// tab's day-detail editor.
+  Future<String> addMeal(String name, {DateTime? loggedAt}) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       throw StateError('Cannot add a meal: no signed-in user.');
     }
     final id = _uuid.v4();
+    final at = loggedAt ?? DateTime.now();
 
     await db
         .into(db.meals)
-        .insert(MealsCompanion.insert(id: id, userId: userId, name: name));
+        .insert(
+          MealsCompanion.insert(
+            id: id,
+            userId: userId,
+            name: name,
+            loggedAt: Value(at),
+          ),
+        );
 
     try {
       await Supabase.instance.client.from('meals').insert({
         'id': id,
         'user_id': userId,
         'name': name,
-        'logged_at': DateTime.now().toIso8601String(),
+        'logged_at': at.toIso8601String(),
       });
       await (db.update(db.meals)..where(
         (m) => m.id.equals(id),

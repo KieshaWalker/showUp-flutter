@@ -6,11 +6,36 @@
 //
 // Navigation:
 //   Swipe left/right (or use arrow buttons) to move between weeks.
-//   Tapping a day expands a detail panel for that day.
+//   Tapping a day (today or a past day; future days are disabled) opens a
+//   detail sheet where habits can be toggled and food entries fully edited:
+//   • "+" in the sheet header adds a meal onto that specific day
+//     (showAddMealSheet(date: ...) — addMeal() accepts a loggedAt override)
+//   • "+ Add Food" on a meal card adds another entry to it (showAddFoodSheet)
+//   • Tap a food entry for its nutrition breakdown, long-press to delete it
+//   • Long-press a meal's header to delete it and all its entries
+//   These reuse the exact same sheets/dialogs as the Nutrition tab (see
+//   nutrition_screen.dart's exported showAddMealSheet/showAddFoodSheet/
+//   showFoodNutritionDialog/confirmDeleteFoodEntry/confirmDeleteMeal), so
+//   editing a past day behaves identically to editing today. The sheet
+//   re-fetches via ref.listen on nutritionNotifierProvider/
+//   habitsNotifierProvider since its own data load is imperative, not
+//   stream-driven.
+//
+// Week summary math (habits % + macro bars):
+//   Each week row is clipped to the days that fall within the displayed
+//   month (a partial first/last row only covers its in-month days), and
+//   the goal shown is prorated by elapsed days so a Wednesday mid-week
+//   isn't compared against a full 7-day target. Each habit contributes up
+//   to its OWN weekly target (getWeekHabitStats in habits_notifier.dart) —
+//   a 3x/week habit is "done" at 3 completions, not 7, matching
+//   HabitWithStatus.isDone elsewhere. A week with neither habits nor
+//   nutrition goals configured shows "—" (no data), not a misleading red
+//   "0%" (see _weekOverallPct).
 //
 // Connections:
 //   habits_notifier.dart    — habitsNotifierProvider for per-day completion data
 //   nutrition_notifier.dart — nutritionNotifierProvider for per-day calorie totals
+//   nutrition_screen.dart   — shared add/edit/delete sheets & dialogs (see above)
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'dart:async';
@@ -20,6 +45,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
+import '../nutrition/nutrition_screen.dart'
+    show
+        showAddMealSheet,
+        showAddFoodSheet,
+        showFoodNutritionDialog,
+        confirmDeleteFoodEntry,
+        confirmDeleteMeal;
 import '../../database/db.dart' show Habit;
 
 // ---------------------------------------------------------------------------
@@ -279,7 +311,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  static double _weekOverallPct(_WeekSummary s) {
+  // Returns null when there's nothing to measure (no habits configured AND
+  // no nutrition goals set) — distinct from a legitimate 0%, which means
+  // goals/habits exist but nothing was completed. Without this, a week with
+  // no trackable data at all rendered as a red "0%" badge, indistinguishable
+  // from genuinely failing a week you were actually tracking.
+  static double? _weekOverallPct(_WeekSummary s) {
     final metrics = <double>[];
     if (s.habitsTotal > 0) {
       metrics.add((s.habitsDone / s.habitsTotal).clamp(0.0, 1.0));
@@ -293,7 +330,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (s.fatGoal != null && s.fatGoal! > 0) {
       metrics.add((s.fat / s.fatGoal!).clamp(0.0, 1.0));
     }
-    if (metrics.isEmpty) return 0;
+    if (metrics.isEmpty) return null;
     return metrics.reduce((a, b) => a + b) / metrics.length;
   }
 
@@ -726,6 +763,12 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
     _load();
   }
 
+  /// Re-fetches this day's data. [_load] is imperative (not stream-backed
+  /// like most of the app), so anything that mutates meals/food entries/
+  /// habits — including edits made from this very sheet via the shared
+  /// showAddMealSheet/showAddFoodSheet/confirmDeleteFoodEntry/
+  /// confirmDeleteMeal helpers — needs to explicitly trigger a reload to
+  /// show up here. See the ref.listen calls in [build].
   Future<void> _load() async {
     final habits = await ref
         .read(habitsNotifierProvider.notifier)
@@ -756,6 +799,12 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Any nutrition/habit mutation — from this sheet or elsewhere (e.g. the
+    // Nutrition tab, if the user has it open in another view) — should
+    // refresh what's shown here.
+    ref.listen(nutritionNotifierProvider, (_, _) => _load());
+    ref.listen(habitsNotifierProvider, (_, _) => _load());
+
     final dateLabel =
         '${_weekdays[widget.date.weekday - 1]}, ${_months[widget.date.month - 1]} ${widget.date.day}';
 
@@ -790,6 +839,13 @@ class _DayDetailSheetState extends ConsumerState<_DayDetailSheet> {
                 children: [
                   Text(dateLabel, style: AppTextStyles.titleLarge),
                   const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline,
+                        color: AppColors.terracotta),
+                    tooltip: 'Add meal for this day',
+                    onPressed: () =>
+                        showAddMealSheet(context, ref, date: widget.date),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.khaki),
                     tooltip: 'Close',
@@ -1017,12 +1073,17 @@ class _HabitRow extends StatelessWidget {
   }
 }
 
-class _MealCard extends StatelessWidget {
+// A meal card in the day-detail sheet. Tap a food entry to see its nutrition
+// breakdown, long-press to delete it; long-press the meal header to delete
+// the whole meal; "+ Add Food" appends another entry — same shared dialogs/
+// sheets the Nutrition tab uses, so editing a past day behaves identically
+// to editing today.
+class _MealCard extends ConsumerWidget {
   final MealWithEntries meal;
   const _MealCard({required this.meal});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(12),
@@ -1034,32 +1095,50 @@ class _MealCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(meal.meal.name, style: AppTextStyles.titleMedium),
-              Text('${meal.calories.round()} kcal',
-                  style: AppTextStyles.bodyMedium),
-            ],
+          GestureDetector(
+            onLongPress: () => confirmDeleteMeal(context, ref, meal.meal),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(meal.meal.name, style: AppTextStyles.titleMedium),
+                Text('${meal.calories.round()} kcal',
+                    style: AppTextStyles.bodyMedium),
+              ],
+            ),
           ),
           if (meal.entries.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm - 2),
             ...meal.entries.map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                        child: Text(e.name,
-                            style: AppTextStyles.bodyMedium)),
-                    Text('${e.calories.round()} kcal',
-                        style: AppTextStyles.labelSmall),
-                  ],
+              (e) => GestureDetector(
+                onTap: () => showFoodNutritionDialog(context, e),
+                onLongPress: () => confirmDeleteFoodEntry(context, ref, e),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: Text(e.name,
+                              style: AppTextStyles.bodyMedium)),
+                      Text('${e.calories.round()} kcal',
+                          style: AppTextStyles.labelSmall),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
+          const SizedBox(height: AppSpacing.xs),
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () => showAddFoodSheet(context, meal.meal.id),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add Food'),
+          ),
         ],
       ),
     );

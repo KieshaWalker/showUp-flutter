@@ -811,8 +811,13 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // getWeekHabitStats — used by CalendarScreen week summary strip
   // ---------------------------------------------------------------------------
   //
-  // Returns (done: total completions in range, total: sum of each habit's
-  // elapsed days since it existed, capped to the 7-day week).
+  // Returns (done, total) where each habit contributes up to its OWN weekly
+  // target — not a flat 7 days. A daily habit stores targetDaysPerWeek == 7
+  // (set automatically by the "add habit" UI), so it still needs every day;
+  // a 3x/week habit is fully "done" once it hits 3 completions, matching
+  // HabitWithStatus.isDone's semantics elsewhere in the app. Without this,
+  // a weekly habit that met its target mid-week would show as e.g. 3/5
+  // (60%) here while reading as 100% done everywhere else.
   // [weekStart] is inclusive, [weekEnd] is exclusive.
   Future<({int done, int total})> getWeekHabitStats(
     DateTime weekStart,
@@ -846,6 +851,15 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
               c.completedDate.isSmallerThanValue(weekEndKey),
         )).get();
 
+    // Group by habit so each habit's contribution can be capped at its own
+    // target below, instead of raw completions inflating the aggregate
+    // (e.g. a 3x/week habit done every day shouldn't count 7 "done" against
+    // a 3-day target).
+    final completionsByHabit = <String, int>{};
+    for (final c in completions) {
+      completionsByHabit[c.habitId] = (completionsByHabit[c.habitId] ?? 0) + 1;
+    }
+
     // Cap the effective end at today so future days don't inflate "total".
     final today = DateTime(
       DateTime.now().year,
@@ -855,20 +869,25 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
     final effectiveEnd =
         weekEnd.isAfter(today) ? today.add(const Duration(days: 1)) : weekEnd;
 
-    // Prorate each habit's contribution to "total" by how many days of the
-    // week it actually existed for — a habit created mid-week only counts
-    // the days since its creation, not the full week, so it doesn't deflate
-    // the week's completion percentage.
+    var done = 0;
     var total = 0;
     for (final h in habits) {
       final createdDate =
           DateTime(h.createdAt.year, h.createdAt.month, h.createdAt.day);
       final habitStart =
           createdDate.isAfter(weekStart) ? createdDate : weekStart;
-      total += effectiveEnd.difference(habitStart).inDays.clamp(0, 7);
+      // Days this habit has existed for within the week, capped to 7 — a
+      // habit created mid-week can't be asked for more completions than
+      // days it's actually existed.
+      final daysExisted =
+          effectiveEnd.difference(habitStart).inDays.clamp(0, 7);
+      final target = h.targetDaysPerWeek.clamp(0, daysExisted);
+      final completed = completionsByHabit[h.id] ?? 0;
+      done += completed.clamp(0, target);
+      total += target;
     }
 
-    return (done: completions.length, total: total);
+    return (done: done, total: total);
   }
 
   // ---------------------------------------------------------------------------
