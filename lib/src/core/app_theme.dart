@@ -26,12 +26,12 @@ import 'package:flutter/services.dart';
 class AppColors {
   AppColors._();
 
-  static const terracotta = ui.Color.fromARGB(168, 158, 143, 138);
-  static const ochre = ui.Color.fromARGB(155, 191, 121, 0);
+  static const terracotta = ui.Color.fromARGB(248, 158, 143, 138);
+  static const ochre = ui.Color.fromARGB(248, 191, 121, 0);
   static const eucalyptus = ui.Color.fromARGB(255, 76, 156, 47);
   static const sage = Color(0xFF6E8260);
   static const khaki = Color(0xFFAF9878);
-  static const mahogany = ui.Color.fromARGB(135, 161, 74, 56);
+  static const mahogany = ui.Color.fromARGB(225, 161, 73, 56);
   static const silhouette = Color(0xFF1C1814);
   static const olive = Color(0xFF5A6A30);
   static const plum = Color(0xFF4E3052);
@@ -54,9 +54,9 @@ class AppColors {
   static const overLimit = ui.Color.fromARGB(255, 125, 21, 24);
 
   // Macro colors
-  static const calColor = terracotta;
+  static const calColor = ui.Color.fromARGB(255, 158, 143, 138);
   static const proteinColor = Color(0xFF4A9ECC);
-  static const carbColor = ochre;
+  static const carbColor = ui.Color.fromARGB(237, 191, 121, 0);
   static const fatColor = Color(0xFFBF7800);
   static const sugarColor = plum;
   static const waterColor = Color(0xFF5AAED4);
@@ -189,7 +189,7 @@ class AppTheme {
       surface: AppColors.glassBg,
       onSurface: Colors.white,
       outline: AppColors.glassBorder,
-      error: Color(0xFFFF5252),
+      error: ui.Color.fromARGB(255, 121, 31, 31),
       onError: Colors.white,
     );
 
