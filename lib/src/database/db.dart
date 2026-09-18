@@ -39,6 +39,10 @@
 //         entry back to the PantryFood it came from, for Quick Add ranking
 //         and meal templates), and added MealTemplates + MealTemplateItems
 //         tables (saved, reusable pantry-food bundles)
+//   v13 — data-only: backfills pantryFoodId on FoodEntries rows logged
+//         before v12 existed, by matching name against pantry foods
+//         (unique matches only — see the onUpgrade block for the two-pass
+//         personal-then-preset logic)
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -336,7 +340,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -441,6 +445,47 @@ class AppDatabase extends _$AppDatabase {
         );
         await m.createTable(mealTemplates);
         await m.createTable(mealTemplateItems);
+      }
+      if (from < 13) {
+        // Backfill pantryFoodId on FoodEntries rows logged before v12
+        // introduced the column (they're all NULL). Matches by exact name,
+        // first against the entry's own user's personal pantry foods, then
+        // (if still unmatched) against global presets — but only when the
+        // name match is UNIQUE within that scope, so an ambiguous or
+        // coincidental name collision (e.g. a manual entry that happens to
+        // share a name with an unrelated pantry food) is left alone rather
+        // than guessed at. Also marks matched rows unsynced so the existing
+        // pushUnsyncedChanges() bootstrap carries the backfill to Supabase.
+        await customStatement('''
+          UPDATE food_entries
+          SET pantry_food_id = (
+                SELECT pf.id FROM pantry_foods pf
+                WHERE pf.user_id = food_entries.user_id
+                  AND lower(trim(pf.name)) = lower(trim(food_entries.name))
+              ),
+              synced = 0
+          WHERE pantry_food_id IS NULL
+            AND (
+              SELECT COUNT(*) FROM pantry_foods pf
+              WHERE pf.user_id = food_entries.user_id
+                AND lower(trim(pf.name)) = lower(trim(food_entries.name))
+            ) = 1
+        ''');
+        await customStatement('''
+          UPDATE food_entries
+          SET pantry_food_id = (
+                SELECT pf.id FROM pantry_foods pf
+                WHERE pf.user_id IS NULL
+                  AND lower(trim(pf.name)) = lower(trim(food_entries.name))
+              ),
+              synced = 0
+          WHERE pantry_food_id IS NULL
+            AND (
+              SELECT COUNT(*) FROM pantry_foods pf
+              WHERE pf.user_id IS NULL
+                AND lower(trim(pf.name)) = lower(trim(food_entries.name))
+            ) = 1
+        ''');
       }
     },
   );

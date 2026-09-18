@@ -41,6 +41,7 @@ import '../onboarding/app_tour.dart';
 import '../onboarding/app_tour_keys.dart';
 import '../pantry/pantry_notifier.dart';
 import '../profile/profile_notifier.dart';
+import '../scoring/score.dart';
 import '../settings/settings_screen.dart';
 
 const List<String> _months = [
@@ -372,18 +373,47 @@ class _HeroCardState extends ConsumerState<_HeroCard>
     final habits = ref.watch(habitsNotifierProvider).value ?? [];
     final nutrition = ref.watch(nutritionNotifierProvider).value;
 
-    final total = habits.length;
-    final done = habits.where((h) => h.isDone).length;
-    final habitPct = total == 0 ? 0.0 : done / total;
+    // habitPct feeds both the outer arc and the score: weekly-frequency
+    // habits get feasibility-based credit (see habitDailyCredit) instead of
+    // a flat done/not-done, so a 3x/week habit with days still left to hit
+    // it doesn't drag the ring down. No habits configured -> null, excluded
+    // from the score average (not treated as a 0).
+    final habitPct = habitPctForDay(habits);
 
     final calories = nutrition?.totalCalories ?? 0.0;
-    final calGoal = (nutrition?.goals?.calories ?? 2000.0).clamp(
-      1.0,
-      double.infinity,
-    );
-    final calPct = (calories / calGoal).clamp(0.0, 1.0);
+    final calGoal = (nutrition?.goals?.calories ?? NutritionRDA.calories)
+        .clamp(1.0, double.infinity);
+    final rawCalPct = (calories / calGoal).clamp(0.0, 1.0);
+    // Paced against the waking window so being at the expected pace (e.g.
+    // 30% of the goal 30% through the day) reads as fully on-track, not a
+    // discouraging raw percentage. Also drives the inner arc, so the visual
+    // and the number agree.
+    final calPct = nutrition == null ? null : paceCalPct(rawCalPct);
 
-    final score = ((habitPct + calPct) / 2) * 100;
+    final overPenalty = overconsumptionPenalty(
+      fat: nutrition?.totalFat ?? 0,
+      fatGoal: nutrition?.goals?.fat,
+      sugar: nutrition?.totalSugar ?? 0,
+      sugarGoal: NutritionRDA.sugar, // no per-user goal column for sugar
+      sodium: nutrition?.totalSodium ?? 0,
+      sodiumGoal: nutrition?.goals?.sodium,
+      cholesterol: nutrition?.totalCholesterol ?? 0,
+      cholesterolGoal: nutrition?.goals?.cholesterol,
+      carbs: nutrition?.totalCarbs ?? 0,
+      carbsGoal: nutrition?.goals?.carbs,
+    );
+    final waterBonusPts = waterBonus(
+      nutrition?.totalWaterMl ?? 0,
+      nutrition?.goals?.waterMl,
+    );
+
+    final score = combineScore(
+          habitPct: habitPct,
+          nutritionPct: calPct,
+          overconsumptionPts: overPenalty,
+          waterBonusPts: waterBonusPts,
+        ) ??
+        0.0;
     final scoreColor = _heroScoreColor(score);
 
     return AppGlass.card(
@@ -402,8 +432,8 @@ class _HeroCardState extends ConsumerState<_HeroCard>
                 builder:
                     (context, _) => CustomPaint(
                       painter: _DualDial(
-                        habitsPct: habitPct,
-                        nutritionPct: calPct,
+                        habitsPct: habitPct ?? 0.0,
+                        nutritionPct: calPct ?? 0.0,
                         animValue: _anim.value,
                       ),
                       child: Center(

@@ -51,7 +51,7 @@ class AppColors {
   /// A genuinely red alert color — distinct from [terracotta] (the app's
   /// muted taupe accent, also aliased as [error]), used specifically to flag
   /// a nutrient total that's over its daily goal.
-  static const overLimit = Color(0xFFE5484D);
+  static const overLimit = ui.Color.fromARGB(255, 125, 21, 24);
 
   // Macro colors
   static const calColor = terracotta;
@@ -64,11 +64,11 @@ class AppColors {
   // Micronutrient colors
   static const fiberColor = olive;
   static const sodiumColor = waterColor;
-  static const cholesterolColor = mahogany;
+  static const cholesterolColor = ui.Color.fromARGB(255, 179, 91, 74);
   static const potassiumColor = khaki;
   static const calciumColor = sage;
   static const ironColor = persimmon;
-  static const vitaminAColor = ochre;
+  static const vitaminAColor = ui.Color.fromARGB(222, 191, 121, 0);
   static const vitaminCColor = eucalyptus;
 
   // ---------------------------------------------------------------------------

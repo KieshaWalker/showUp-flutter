@@ -21,21 +21,27 @@
 //   habitsNotifierProvider since its own data load is imperative, not
 //   stream-driven.
 //
-// Week summary math (habits % + macro bars):
+// Week summary math (habits % + macro bars + overall score badge):
 //   Each week row is clipped to the days that fall within the displayed
 //   month (a partial first/last row only covers its in-month days), and
 //   the goal shown is prorated by elapsed days so a Wednesday mid-week
 //   isn't compared against a full 7-day target. Each habit contributes up
 //   to its OWN weekly target (getWeekHabitStats in habits_notifier.dart) —
 //   a 3x/week habit is "done" at 3 completions, not 7, matching
-//   HabitWithStatus.isDone elsewhere. A week with neither habits nor
+//   HabitWithStatus.isDone elsewhere. The mini P/C/F bars are display-only;
+//   the WEEK % badge (_weekOverallPct) is computed via the shared
+//   scoring/score.dart module also used by the Overview hero ring —
+//   habits + calorie progress, minus a capped overconsumption penalty
+//   (fat/sugar/sodium/cholesterol/carbs over goal), plus a capped water
+//   bonus for exceeding the water goal. A week with neither habits nor
 //   nutrition goals configured shows "—" (no data), not a misleading red
-//   "0%" (see _weekOverallPct).
+//   "0%".
 //
 // Connections:
 //   habits_notifier.dart    — habitsNotifierProvider for per-day completion data
 //   nutrition_notifier.dart — nutritionNotifierProvider for per-day calorie totals
 //   nutrition_screen.dart   — shared add/edit/delete sheets & dialogs (see above)
+//   scoring/score.dart      — shared score formula (also used by the Overview hero ring)
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'dart:async';
@@ -51,7 +57,9 @@ import '../nutrition/nutrition_screen.dart'
         showAddFoodSheet,
         showFoodNutritionDialog,
         confirmDeleteFoodEntry,
-        confirmDeleteMeal;
+        confirmDeleteMeal,
+        NutritionRDA;
+import '../scoring/score.dart';
 import '../../database/db.dart' show Habit;
 import '../../shared/widgets.dart' show AppLogoTitle, AppDragHandle;
 import '../settings/settings_screen.dart';
@@ -70,6 +78,21 @@ class _WeekSummary {
   final double? carbsGoal;
   final double? fatGoal;
 
+  // Scoring-only fields (not shown in the mini macro bars above, only used
+  // by _weekOverallPct's overconsumption penalty / water bonus / calorie
+  // sub-score). Goals are already prorated to elapsed days, same as the
+  // macro goals above.
+  final double calories;
+  final double? caloriesGoal;
+  final double sugar;
+  final double? sugarGoal;
+  final double sodium;
+  final double? sodiumGoal;
+  final double cholesterol;
+  final double? cholesterolGoal;
+  final double water;
+  final double? waterGoal;
+
   const _WeekSummary({
     required this.habitsDone,
     required this.habitsTotal,
@@ -79,6 +102,16 @@ class _WeekSummary {
     this.proteinGoal,
     this.carbsGoal,
     this.fatGoal,
+    required this.calories,
+    this.caloriesGoal,
+    required this.sugar,
+    this.sugarGoal,
+    required this.sodium,
+    this.sodiumGoal,
+    required this.cholesterol,
+    this.cholesterolGoal,
+    required this.water,
+    this.waterGoal,
   });
 }
 
@@ -216,6 +249,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         proteinGoal: goals != null ? goals.protein * elapsedDays : null,
         carbsGoal: goals != null ? goals.carbs * elapsedDays : null,
         fatGoal: goals != null ? goals.fat * elapsedDays : null,
+        calories: nutrition.totalCalories,
+        caloriesGoal: goals != null ? goals.calories * elapsedDays : null,
+        sugar: nutrition.totalSugar,
+        // No per-user goal column for sugar — same NutritionRDA fallback
+        // used everywhere else in the app (see nutrition_screen.dart).
+        sugarGoal: NutritionRDA.sugar * elapsedDays,
+        sodium: nutrition.totalSodium,
+        sodiumGoal: goals != null ? goals.sodium * elapsedDays : null,
+        cholesterol: nutrition.totalCholesterol,
+        cholesterolGoal:
+            goals != null ? goals.cholesterol * elapsedDays : null,
+        water: nutrition.totalWaterMl,
+        waterGoal: goals != null ? goals.waterMl * elapsedDays : null,
       ));
     }
 
@@ -323,27 +369,44 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  // Returns null when there's nothing to measure (no habits configured AND
-  // no nutrition goals set) — distinct from a legitimate 0%, which means
-  // goals/habits exist but nothing was completed. Without this, a week with
-  // no trackable data at all rendered as a red "0%" badge, indistinguishable
-  // from genuinely failing a week you were actually tracking.
+  // Shared with the Overview hero ring via score.dart — see that file for
+  // the formula. Weekly habits use the plain done/total from
+  // getWeekHabitStats (each habit already capped at its own weekly target,
+  // no per-day feasibility needed here since we're looking at the whole
+  // week's outcome, not "today"). Calories use the week's elapsed-day
+  // -prorated goal, with no time-of-day pacing (the week's pace is already
+  // handled by prorating to elapsed days). Returns null when there's
+  // nothing to measure (no habits configured AND no nutrition goals set)
+  // — distinct from a legitimate 0%, which means goals/habits exist but
+  // nothing was completed/logged.
   static double? _weekOverallPct(_WeekSummary s) {
-    final metrics = <double>[];
-    if (s.habitsTotal > 0) {
-      metrics.add((s.habitsDone / s.habitsTotal).clamp(0.0, 1.0));
-    }
-    if (s.proteinGoal != null && s.proteinGoal! > 0) {
-      metrics.add((s.protein / s.proteinGoal!).clamp(0.0, 1.0));
-    }
-    if (s.carbsGoal != null && s.carbsGoal! > 0) {
-      metrics.add((s.carbs / s.carbsGoal!).clamp(0.0, 1.0));
-    }
-    if (s.fatGoal != null && s.fatGoal! > 0) {
-      metrics.add((s.fat / s.fatGoal!).clamp(0.0, 1.0));
-    }
-    if (metrics.isEmpty) return null;
-    return metrics.reduce((a, b) => a + b) / metrics.length;
+    final habitPct =
+        s.habitsTotal > 0 ? (s.habitsDone / s.habitsTotal).clamp(0.0, 1.0) : null;
+    final calPct = (s.caloriesGoal != null && s.caloriesGoal! > 0)
+        ? (s.calories / s.caloriesGoal!).clamp(0.0, 1.0)
+        : null;
+
+    final overPenalty = overconsumptionPenalty(
+      fat: s.fat,
+      fatGoal: s.fatGoal,
+      sugar: s.sugar,
+      sugarGoal: s.sugarGoal,
+      sodium: s.sodium,
+      sodiumGoal: s.sodiumGoal,
+      cholesterol: s.cholesterol,
+      cholesterolGoal: s.cholesterolGoal,
+      carbs: s.carbs,
+      carbsGoal: s.carbsGoal,
+    );
+    final waterBonusPts = waterBonus(s.water, s.waterGoal);
+
+    final score = combineScore(
+      habitPct: habitPct,
+      nutritionPct: calPct,
+      overconsumptionPts: overPenalty,
+      waterBonusPts: waterBonusPts,
+    );
+    return score == null ? null : score / 100;
   }
 
   Widget _buildCalendar() {
