@@ -351,6 +351,18 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       ),
+
+      // Without this, a plain SnackBar(...) falls back to Flutter's default
+      // inverseSurface/onInverseSurface, which this ColorScheme never sets —
+      // they in turn fall back to onSurface (white) / surface (near-transparent
+      // white), rendering as a solid white banner with invisible white text.
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.glassModal,
+        contentTextStyle: AppTextStyles.bodyLarge,
+        actionTextColor: AppColors.terracotta,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
     );
   }
 }
