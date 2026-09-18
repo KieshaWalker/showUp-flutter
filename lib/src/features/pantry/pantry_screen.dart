@@ -6,10 +6,9 @@
 //     chips (icon badge, name, calories), just full-width-per-column
 //   • Each card shows the food name, serving size, and calorie count
 //   • FAB to add a personal food (opens a form bottom sheet)
-//   • Admin-only second FAB to scan a barcode (Open Food Facts lookup)
-//     prefills the same form — see barcode_scanner_screen.dart and
-//     open_food_facts_service.dart. Gated behind roleProvider while this
-//     feature is being tried out; not yet meant for all users.
+//   • Second FAB to scan a barcode (Open Food Facts lookup) prefills the
+//     same form — see barcode_scanner_screen.dart and
+//     open_food_facts_service.dart
 //   • Long-press or swipe a personal food to edit or delete it
 //   • Global preset foods (isPreset = true) are read-only — no edit/delete
 //
@@ -22,7 +21,6 @@
 //                             addFood, updateFood, deleteFood called from here
 //   nutrition_screen.dart   — links to PantryScreen (or reuses the picker)
 //                             when the user taps "add from pantry" in a meal
-//   role_provider.dart      — roleProvider gates the barcode-scan FAB to admins
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'package:flutter/material.dart';
@@ -30,7 +28,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../shared/widgets.dart';
 import '../../database/db.dart';
-import '../admin/role_provider.dart';
 import '../settings/settings_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'open_food_facts_service.dart';
@@ -62,9 +59,6 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
   @override
   Widget build(BuildContext context) {
     final foodsAsync = ref.watch(pantryNotifierProvider);
-    // Barcode scanning is admin-only while it's being tried out — see
-    // role_provider.dart for how isAdmin is determined.
-    final isAdmin = ref.watch(roleProvider).value ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -82,15 +76,13 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (isAdmin) ...[
-            FloatingActionButton(
-              heroTag: 'pantry-scan-fab',
-              tooltip: 'Scan Barcode',
-              onPressed: () => _scanBarcode(context),
-              child: const Icon(Icons.qr_code_scanner),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
+          FloatingActionButton(
+            heroTag: 'pantry-scan-fab',
+            tooltip: 'Scan Barcode',
+            onPressed: () => _scanBarcode(context),
+            child: const Icon(Icons.qr_code_scanner),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           FloatingActionButton.extended(
             heroTag: 'pantry-add-fab',
             onPressed: () => _showFoodForm(context),
