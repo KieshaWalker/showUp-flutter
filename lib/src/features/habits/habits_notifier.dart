@@ -20,6 +20,11 @@
 //   syncFromRemote()    — pulls all habits/completions/skips from Supabase
 //                         and upserts into local SQLite (called on login)
 //
+// otherUserHabitsProvider (FutureProvider.family<List<HabitWithStatus>, userId>):
+//   Reads another user's habits + completions + skips straight from Supabase
+//   (no local cache) and reuses computeHabitsWithStatus for the community
+//   "view their habits" screen. See public_profile_screen.dart.
+//
 // Write strategy (local-first):
 //   Every write hits SQLite first so the UI updates instantly.
 //   The Supabase sync is fire-and-forget inside try/catch — if it fails,
@@ -186,73 +191,85 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
           await (db.select(db.habitSkips)
             ..where((s) => s.userId.equals(userId))).get();
 
-      // today  = UTC midnight of today's LOCAL calendar date.
-      // weekStart = Monday of the current local week (also UTC midnight).
-      // See _dateOnly / _storedDateOnly comments for timezone details.
-      final today = _dateOnly(DateTime.now());
-      final weekStart = _startOfWeek(today);
-
-      return habits.map((habit) {
-        // Sort descending so streak walks backwards from today.
-        final habitCompletions =
-            completions.where((c) => c.habitId == habit.id).toList()
-              ..sort((a, b) => b.completedDate.compareTo(a.completedDate));
-
-        // Was this habit completed today? Uses _storedDateOnly to handle
-        // Drift's local-time return correctly (see helper comments below).
-        final completedToday = habitCompletions.any(
-          (c) => _storedDateOnly(c.completedDate) == today,
-        );
-
-        // All completions from Monday of this week onward.
-        // No upper-bound needed: toggleCompletion only ever uses today's date,
-        // so future-dated completions cannot exist locally.
-        final thisWeekCompletions =
-            habitCompletions
-                .where(
-                  (c) => !_storedDateOnly(c.completedDate).isBefore(weekStart),
-                )
-                .toList();
-
-        final completionsThisWeek = thisWeekCompletions.length;
-
-        // completedThisWeek — raw completions only (no skips).
-        // isDone (above) uses the combined count instead.
-        final completedThisWeek =
-            completionsThisWeek >= habit.targetDaysPerWeek;
-
-        // Count skips used THIS week only (keyed by weekStart date).
-        final skipsThisWeek =
-            skips
-                .where(
-                  (s) =>
-                      s.habitId == habit.id &&
-                      _storedDateOnly(s.weekStart) == weekStart,
-                )
-                .length;
-
-        final habitSkips = skips.where((s) => s.habitId == habit.id).toList();
-
-        // Streak: daily habits count consecutive days, weekly count weeks.
-        final streak =
-            habit.frequencyType == 'weekly'
-                ? _calculateWeeklyStreak(
-                  habitCompletions,
-                  habitSkips,
-                  habit.targetDaysPerWeek,
-                )
-                : _calculateDailyStreak(habitCompletions);
-
-        return HabitWithStatus(
-          habit: habit,
-          completedToday: completedToday,
-          completedThisWeek: completedThisWeek,
-          completionsThisWeek: completionsThisWeek,
-          skipsThisWeek: skipsThisWeek,
-          streak: streak,
-        );
-      }).toList();
+      return computeHabitsWithStatus(habits, completions, skips);
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // computeHabitsWithStatus — pure computation shared by build() (local Drift
+  // stream) and otherUserHabitsProvider (remote data for another user).
+  // ---------------------------------------------------------------------------
+  static List<HabitWithStatus> computeHabitsWithStatus(
+    List<Habit> habits,
+    List<HabitCompletion> completions,
+    List<HabitSkip> skips,
+  ) {
+    // today  = UTC midnight of today's LOCAL calendar date.
+    // weekStart = Monday of the current local week (also UTC midnight).
+    // See _dateOnly / _storedDateOnly comments for timezone details.
+    final today = _dateOnly(DateTime.now());
+    final weekStart = _startOfWeek(today);
+
+    return habits.map((habit) {
+      // Sort descending so streak walks backwards from today.
+      final habitCompletions =
+          completions.where((c) => c.habitId == habit.id).toList()
+            ..sort((a, b) => b.completedDate.compareTo(a.completedDate));
+
+      // Was this habit completed today? Uses _storedDateOnly to handle
+      // Drift's local-time return correctly (see helper comments below).
+      final completedToday = habitCompletions.any(
+        (c) => _storedDateOnly(c.completedDate) == today,
+      );
+
+      // All completions from Monday of this week onward.
+      // No upper-bound needed: toggleCompletion only ever uses today's date,
+      // so future-dated completions cannot exist locally.
+      final thisWeekCompletions =
+          habitCompletions
+              .where(
+                (c) => !_storedDateOnly(c.completedDate).isBefore(weekStart),
+              )
+              .toList();
+
+      final completionsThisWeek = thisWeekCompletions.length;
+
+      // completedThisWeek — raw completions only (no skips).
+      // isDone (above) uses the combined count instead.
+      final completedThisWeek =
+          completionsThisWeek >= habit.targetDaysPerWeek;
+
+      // Count skips used THIS week only (keyed by weekStart date).
+      final skipsThisWeek =
+          skips
+              .where(
+                (s) =>
+                    s.habitId == habit.id &&
+                    _storedDateOnly(s.weekStart) == weekStart,
+              )
+              .length;
+
+      final habitSkips = skips.where((s) => s.habitId == habit.id).toList();
+
+      // Streak: daily habits count consecutive days, weekly count weeks.
+      final streak =
+          habit.frequencyType == 'weekly'
+              ? _calculateWeeklyStreak(
+                habitCompletions,
+                habitSkips,
+                habit.targetDaysPerWeek,
+              )
+              : _calculateDailyStreak(habitCompletions);
+
+      return HabitWithStatus(
+        habit: habit,
+        completedToday: completedToday,
+        completedThisWeek: completedThisWeek,
+        completionsThisWeek: completionsThisWeek,
+        skipsThisWeek: skipsThisWeek,
+        streak: streak,
+      );
+    }).toList();
   }
 
   // ===========================================================================
@@ -953,20 +970,21 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   /// Converts a local DateTime (from DateTime.now() or user input) to the
   /// canonical UTC-midnight storage key using LOCAL date components.
   /// Use this when WRITING dates or computing "today" / "weekStart".
-  DateTime _dateOnly(DateTime dt) => DateTime.utc(dt.year, dt.month, dt.day);
+  static DateTime _dateOnly(DateTime dt) =>
+      DateTime.utc(dt.year, dt.month, dt.day);
 
   /// Converts a DateTime returned by Drift to the canonical UTC-midnight key.
   /// Drift returns stored timestamps as LOCAL time; call .toUtc() first to
   /// recover the original UTC date.
   /// Use this when READING completion/skip dates back from the database.
-  DateTime _storedDateOnly(DateTime dt) {
+  static DateTime _storedDateOnly(DateTime dt) {
     final utc = dt.toUtc();
     return DateTime.utc(utc.year, utc.month, utc.day);
   }
 
   /// Returns the Monday of the week containing [date].
   /// Week is Mon–Sun (ISO 8601). weekday==1 is Monday.
-  DateTime _startOfWeek(DateTime date) {
+  static DateTime _startOfWeek(DateTime date) {
     return date.subtract(Duration(days: date.weekday - 1));
   }
 
@@ -985,7 +1003,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // │  • Start streak only if completed today: add a check before loop.   │
   // │  • Count this week only: cap the loop to 7 iterations.              │
   // └──────────────────────────────────────────────────────────────────────┘
-  int _calculateDailyStreak(List<HabitCompletion> completions) {
+  static int _calculateDailyStreak(List<HabitCompletion> completions) {
     if (completions.isEmpty) return 0;
     final today = _dateOnly(DateTime.now());
     final yesterday = today.subtract(const Duration(days: 1));
@@ -1024,7 +1042,7 @@ class HabitsNotifier extends StreamNotifier<List<HabitWithStatus>> {
   // above ((completionsThisWeek + skipsThisWeek) >= target) — otherwise a
   // habit can show as "done" for the week via a skip while its streak still
   // treats that week as unmet.
-  int _calculateWeeklyStreak(
+  static int _calculateWeeklyStreak(
     List<HabitCompletion> completions,
     List<HabitSkip> skips,
     int target,
@@ -1069,3 +1087,60 @@ final habitsNotifierProvider =
     StreamNotifierProvider<HabitsNotifier, List<HabitWithStatus>>(
       HabitsNotifier.new,
     );
+
+/// Another user's habits (with computed status/streaks), fetched directly
+/// from Supabase — not cached locally, since local Drift only ever holds
+/// the current user's own rows. Used by the community "view their habits"
+/// screen. Relies on the `habits`/`habit_completions`/`habit_skips` SELECT
+/// RLS policies being open to any authenticated user (widened 2026-09-18
+/// alongside `pantry_foods` for this feature).
+final otherUserHabitsProvider =
+    FutureProvider.family<List<HabitWithStatus>, String>((ref, userId) async {
+  final habitRows = await Supabase.instance.client
+      .from('habits')
+      .select()
+      .eq('user_id', userId);
+  final completionRows = await Supabase.instance.client
+      .from('habit_completions')
+      .select()
+      .eq('user_id', userId);
+  final skipRows = await Supabase.instance.client
+      .from('habit_skips')
+      .select()
+      .eq('user_id', userId);
+
+  final habits = (habitRows as List)
+      .map((h) => Habit(
+            id: h['id'] as String,
+            userId: h['user_id'] as String,
+            name: h['name'] as String,
+            frequencyType: h['frequency_type'] as String,
+            targetDaysPerWeek: h['target_days_per_week'] as int,
+            skipsAllowedPerWeek: (h['skips_allowed_per_week'] as int?) ?? 0,
+            createdAt: DateTime.parse(h['created_at'] as String),
+            synced: true,
+          ))
+      .toList();
+
+  final completions = (completionRows as List)
+      .map((c) => HabitCompletion(
+            id: c['id'] as String,
+            habitId: c['habit_id'] as String,
+            userId: c['user_id'] as String,
+            completedDate: DateTime.parse(c['completed_date'] as String),
+            synced: true,
+          ))
+      .toList();
+
+  final skips = (skipRows as List)
+      .map((s) => HabitSkip(
+            id: s['id'] as String,
+            habitId: s['habit_id'] as String,
+            userId: s['user_id'] as String,
+            weekStart: DateTime.parse(s['week_start'] as String),
+            synced: true,
+          ))
+      .toList();
+
+  return HabitsNotifier.computeHabitsWithStatus(habits, completions, skips);
+});

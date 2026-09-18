@@ -14,6 +14,11 @@
 //   syncFromRemote() — pulls global presets + user's personal foods from Supabase
 //                      and upserts into local SQLite (called on login in main.dart)
 //
+// otherUserPantryProvider (FutureProvider.family<List<PantryFood>, userId>):
+//   Reads another user's personal foods straight from Supabase (no local
+//   cache) for the community "view their pantry" screen. See
+//   public_profile_screen.dart.
+//
 // Why local cache for global presets?
 //   Caching presets locally means the pantry works offline and search is instant
 //   without a network round-trip on every keystroke.
@@ -46,6 +51,52 @@ final pantryNotifierProvider =
     StreamNotifierProvider<PantryNotifier, List<PantryFood>>(
   PantryNotifier.new,
 );
+
+/// Another user's personal pantry foods, fetched directly from Supabase
+/// (not cached locally — local Drift only ever holds the current user's
+/// own rows + presets). Used by the community "view their pantry" screen.
+/// Relies on the `pantry_foods` SELECT RLS policy being open to any
+/// authenticated user (widened 2026-09-18 alongside `habits`/
+/// `habit_completions`/`habit_skips` for this feature).
+final otherUserPantryProvider =
+    FutureProvider.family<List<PantryFood>, String>((ref, userId) async {
+  final rows = await Supabase.instance.client
+      .from('pantry_foods')
+      .select()
+      .eq('user_id', userId)
+      .order('name');
+
+  return (rows as List)
+      .map((row) => _pantryFoodFromRow(row as Map<String, dynamic>, userId))
+      .toList();
+});
+
+PantryFood _pantryFoodFromRow(Map<String, dynamic> row, String userId) {
+  return PantryFood(
+    id: row['id'] as String,
+    userId: userId,
+    name: row['name'] as String,
+    calories: (row['calories'] as num).toDouble(),
+    protein: (row['protein'] as num).toDouble(),
+    carbs: (row['carbs'] as num).toDouble(),
+    fat: (row['fat'] as num).toDouble(),
+    sugar: ((row['sugar'] as num?) ?? 0).toDouble(),
+    fiber: ((row['fiber'] as num?) ?? 0).toDouble(),
+    sodium: ((row['sodium'] as num?) ?? 0).toDouble(),
+    cholesterol: ((row['cholesterol'] as num?) ?? 0).toDouble(),
+    potassium: ((row['potassium'] as num?) ?? 0).toDouble(),
+    calcium: ((row['calcium'] as num?) ?? 0).toDouble(),
+    iron: ((row['iron'] as num?) ?? 0).toDouble(),
+    vitaminA: ((row['vitamin_a'] as num?) ?? 0).toDouble(),
+    vitaminC: ((row['vitamin_c'] as num?) ?? 0).toDouble(),
+    servingLabel: row['serving_label'] as String,
+    isPreset: row['is_preset'] as bool? ?? false,
+    createdAt: row['created_at'] != null
+        ? DateTime.parse(row['created_at'] as String)
+        : DateTime.now(),
+    synced: true,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Notifier
