@@ -48,6 +48,11 @@ class AppColors {
   static const warning = ochre;
   static const error = terracotta;
 
+  /// A genuinely red alert color — distinct from [terracotta] (the app's
+  /// muted taupe accent, also aliased as [error]), used specifically to flag
+  /// a nutrient total that's over its daily goal.
+  static const overLimit = Color(0xFFE5484D);
+
   // Macro colors
   static const calColor = terracotta;
   static const proteinColor = Color(0xFF4A9ECC);

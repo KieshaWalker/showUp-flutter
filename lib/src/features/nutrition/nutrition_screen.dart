@@ -1799,6 +1799,7 @@ class NutritionMacroRow extends StatelessWidget {
             goal: goals?.carbs ?? NutritionRDA.carbs,
             unit: 'g',
             color: AppColors.carbColor,
+            flagWhenOver: true,
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -1809,6 +1810,7 @@ class NutritionMacroRow extends StatelessWidget {
             goal: goals?.fat ?? NutritionRDA.fat,
             unit: 'g',
             color: AppColors.fatColor,
+            flagWhenOver: true,
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -1821,6 +1823,7 @@ class NutritionMacroRow extends StatelessWidget {
             goal: NutritionRDA.sugar,
             unit: 'g',
             color: AppColors.sugarColor,
+            flagWhenOver: true,
           ),
         ),
         ],
@@ -1854,6 +1857,7 @@ class NutritionMicroGrid extends StatelessWidget {
           goal: goals?.sodium ?? NutritionRDA.sodium,
           unit: 'mg',
           color: AppColors.sodiumColor,
+          flagWhenOver: true,
         ),
       ),
       (
@@ -1863,6 +1867,7 @@ class NutritionMicroGrid extends StatelessWidget {
           goal: goals?.cholesterol ?? NutritionRDA.cholesterol,
           unit: 'mg',
           color: AppColors.cholesterolColor,
+          flagWhenOver: true,
         ),
         NutritionMacroPill(
           label: 'Potassium',
@@ -1937,6 +1942,12 @@ class NutritionMacroPill extends StatelessWidget {
   final String unit;
   final Color color;
 
+  /// Whether going over [goal] should flag this pill red. Only meaningful
+  /// for nutrients where "over" is actually undesirable (carbs, fat, sugar,
+  /// sodium, cholesterol) — left false for protein and other micronutrients
+  /// where a higher total isn't a problem.
+  final bool flagWhenOver;
+
   const NutritionMacroPill({
     super.key,
     required this.label,
@@ -1944,6 +1955,7 @@ class NutritionMacroPill extends StatelessWidget {
     required this.goal,
     required this.unit,
     required this.color,
+    this.flagWhenOver = false,
   });
 
   @override
@@ -1951,7 +1963,7 @@ class NutritionMacroPill extends StatelessWidget {
     final goal = this.goal;
     final hasGoal = goal != null && goal > 0;
     final progress = hasGoal ? (current / goal).clamp(0.0, 1.0) : 0.0;
-    final isOver = hasGoal && current > goal;
+    final isOver = flagWhenOver && hasGoal && current > goal;
 
     return AppGlass.card(
       padding: const EdgeInsets.all(12),
@@ -1964,7 +1976,7 @@ class NutritionMacroPill extends StatelessWidget {
           Text(
             '${current.toInt()}$unit',
             style: AppTextStyles.titleMedium.copyWith(
-              color: isOver ? AppColors.terracotta : AppColors.textOnDark,
+              color: isOver ? AppColors.overLimit : AppColors.textOnDark,
             ),
           ),
           if (hasGoal) ...[
@@ -1974,7 +1986,7 @@ class NutritionMacroPill extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 5,
-                color: isOver ? AppColors.terracotta : color,
+                color: isOver ? AppColors.overLimit : color,
                 backgroundColor: color.withValues(alpha: 0.15),
               ),
             ),
