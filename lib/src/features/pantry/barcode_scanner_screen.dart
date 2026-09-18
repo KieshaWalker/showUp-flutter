@@ -7,16 +7,27 @@
 //
 // Every exit path — a successful scan, manual entry, AND backing out via the
 // AppBar back button or the system back gesture — is routed through _exit(),
-// which stops the camera before popping. mobile_scanner's AVCaptureSession
-// teardown on iOS/macOS isn't guaranteed to finish by the time dispose() runs
-// during a pop transition, which otherwise leaves the OS's camera-in-use
-// indicator lit after this screen closes. The back-button/system-back path
-// is caught with PopScope(canPop: false): that blocks Navigator.maybePop()
-// (what the back button and system gestures call) but NOT an explicit
+// which stops the camera before popping. The back-button/system-back path is
+// caught with PopScope(canPop: false): that blocks Navigator.maybePop() (what
+// the back button and system gestures call) but NOT an explicit
 // Navigator.pop() call, so _exit() can still pop for real once it's done
 // stopping the camera — see the official PopScope async-confirmation pattern
 // this mirrors (examples/api/lib/widgets/pop_scope/pop_scope.0.dart in the
 // Flutter SDK).
+//
+// Known mobile_scanner iOS bug (still reproduces on 7.4.2, confirmed on a
+// real iPhone, on EVERY exit path including a clean detected-barcode
+// success): MobileScannerController.stop() has several "already stopped,
+// skip" guards (isRunning / _textureId == null) that can short-circuit
+// before the native AVCaptureSession is actually released, leaving iOS's
+// camera-in-use indicator lit until the app is force-quit. See
+// https://github.com/juliansteenbakker/mobile_scanner/issues/619 for the
+// same symptom reported against older versions. mobile_scanner's own code
+// works around this for its debug/hot-restart case by calling the
+// method-channel's stop(force: true) directly, bypassing those guards (see
+// MobileScanner._initializeController's kDebugMode branch in
+// mobile_scanner.dart) — _exit() below does the same thing for our
+// navigate-away case, which isn't covered by that built-in workaround.
 //
 // Connections:
 //   pantry_screen.dart           — pushes this screen, then looks up the
@@ -26,6 +37,8 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+// ignore: implementation_imports
+import 'package:mobile_scanner/src/method_channel/mobile_scanner_method_channel.dart';
 import '../../core/app_theme.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
@@ -54,11 +67,19 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   /// Stops the camera session, then pops with [code] (or no result, for a
   /// plain back-out). See the file-level comment for why every exit path
-  /// funnels through here instead of popping directly.
+  /// funnels through here instead of popping directly, and why this force-
+  /// stops the platform channel directly rather than trusting
+  /// MobileScannerController.stop() alone.
   Future<void> _exit([String? code]) async {
     if (_handled) return;
     _handled = true;
     await _controller.stop();
+    try {
+      if (MobileScannerPlatform.instance
+          case final MethodChannelMobileScanner impl) {
+        await impl.stop(force: true);
+      }
+    } catch (_) {}
     if (mounted) Navigator.pop(context, code);
   }
 
