@@ -60,6 +60,8 @@ dependencies:
   css_colors: ^1.1.7
   flutter_svg: ^2.0.10+1
   confetti: ^0.7.0
+  mobile_scanner: ^7.4.2
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

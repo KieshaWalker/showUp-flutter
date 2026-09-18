@@ -6,6 +6,10 @@
 //     chips (icon badge, name, calories), just full-width-per-column
 //   • Each card shows the food name, serving size, and calorie count
 //   • FAB to add a personal food (opens a form bottom sheet)
+//   • Admin-only second FAB to scan a barcode (Open Food Facts lookup)
+//     prefills the same form — see barcode_scanner_screen.dart and
+//     open_food_facts_service.dart. Gated behind roleProvider while this
+//     feature is being tried out; not yet meant for all users.
 //   • Long-press or swipe a personal food to edit or delete it
 //   • Global preset foods (isPreset = true) are read-only — no edit/delete
 //
@@ -18,6 +22,7 @@
 //                             addFood, updateFood, deleteFood called from here
 //   nutrition_screen.dart   — links to PantryScreen (or reuses the picker)
 //                             when the user taps "add from pantry" in a meal
+//   role_provider.dart      — roleProvider gates the barcode-scan FAB to admins
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'package:flutter/material.dart';
@@ -25,7 +30,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../shared/widgets.dart';
 import '../../database/db.dart';
+import '../admin/role_provider.dart';
 import '../settings/settings_screen.dart';
+import 'barcode_scanner_screen.dart';
+import 'open_food_facts_service.dart';
 import 'pantry_notifier.dart';
 
 class PantryScreen extends ConsumerStatefulWidget {
@@ -54,6 +62,9 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
   @override
   Widget build(BuildContext context) {
     final foodsAsync = ref.watch(pantryNotifierProvider);
+    // Barcode scanning is admin-only while it's being tried out — see
+    // role_provider.dart for how isAdmin is determined.
+    final isAdmin = ref.watch(roleProvider).value ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -67,10 +78,26 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFoodForm(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Food'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (isAdmin) ...[
+            FloatingActionButton(
+              heroTag: 'pantry-scan-fab',
+              tooltip: 'Scan Barcode',
+              onPressed: () => _scanBarcode(context),
+              child: const Icon(Icons.qr_code_scanner),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          FloatingActionButton.extended(
+            heroTag: 'pantry-add-fab',
+            onPressed: () => _showFoodForm(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Food'),
+          ),
+        ],
       ),
       body: foodsAsync.when(
         loading:
@@ -205,13 +232,51 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     );
   }
 
-  void _showFoodForm(BuildContext context, {PantryFood? food}) {
+  /// Pushes the full-screen scanner, looks up the resulting barcode against
+  /// Open Food Facts, and opens the add-food form prefilled with whatever it
+  /// found (or empty, with a heads-up, if the barcode isn't in the database).
+  Future<void> _scanBarcode(BuildContext context) async {
+    final barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (barcode == null || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.terracotta),
+      ),
+    );
+    final info = await lookupBarcode(barcode);
+    if (!context.mounted) return;
+    Navigator.pop(context); // close the loading dialog
+
+    if (info == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't find that barcode — add it manually."),
+        ),
+      );
+      _showFoodForm(context);
+      return;
+    }
+    _showFoodForm(context, prefill: info);
+  }
+
+  void _showFoodForm(
+    BuildContext context, {
+    PantryFood? food,
+    ScannedFoodInfo? prefill,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder:
           (ctx) => _FoodFormSheet(
             food: food,
+            prefill: prefill,
             onSave: ({
               required String name,
               required double calories,
@@ -434,9 +499,14 @@ typedef _SaveCallback =
 
 class _FoodFormSheet extends StatefulWidget {
   final PantryFood? food;
+  final ScannedFoodInfo? prefill;
   final _SaveCallback onSave;
 
-  const _FoodFormSheet({required this.food, required this.onSave});
+  const _FoodFormSheet({
+    required this.food,
+    this.prefill,
+    required this.onSave,
+  });
 
   @override
   State<_FoodFormSheet> createState() => _FoodFormSheetState();
@@ -466,46 +536,37 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
   void initState() {
     super.initState();
     final f = widget.food;
-    _nameCtrl = TextEditingController(text: f?.name ?? '');
-    _calCtrl = TextEditingController(
-      text: f != null ? f.calories.toStringAsFixed(0) : '',
+    // A scanned-barcode prefill only applies to a brand-new food (widget.food
+    // is null) — editing an existing food always shows its own saved values.
+    final p = f == null ? widget.prefill : null;
+
+    String num0(double? v) => v == null ? '' : v.toStringAsFixed(0);
+    String num1(double? v) => v == null ? '' : v.toStringAsFixed(1);
+
+    _nameCtrl = TextEditingController(text: f?.name ?? p?.name ?? '');
+    _calCtrl = TextEditingController(text: num0(f?.calories ?? p?.calories));
+    _proCtrl = TextEditingController(text: num1(f?.protein ?? p?.protein));
+    _carbCtrl = TextEditingController(text: num1(f?.carbs ?? p?.carbs));
+    _fatCtrl = TextEditingController(text: num1(f?.fat ?? p?.fat));
+    _sugarCtrl = TextEditingController(text: num1(f?.sugar ?? p?.sugar));
+    _servingCtrl = TextEditingController(
+      text: f?.servingLabel ?? p?.servingLabel ?? '1 serving',
     );
-    _proCtrl = TextEditingController(
-      text: f != null ? f.protein.toStringAsFixed(1) : '',
-    );
-    _carbCtrl = TextEditingController(
-      text: f != null ? f.carbs.toStringAsFixed(1) : '',
-    );
-    _fatCtrl = TextEditingController(
-      text: f != null ? f.fat.toStringAsFixed(1) : '',
-    );
-    _sugarCtrl = TextEditingController(
-      text: f != null ? f.sugar.toStringAsFixed(1) : '',
-    );
-    _servingCtrl = TextEditingController(text: f?.servingLabel ?? '1 serving');
-    _fiberCtrl = TextEditingController(
-      text: f != null ? f.fiber.toStringAsFixed(1) : '',
-    );
-    _sodiumCtrl = TextEditingController(
-      text: f != null ? f.sodium.toStringAsFixed(0) : '',
-    );
+    _fiberCtrl = TextEditingController(text: num1(f?.fiber ?? p?.fiber));
+    _sodiumCtrl = TextEditingController(text: num0(f?.sodium ?? p?.sodium));
     _cholesterolCtrl = TextEditingController(
-      text: f != null ? f.cholesterol.toStringAsFixed(0) : '',
+      text: num0(f?.cholesterol ?? p?.cholesterol),
     );
     _potassiumCtrl = TextEditingController(
-      text: f != null ? f.potassium.toStringAsFixed(0) : '',
+      text: num0(f?.potassium ?? p?.potassium),
     );
-    _calciumCtrl = TextEditingController(
-      text: f != null ? f.calcium.toStringAsFixed(0) : '',
-    );
-    _ironCtrl = TextEditingController(
-      text: f != null ? f.iron.toStringAsFixed(1) : '',
-    );
+    _calciumCtrl = TextEditingController(text: num0(f?.calcium ?? p?.calcium));
+    _ironCtrl = TextEditingController(text: num1(f?.iron ?? p?.iron));
     _vitaminACtrl = TextEditingController(
-      text: f != null ? f.vitaminA.toStringAsFixed(0) : '',
+      text: num0(f?.vitaminA ?? p?.vitaminA),
     );
     _vitaminCCtrl = TextEditingController(
-      text: f != null ? f.vitaminC.toStringAsFixed(0) : '',
+      text: num0(f?.vitaminC ?? p?.vitaminC),
     );
   }
 
