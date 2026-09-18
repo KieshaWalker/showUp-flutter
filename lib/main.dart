@@ -127,10 +127,14 @@ class _AppShellState extends ConsumerState<AppShell> {
       await ref.read(habitsNotifierProvider.notifier).pushUnsyncedChanges();
       await ref.read(nutritionNotifierProvider.notifier).pushUnsyncedChanges();
       await ref.read(pantryNotifierProvider.notifier).pushUnsyncedChanges();
+      await ref
+          .read(mealTemplatesNotifierProvider.notifier)
+          .pushUnsyncedChanges();
 
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
+      ref.read(mealTemplatesNotifierProvider.notifier).syncFromRemote();
 
       if (mounted) await maybeShowWelcomeSetup(context, ref);
       if (mounted) await maybeStartAppTour(context);

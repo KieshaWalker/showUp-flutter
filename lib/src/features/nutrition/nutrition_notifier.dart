@@ -323,6 +323,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
     double iron = 0,
     double vitaminA = 0,
     double vitaminC = 0,
+    String? pantryFoodId,
+    double servings = 1.0,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -350,6 +352,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
             iron: Value(iron),
             vitaminA: Value(vitaminA),
             vitaminC: Value(vitaminC),
+            pantryFoodId: Value(pantryFoodId),
+            servings: Value(servings),
           ),
         );
 
@@ -372,6 +376,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
         'iron': iron,
         'vitamin_a': vitaminA,
         'vitamin_c': vitaminC,
+        'pantry_food_id': pantryFoodId,
+        'servings': servings,
       });
       await (db.update(db.foodEntries)..where(
         (e) => e.id.equals(id),
@@ -616,6 +622,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 iron: Value(entry.iron),
                 vitaminA: Value(entry.vitaminA),
                 vitaminC: Value(entry.vitaminC),
+                pantryFoodId: Value(entry.pantryFoodId),
+                servings: Value(entry.servings),
               ),
             );
         remoteEntries.add({
@@ -636,6 +644,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'iron': entry.iron,
           'vitamin_a': entry.vitaminA,
           'vitamin_c': entry.vitaminC,
+          'pantry_food_id': entry.pantryFoodId,
+          'servings': entry.servings,
         });
       }
 
@@ -715,6 +725,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
           'iron': e.iron,
           'vitamin_a': e.vitaminA,
           'vitamin_c': e.vitaminC,
+          'pantry_food_id': e.pantryFoodId,
+          'servings': e.servings,
         });
         await (db.update(db.foodEntries)..where(
           (t) => t.id.equals(e.id),
@@ -839,6 +851,8 @@ class NutritionNotifier extends StreamNotifier<TodayNutrition> {
                 iron: Value((e['iron'] as num?)?.toDouble() ?? 0.0),
                 vitaminA: Value((e['vitamin_a'] as num?)?.toDouble() ?? 0.0),
                 vitaminC: Value((e['vitamin_c'] as num?)?.toDouble() ?? 0.0),
+                pantryFoodId: Value(e['pantry_food_id'] as String?),
+                servings: Value((e['servings'] as num?)?.toDouble() ?? 1.0),
                 synced: const Value(true),
               ),
             );

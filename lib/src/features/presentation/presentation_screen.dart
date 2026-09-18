@@ -645,9 +645,32 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
     );
   }
 
+  Future<void> _applyTemplate(MealTemplateWithItems template) async {
+    final result = await ref
+        .read(mealTemplatesNotifierProvider.notifier)
+        .applyTemplate(template.template.id);
+    if (!mounted) return;
+
+    final skippedCount = result.skippedPantryFoodIds.length;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          skippedCount == 0
+              ? 'Logged "${template.template.name}"'
+              : 'Logged "${template.template.name}" — $skippedCount '
+                  '${skippedCount == 1 ? 'item' : 'items'} skipped (no longer in your pantry)',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pantryAsync = ref.watch(pantryNotifierProvider);
+    // Soft-fail to {} (no reorder) rather than blocking the section on
+    // loading/error — only the pantry list itself gates visibility below.
+    final rankingCounts = ref.watch(quickAddRankingProvider).value ?? {};
+    final templates = ref.watch(mealTemplatesNotifierProvider).value ?? [];
 
     return pantryAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -655,10 +678,11 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
       data: (foods) {
         if (foods.isEmpty) return const SizedBox.shrink();
 
+        final ranked = rankPantryFoodsForQuickAdd(foods, rankingCounts);
         final filtered =
             _query.isEmpty
-                ? foods
-                : foods
+                ? ranked
+                : ranked
                     .where(
                       (f) =>
                           f.name.toLowerCase().contains(_query.toLowerCase()),
@@ -683,6 +707,27 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
+
+            // Saved meal templates — one-tap re-log of a previously-built meal
+            if (templates.isNotEmpty) ...[
+              Text('Your templates', style: AppTextStyles.labelSmall),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 64,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: templates.length,
+                  separatorBuilder:
+                      (_, _) => const SizedBox(width: AppSpacing.sm),
+                  itemBuilder:
+                      (ctx, i) => _TemplateChip(
+                        template: templates[i],
+                        onTap: () => _applyTemplate(templates[i]),
+                      ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
 
             // Search bar
             AppGlass.card(
@@ -865,6 +910,76 @@ class _QuickAddChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Saved meal template chip — one-shot action, not a toggle, so it reuses
+// _QuickAddChip's visual language rather than SelectableChip.
+// ---------------------------------------------------------------------------
+
+class _TemplateChip extends StatelessWidget {
+  final MealTemplateWithItems template;
+  final VoidCallback onTap;
+
+  const _TemplateChip({required this.template, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final itemCount = template.items.length;
+    return GestureDetector(
+      onTap: onTap,
+      child: AppGlass.card(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        borderRadius: AppRadius.lgAll,
+        child: SizedBox(
+          width: 140,
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.terracotta.withValues(alpha: 0.15),
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: const Icon(
+                  Icons.bookmark_rounded,
+                  size: 14,
+                  color: AppColors.terracotta,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      template.template.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.terracotta,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Quick add bottom sheet
 // ---------------------------------------------------------------------------
 
@@ -878,8 +993,12 @@ class _QuickAddSheet extends ConsumerStatefulWidget {
 
 class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
   double _servings = 1.0;
-  String? _selectedMealId; // null = auto (create/find "Quick Add")
+  String? _selectedMealId; // null = auto (create/find the resolved meal)
   bool _adding = false;
+
+  // Computed once per sheet-open (not per rebuild) so the label doesn't
+  // change under the user if the sheet stays open across a window boundary.
+  late final String _resolvedMealName = resolveMealNameForTime(DateTime.now());
 
   double get _cal => widget.food.calories * _servings;
   double get _pro => widget.food.protein * _servings;
@@ -906,15 +1025,15 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
     if (_selectedMealId != null) {
       mealId = _selectedMealId!;
     } else {
-      // Look for an existing "Quick Add" meal today
+      // Look for an existing meal matching the resolved time-of-day name
       final existing =
           nutrition.value?.meals
-              .where((m) => m.meal.name == 'Quick Add')
+              .where((m) => m.meal.name == _resolvedMealName)
               .firstOrNull;
       if (existing != null) {
         mealId = existing.meal.id;
       } else {
-        mealId = await notifier.addMeal('Quick Add');
+        mealId = await notifier.addMeal(_resolvedMealName);
       }
     }
 
@@ -934,6 +1053,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
       iron: _iron,
       vitaminA: _vitaminA,
       vitaminC: _vitaminC,
+      pantryFoodId: widget.food.id,
+      servings: _servings,
     );
 
     if (mounted) Navigator.pop(context);
@@ -942,7 +1063,12 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
   @override
   Widget build(BuildContext context) {
     final nutritionAsync = ref.watch(nutritionNotifierProvider);
-    final meals = nutritionAsync.value?.meals ?? [];
+    // Exclude the resolved-name meal from the tail of the row — it's already
+    // represented by the auto chip at index 0, so it would otherwise show twice.
+    final meals =
+        (nutritionAsync.value?.meals ?? [])
+            .where((m) => m.meal.name != _resolvedMealName)
+            .toList();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1019,15 +1145,15 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
               height: 40,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: meals.length + 1, // +1 for "Quick Add" option
+                itemCount: meals.length + 1, // +1 for the auto-resolved option
                 separatorBuilder:
                     (_, _) => const SizedBox(width: AppSpacing.md),
                 itemBuilder: (ctx, i) {
-                  // First chip is always "Quick Add" (auto)
+                  // First chip is always the time-of-day-resolved meal (auto)
                   if (i == 0) {
                     final selected = _selectedMealId == null;
                     return SelectableChip(
-                      label: 'Quick Add',
+                      label: _resolvedMealName,
                       selected: selected,
                       onTap: () => setState(() => _selectedMealId = null),
                     );

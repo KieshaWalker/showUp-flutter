@@ -22,6 +22,10 @@
 //   showFoodNutritionDialog() — tap-to-view nutrition breakdown dialog
 //   confirmDeleteFoodEntry()  — long-press-to-delete confirmation dialog
 //   confirmDeleteMeal()       — long-press-to-delete confirmation dialog (whole meal)
+//   resolveMealNameForTime()  — maps a DateTime to Breakfast/Lunch/Dinner/Snack;
+//                                used by Quick Add (presentation_screen.dart) to
+//                                pick its implicit target meal, and by
+//                                pantry_notifier.dart's usage-frequency ranking
 //
 // Connections:
 //   nutrition_notifier.dart — all state + mutations
@@ -427,6 +431,22 @@ class _MealCardState extends ConsumerState<_MealCard> {
                       ],
                     ),
                   ),
+                  Tooltip(
+                    message:
+                        m.entries.any((e) => e.pantryFoodId != null)
+                            ? 'Save as meal template'
+                            : 'Add foods from the pantry to save this as a template',
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.bookmark_add_outlined,
+                        color: AppColors.textOnDarkSecondary,
+                      ),
+                      onPressed:
+                          m.entries.any((e) => e.pantryFoodId != null)
+                              ? () => _saveAsTemplate(context)
+                              : null,
+                    ),
+                  ),
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
@@ -467,6 +487,71 @@ class _MealCardState extends ConsumerState<_MealCard> {
 
   void _confirmDelete(BuildContext context) {
     confirmDeleteMeal(context, ref, widget.mealWithEntries.meal);
+  }
+
+  Future<void> _saveAsTemplate(BuildContext context) async {
+    final m = widget.mealWithEntries;
+    final templatable = m.entries.where((e) => e.pantryFoodId != null).toList();
+    if (templatable.isEmpty) return;
+
+    final skippedCount = m.entries.length - templatable.length;
+    final controller = TextEditingController(text: m.meal.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Save as template'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Template name'),
+                ),
+                if (skippedCount > 0) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '$skippedCount manually-entered ${skippedCount == 1 ? 'item' : 'items'} '
+                    "won't be included — only pantry-added foods can be saved.",
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed:
+                    () => Navigator.pop(dialogContext, controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
+
+    if (name == null || name.isEmpty || !context.mounted) return;
+
+    await ref
+        .read(mealTemplatesNotifierProvider.notifier)
+        .saveTemplate(
+          name: name,
+          items: [
+            for (final e in templatable)
+              (pantryFoodId: e.pantryFoodId!, servings: e.servings),
+          ],
+        );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saved "$name" as a template')));
+    }
   }
 }
 
@@ -739,6 +824,18 @@ Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
       ),
     ),
   );
+}
+
+/// Resolves which meal name a time-of-day maps to — used by Quick Add to
+/// pick an implicit target meal instead of a fake "Quick Add" bucket.
+/// Boundaries are local device time; gaps (mid-afternoon, late night)
+/// intentionally fall to Snack rather than forcing Lunch/Dinner.
+String resolveMealNameForTime(DateTime time) {
+  final h = time.hour;
+  if (h >= 5 && h < 11) return 'Breakfast';
+  if (h >= 11 && h < 15) return 'Lunch';
+  if (h >= 17 && h < 22) return 'Dinner';
+  return 'Snack';
 }
 
 /// Shows the "Add Meal" sheet. [date] defaults to today; pass a past date
@@ -1246,7 +1343,7 @@ class _ManualEntryTab extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _FormField(ctrl: nameCtrl, label: 'Food name'),
+          _FormField(ctrl: nameCtrl, label: 'Food name', isText: true),
           _FormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
           _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
           _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
@@ -1550,11 +1647,16 @@ class _FormField extends StatelessWidget {
     this.unit,
     this.decimal = false,
     this.recommended,
+    this.isText = false,
   });
   final TextEditingController ctrl;
   final String label;
   final String? unit;
   final bool decimal;
+
+  /// True for free-text fields (e.g. a food name) that should get a normal
+  /// text keyboard instead of the numeric keypad the other fields here use.
+  final bool isText;
 
   /// Reference daily value shown as helper text below the field, e.g.
   /// "Recommended: 28g" — the general adult RDA/FDA Daily Value used as
@@ -1569,9 +1671,13 @@ class _FormField extends StatelessWidget {
         controller: ctrl,
         style: AppTextStyles.bodyLarge,
         keyboardType:
-            decimal
-                ? const TextInputType.numberWithOptions(decimal: true)
-                : TextInputType.number,
+            isText
+                ? TextInputType.text
+                : (decimal
+                    ? const TextInputType.numberWithOptions(decimal: true)
+                    : TextInputType.number),
+        textCapitalization:
+            isText ? TextCapitalization.words : TextCapitalization.none,
         decoration: InputDecoration(
           labelText: unit != null ? '$label ($unit)' : label,
           helperText:

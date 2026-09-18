@@ -35,6 +35,10 @@
 //         calcium, iron, vitaminA, vitaminC) to FoodEntries, and matching
 //         per-user goal columns (defaulted to FDA daily values) to
 //         DailyNutritionGoals
+//   v12 — added pantryFoodId + servings to FoodEntries (links a logged
+//         entry back to the PantryFood it came from, for Quick Add ranking
+//         and meal templates), and added MealTemplates + MealTemplateItems
+//         tables (saved, reusable pantry-food bundles)
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -142,6 +146,15 @@ class FoodEntries extends Table {
 
   /// Vitamin C (mg)
   RealColumn get vitaminC => real().withDefault(const Constant(0.0))();
+
+  /// Links back to the PantryFood this entry was logged from, if any.
+  /// NULL for manually-entered foods. Powers Quick Add's usage ranking and
+  /// lets a meal be saved as a template.
+  TextColumn get pantryFoodId => text().nullable()();
+
+  /// Number of servings logged (relative to the source PantryFood's
+  /// per-serving macros). Defaults to 1.0 for rows predating this column.
+  RealColumn get servings => real().withDefault(const Constant(1.0))();
 
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
@@ -268,6 +281,38 @@ class PantryFoods extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Meal templates
+// ---------------------------------------------------------------------------
+
+/// A saved, named bundle of pantry foods a user can re-log in one tap
+/// (e.g. "My usual breakfast"). See [MealTemplateItems] for the foods.
+class MealTemplates extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One pantry food + serving count within a [MealTemplates] row.
+class MealTemplateItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get templateId => text()();
+  TextColumn get userId => text()();
+
+  /// Always non-null — templates only bundle pantry foods, not manual entries.
+  TextColumn get pantryFoodId => text()();
+  RealColumn get servings => real().withDefault(const Constant(1.0))();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
@@ -283,13 +328,15 @@ class PantryFoods extends Table {
     WaterLogs,
     DailyNutritionGoals,
     PantryFoods,
+    MealTemplates,
+    MealTemplateItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -384,6 +431,16 @@ class AppDatabase extends _$AppDatabase {
             'ALTER TABLE daily_nutrition_goals ADD COLUMN ${entry.key} REAL NOT NULL DEFAULT ${entry.value}',
           );
         }
+      }
+      if (from < 12) {
+        await customStatement(
+          'ALTER TABLE food_entries ADD COLUMN pantry_food_id TEXT',
+        );
+        await customStatement(
+          'ALTER TABLE food_entries ADD COLUMN servings REAL NOT NULL DEFAULT 1.0',
+        );
+        await m.createTable(mealTemplates);
+        await m.createTable(mealTemplateItems);
       }
     },
   );

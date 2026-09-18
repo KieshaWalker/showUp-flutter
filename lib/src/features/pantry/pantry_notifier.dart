@@ -33,6 +33,8 @@
 //   pantry_screen.dart      — search/browse UI, calls addFood/updateFood/deleteFood
 //   nutrition_screen.dart   — "add from pantry" flow calls pantryNotifierProvider
 
+import 'package:async/async.dart';
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -40,6 +42,7 @@ import 'package:uuid/uuid.dart';
 import '../../database/database_provider.dart';
 import '../../database/db.dart';
 import '../nutrition/nutrition_notifier.dart';
+import '../nutrition/nutrition_screen.dart' show resolveMealNameForTime;
 
 const _uuid = Uuid();
 
@@ -70,6 +73,86 @@ final otherUserPantryProvider =
       .map((row) => _pantryFoodFromRow(row as Map<String, dynamic>, userId))
       .toList();
 });
+
+/// Per-food usage counts for the current time-of-day meal window (Breakfast/
+/// Lunch/Dinner/Snack, same buckets as [resolveMealNameForTime]) vs. all
+/// time. Powers Quick Add's chip ordering on the Overview tab.
+final quickAddRankingProvider =
+    FutureProvider.autoDispose<Map<String, (int window, int total)>>((
+  ref,
+) async {
+  // Re-rank whenever the pantry list changes or any food entry is
+  // logged/deleted. NutritionNotifier's build() stream is an unfiltered,
+  // all-dates COUNT on food_entries (nutrition_notifier.dart), so it fires
+  // correctly here even though ranking looks across all history, not just today.
+  ref.watch(pantryNotifierProvider);
+  ref.watch(nutritionNotifierProvider);
+
+  final db = ref.read(databaseProvider);
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return {};
+
+  final resolvedMealName = resolveMealNameForTime(DateTime.now());
+
+  // The CASE expression below mirrors resolveMealNameForTime's boundaries in
+  // SQL so "Snack" (which spans two disjoint hour ranges) buckets correctly —
+  // a plain BETWEEN on hour-of-day can't express that split.
+  final rows = await db
+      .customSelect(
+        '''
+        SELECT fe.pantry_food_id AS food_id,
+               SUM(CASE WHEN (
+                 CASE
+                   WHEN CAST(strftime('%H', m.logged_at, 'unixepoch', 'localtime') AS INTEGER) BETWEEN 5 AND 10 THEN 'Breakfast'
+                   WHEN CAST(strftime('%H', m.logged_at, 'unixepoch', 'localtime') AS INTEGER) BETWEEN 11 AND 14 THEN 'Lunch'
+                   WHEN CAST(strftime('%H', m.logged_at, 'unixepoch', 'localtime') AS INTEGER) BETWEEN 17 AND 21 THEN 'Dinner'
+                   ELSE 'Snack'
+                 END
+               ) = ?1 THEN 1 ELSE 0 END) AS window_count,
+               COUNT(*) AS total_count
+        FROM food_entries fe
+        JOIN meals m ON m.id = fe.meal_id
+        WHERE fe.user_id = ?2 AND fe.pantry_food_id IS NOT NULL
+        GROUP BY fe.pantry_food_id
+        ''',
+        variables: [
+          Variable.withString(resolvedMealName),
+          Variable.withString(userId),
+        ],
+        readsFrom: {db.foodEntries, db.meals},
+      )
+      .get();
+
+  return {
+    for (final row in rows)
+      row.read<String>('food_id'): (
+        row.read<int>('window_count'),
+        row.read<int>('total_count'),
+      ),
+  };
+});
+
+/// Reorders [foods] so ones logged more often during the current time-of-day
+/// window rise to the front, falling back to all-time frequency, then the
+/// original order (a cold-start user/window with zero counts everywhere is
+/// left untouched — [mergeSort] is stable, unlike [List.sort]).
+List<PantryFood> rankPantryFoodsForQuickAdd(
+  List<PantryFood> foods,
+  Map<String, (int window, int total)> counts,
+) {
+  final ranked = [...foods];
+  mergeSort(
+    ranked,
+    compare: (a, b) {
+      final ca = counts[a.id] ?? (0, 0);
+      final cb = counts[b.id] ?? (0, 0);
+      if (ca.$1 != cb.$1) return cb.$1.compareTo(ca.$1);
+      if (ca.$2 != cb.$2) return cb.$2.compareTo(ca.$2);
+      return 0;
+    },
+  );
+  return ranked;
+}
 
 PantryFood _pantryFoodFromRow(Map<String, dynamic> row, String userId) {
   return PantryFood(
@@ -311,13 +394,14 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
   // ── Meal creation ──────────────────────────────────────────────────────────
 
   /// Creates a named meal in today's nutrition log from a list of pantry foods
-  /// with their serving counts.
-  Future<void> createMealFromPantry({
+  /// with their serving counts. Returns the new meal's id.
+  Future<String> createMealFromPantry({
     required String mealName,
     required List<({PantryFood food, double servings})> selections,
+    DateTime? loggedAt,
   }) async {
     final notifier = ref.read(nutritionNotifierProvider.notifier);
-    final mealId = await notifier.addMeal(mealName);
+    final mealId = await notifier.addMeal(mealName, loggedAt: loggedAt);
 
     for (final s in selections) {
       await notifier.addFoodEntry(
@@ -336,8 +420,12 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         iron: s.food.iron * s.servings,
         vitaminA: s.food.vitaminA * s.servings,
         vitaminC: s.food.vitaminC * s.servings,
+        pantryFoodId: s.food.id,
+        servings: s.servings,
       );
     }
+
+    return mealId;
   }
 
   // ── Remote sync ────────────────────────────────────────────────────────────
@@ -457,6 +545,313 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
                 vitaminC: Value(((row['vitamin_c'] as num?) ?? 0).toDouble()),
                 servingLabel: Value(row['serving_label'] as String),
                 isPreset: Value(row['is_preset'] as bool? ?? false),
+                synced: const Value(true),
+              ),
+            );
+      }
+    } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Meal templates — saved, reusable pantry-food bundles
+// ---------------------------------------------------------------------------
+
+/// A saved meal template with its pantry-food + serving items.
+class MealTemplateWithItems {
+  final MealTemplate template;
+  final List<MealTemplateItem> items;
+
+  const MealTemplateWithItems({required this.template, required this.items});
+}
+
+final mealTemplatesNotifierProvider = StreamNotifierProvider<
+  MealTemplatesNotifier,
+  List<MealTemplateWithItems>
+>(MealTemplatesNotifier.new);
+
+/// Manages user-saved "meal templates" — a named bundle of pantry foods +
+/// servings the user can re-log in one tap from Quick Add, instead of
+/// rebuilding the same meal from scratch every time. See [createMealFromPantry]
+/// for the underlying meal+entry creation this reuses.
+class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> {
+  @override
+  Stream<List<MealTemplateWithItems>> build() {
+    final db = ref.watch(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+    // Same count-only-watch-as-trigger pattern as NutritionNotifier.build():
+    // cheap COUNT streams fire the rebuild, then a fresh full query assembles
+    // the result.
+    final templatesStream =
+        (db.selectOnly(db.mealTemplates)
+              ..addColumns([db.mealTemplates.id.count()])
+              ..where(db.mealTemplates.userId.equals(userId)))
+            .watchSingle();
+    final itemsStream =
+        (db.selectOnly(db.mealTemplateItems)
+              ..addColumns([db.mealTemplateItems.id.count()])
+              ..where(db.mealTemplateItems.userId.equals(userId)))
+            .watchSingle();
+
+    final trigger = StreamGroup.merge<List<dynamic>>([
+      templatesStream.map((_) => []),
+      itemsStream.map((_) => []),
+    ]).map((_) => null);
+
+    return trigger.asyncMap((_) => _loadAll(db, userId));
+  }
+
+  Future<List<MealTemplateWithItems>> _loadAll(
+    AppDatabase db,
+    String userId,
+  ) async {
+    final templates =
+        await (db.select(db.mealTemplates)
+              ..where((t) => t.userId.equals(userId))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .get();
+    final items =
+        await (db.select(
+          db.mealTemplateItems,
+        )..where((i) => i.userId.equals(userId))).get();
+
+    return [
+      for (final t in templates)
+        MealTemplateWithItems(
+          template: t,
+          items: items.where((i) => i.templateId == t.id).toList(),
+        ),
+    ];
+  }
+
+  /// Saves [items] (pantry food id + serving count pairs) as a new named
+  /// template. Callers should only pass items whose source FoodEntry had a
+  /// non-null pantryFoodId — manual entries can't be replayed at apply time.
+  Future<void> saveTemplate({
+    required String name,
+    required List<({String pantryFoodId, double servings})> items,
+  }) async {
+    if (items.isEmpty) return;
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final templateId = _uuid.v4();
+    await db
+        .into(db.mealTemplates)
+        .insert(
+          MealTemplatesCompanion.insert(
+            id: templateId,
+            userId: userId,
+            name: name,
+          ),
+        );
+
+    final itemRows = [
+      for (final item in items)
+        MealTemplateItemsCompanion.insert(
+          id: _uuid.v4(),
+          templateId: templateId,
+          userId: userId,
+          pantryFoodId: item.pantryFoodId,
+          servings: Value(item.servings),
+        ),
+    ];
+    await db.batch((b) => b.insertAll(db.mealTemplateItems, itemRows));
+
+    try {
+      await Supabase.instance.client.from('meal_templates').insert({
+        'id': templateId,
+        'user_id': userId,
+        'name': name,
+      });
+      await Supabase.instance.client.from('meal_template_items').insert([
+        for (final row in itemRows)
+          {
+            'id': row.id.value,
+            'template_id': templateId,
+            'user_id': userId,
+            'pantry_food_id': row.pantryFoodId.value,
+            'servings': row.servings.value,
+          },
+      ]);
+      await (db.update(
+        db.mealTemplates,
+      )..where((t) => t.id.equals(templateId))).write(
+        const MealTemplatesCompanion(synced: Value(true)),
+      );
+      await (db.update(
+        db.mealTemplateItems,
+      )..where((i) => i.templateId.equals(templateId))).write(
+        const MealTemplateItemsCompanion(synced: Value(true)),
+      );
+    } catch (_) {}
+  }
+
+  /// Re-logs a saved template as a brand-new meal. Items whose pantry food
+  /// was deleted since the template was saved are skipped (their pantry food
+  /// ids are returned, since a name can't be looked up once deleted) rather
+  /// than failing the whole apply.
+  Future<({String mealId, List<String> skippedPantryFoodIds})> applyTemplate(
+    String templateId, {
+    DateTime? loggedAt,
+  }) async {
+    final db = ref.read(databaseProvider);
+    final template =
+        await (db.select(
+          db.mealTemplates,
+        )..where((t) => t.id.equals(templateId))).getSingle();
+    final items =
+        await (db.select(
+          db.mealTemplateItems,
+        )..where((i) => i.templateId.equals(templateId))).get();
+
+    final selections = <({PantryFood food, double servings})>[];
+    final skipped = <String>[];
+    for (final item in items) {
+      final food =
+          await (db.select(
+            db.pantryFoods,
+          )..where((f) => f.id.equals(item.pantryFoodId))).getSingleOrNull();
+      if (food == null) {
+        skipped.add(item.pantryFoodId);
+        continue;
+      }
+      selections.add((food: food, servings: item.servings));
+    }
+
+    final mealId = await ref
+        .read(pantryNotifierProvider.notifier)
+        .createMealFromPantry(
+          mealName: template.name,
+          selections: selections,
+          loggedAt: loggedAt,
+        );
+
+    return (mealId: mealId, skippedPantryFoodIds: skipped);
+  }
+
+  Future<void> deleteTemplate(String templateId) async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await (db.delete(
+      db.mealTemplateItems,
+    )..where((i) => i.templateId.equals(templateId))).go();
+    final deleted =
+        await (db.delete(db.mealTemplates)..where(
+          (t) => t.id.equals(templateId) & t.userId.equals(userId),
+        )).go();
+    if (deleted == 0) return;
+
+    try {
+      await Supabase.instance.client
+          .from('meal_template_items')
+          .delete()
+          .eq('template_id', templateId);
+      await Supabase.instance.client
+          .from('meal_templates')
+          .delete()
+          .eq('id', templateId)
+          .eq('user_id', userId);
+    } catch (_) {}
+  }
+
+  /// Retry template writes whose Supabase sync previously failed. Call this
+  /// before [syncFromRemote] on app launch, same as the pantry/nutrition
+  /// bootstrap in main.dart.
+  Future<void> pushUnsyncedChanges() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final unsyncedTemplates =
+        await (db.select(db.mealTemplates)..where(
+          (t) => t.userId.equals(userId) & t.synced.equals(false),
+        )).get();
+    for (final t in unsyncedTemplates) {
+      try {
+        await Supabase.instance.client.from('meal_templates').upsert({
+          'id': t.id,
+          'user_id': t.userId,
+          'name': t.name,
+        });
+        await (db.update(db.mealTemplates)..where((row) => row.id.equals(t.id)))
+            .write(const MealTemplatesCompanion(synced: Value(true)));
+      } catch (_) {}
+    }
+
+    final unsyncedItems =
+        await (db.select(db.mealTemplateItems)..where(
+          (i) => i.userId.equals(userId) & i.synced.equals(false),
+        )).get();
+    for (final i in unsyncedItems) {
+      try {
+        await Supabase.instance.client.from('meal_template_items').upsert({
+          'id': i.id,
+          'template_id': i.templateId,
+          'user_id': i.userId,
+          'pantry_food_id': i.pantryFoodId,
+          'servings': i.servings,
+        });
+        await (db.update(
+          db.mealTemplateItems,
+        )..where((row) => row.id.equals(i.id))).write(
+          const MealTemplateItemsCompanion(synced: Value(true)),
+        );
+      } catch (err) {
+        if (err is PostgrestException && err.code == '23503') {
+          // Parent template no longer exists remotely — drop the orphaned item.
+          await (db.delete(
+            db.mealTemplateItems,
+          )..where((row) => row.id.equals(i.id))).go();
+        }
+      }
+    }
+  }
+
+  /// Pulls the current user's templates from Supabase into local Drift.
+  /// Called once on login, alongside habits/nutrition/pantry.
+  Future<void> syncFromRemote() async {
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final templates = await Supabase.instance.client
+          .from('meal_templates')
+          .select()
+          .eq('user_id', userId);
+      for (final row in templates as List) {
+        await db
+            .into(db.mealTemplates)
+            .insertOnConflictUpdate(
+              MealTemplatesCompanion.insert(
+                id: row['id'] as String,
+                userId: userId,
+                name: row['name'] as String,
+                createdAt: Value(DateTime.parse(row['created_at'] as String)),
+                synced: const Value(true),
+              ),
+            );
+      }
+
+      final items = await Supabase.instance.client
+          .from('meal_template_items')
+          .select()
+          .eq('user_id', userId);
+      for (final row in items as List) {
+        await db
+            .into(db.mealTemplateItems)
+            .insertOnConflictUpdate(
+              MealTemplateItemsCompanion.insert(
+                id: row['id'] as String,
+                templateId: row['template_id'] as String,
+                userId: userId,
+                pantryFoodId: row['pantry_food_id'] as String,
+                servings: Value(((row['servings'] as num?) ?? 1.0).toDouble()),
                 synced: const Value(true),
               ),
             );
