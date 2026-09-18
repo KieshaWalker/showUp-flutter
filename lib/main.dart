@@ -139,7 +139,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (mounted) await maybeShowWelcomeSetup(context, ref);
       if (mounted) await maybeStartAppTour(context);
     });
-    registerAppTour();
+    registerAppTour(
+      onSwitchToTab: (i) => setState(() => _currentIndex = i),
+    );
   }
 
   @override

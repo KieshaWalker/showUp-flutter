@@ -21,6 +21,8 @@
 //                             addFood, updateFood, deleteFood called from here
 //   nutrition_screen.dart   — links to PantryScreen (or reuses the picker)
 //                             when the user taps "add from pantry" in a meal
+//   app_tour.dart           — stage two of the app tour switches here and
+//                             points out the Scan Barcode FAB
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'package:flutter/material.dart';
@@ -28,6 +30,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../shared/widgets.dart';
 import '../../database/db.dart';
+import '../onboarding/app_tour.dart';
+import '../onboarding/app_tour_keys.dart';
 import '../settings/settings_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'open_food_facts_service.dart';
@@ -76,11 +80,18 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          FloatingActionButton(
-            heroTag: 'pantry-scan-fab',
-            tooltip: 'Scan Barcode',
-            onPressed: () => _scanBarcode(context),
-            child: const Icon(Icons.qr_code_scanner),
+          appTourTarget(
+            key: pantryScanFabKey,
+            title: 'Scan a Barcode',
+            description:
+                'Point your camera at a package barcode to pull its '
+                'nutrition info in automatically.',
+            child: FloatingActionButton(
+              heroTag: 'pantry-scan-fab',
+              tooltip: 'Scan Barcode',
+              onPressed: () => _scanBarcode(context),
+              child: const Icon(Icons.qr_code_scanner),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           FloatingActionButton.extended(
