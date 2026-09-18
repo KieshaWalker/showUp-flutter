@@ -140,7 +140,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                           ),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
+                                crossAxisCount: 3,
                                 mainAxisSpacing: AppSpacing.sm,
                                 crossAxisSpacing: AppSpacing.sm,
                                 mainAxisExtent: 140,
