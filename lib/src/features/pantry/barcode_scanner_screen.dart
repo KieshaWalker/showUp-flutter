@@ -39,12 +39,23 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     super.dispose();
   }
 
+  /// Stops the camera session and pops with [code]. mobile_scanner's
+  /// AVCaptureSession teardown on iOS/macOS isn't guaranteed to finish by the
+  /// time [dispose] runs during the pop transition, which otherwise leaves
+  /// the OS's camera-in-use indicator lit after this screen closes — so the
+  /// session is stopped explicitly first, before popping.
+  Future<void> _finish(String code) async {
+    if (_handled) return;
+    _handled = true;
+    await _controller.stop();
+    if (mounted) Navigator.pop(context, code);
+  }
+
   void _onDetect(BarcodeCapture capture) {
     if (_handled) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
-    _handled = true;
-    Navigator.pop(context, code);
+    _finish(code);
   }
 
   void _enterManually() {
@@ -72,7 +83,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     ).then((code) {
       if (code != null && code.isNotEmpty && mounted) {
-        Navigator.pop(context, code);
+        _finish(code);
       }
     });
   }

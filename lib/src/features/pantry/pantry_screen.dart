@@ -254,12 +254,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     Navigator.pop(context); // close the loading dialog
 
     if (info == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't find that barcode — add it manually."),
-        ),
-      );
-      _showFoodForm(context);
+      _showFoodForm(context, notFoundBarcode: barcode);
       return;
     }
     _showFoodForm(context, prefill: info);
@@ -269,6 +264,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     BuildContext context, {
     PantryFood? food,
     ScannedFoodInfo? prefill,
+    String? notFoundBarcode,
   }) {
     showModalBottomSheet(
       context: context,
@@ -277,6 +273,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
           (ctx) => _FoodFormSheet(
             food: food,
             prefill: prefill,
+            notFoundBarcode: notFoundBarcode,
             onSave: ({
               required String name,
               required double calories,
@@ -500,11 +497,13 @@ typedef _SaveCallback =
 class _FoodFormSheet extends StatefulWidget {
   final PantryFood? food;
   final ScannedFoodInfo? prefill;
+  final String? notFoundBarcode;
   final _SaveCallback onSave;
 
   const _FoodFormSheet({
     required this.food,
     this.prefill,
+    this.notFoundBarcode,
     required this.onSave,
   });
 
@@ -648,6 +647,39 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
               _isEditing ? 'Edit Food' : 'New Food',
               style: AppTextStyles.headlineMedium,
             ),
+
+            if (widget.notFoundBarcode != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.overLimit.withValues(alpha: 0.15),
+                  borderRadius: AppRadius.mdAll,
+                  border: Border.all(
+                    color: AppColors.overLimit.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 18,
+                      color: AppColors.overLimit,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'No match for barcode ${widget.notFoundBarcode} — enter the details manually below.',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.overLimit,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg - 4),
 
             _Field(ctrl: _nameCtrl, label: 'Food name', autofocus: !_isEditing),
