@@ -5,6 +5,19 @@
 // Includes a manual-entry fallback for damaged barcodes or the simulator,
 // where there's no camera to scan with.
 //
+// Every exit path — a successful scan, manual entry, AND backing out via the
+// AppBar back button or the system back gesture — is routed through _exit(),
+// which stops the camera before popping. mobile_scanner's AVCaptureSession
+// teardown on iOS/macOS isn't guaranteed to finish by the time dispose() runs
+// during a pop transition, which otherwise leaves the OS's camera-in-use
+// indicator lit after this screen closes. The back-button/system-back path
+// is caught with PopScope(canPop: false): that blocks Navigator.maybePop()
+// (what the back button and system gestures call) but NOT an explicit
+// Navigator.pop() call, so _exit() can still pop for real once it's done
+// stopping the camera — see the official PopScope async-confirmation pattern
+// this mirrors (examples/api/lib/widgets/pop_scope/pop_scope.0.dart in the
+// Flutter SDK).
+//
 // Connections:
 //   pantry_screen.dart           — pushes this screen, then looks up the
 //                                  result via open_food_facts_service.dart
@@ -39,12 +52,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     super.dispose();
   }
 
-  /// Stops the camera session and pops with [code]. mobile_scanner's
-  /// AVCaptureSession teardown on iOS/macOS isn't guaranteed to finish by the
-  /// time [dispose] runs during the pop transition, which otherwise leaves
-  /// the OS's camera-in-use indicator lit after this screen closes — so the
-  /// session is stopped explicitly first, before popping.
-  Future<void> _finish(String code) async {
+  /// Stops the camera session, then pops with [code] (or no result, for a
+  /// plain back-out). See the file-level comment for why every exit path
+  /// funnels through here instead of popping directly.
+  Future<void> _exit([String? code]) async {
     if (_handled) return;
     _handled = true;
     await _controller.stop();
@@ -55,7 +66,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     if (_handled) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
-    _finish(code);
+    _exit(code);
   }
 
   void _enterManually() {
@@ -83,66 +94,73 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     ).then((code) {
       if (code != null && code.isNotEmpty && mounted) {
-        _finish(code);
+        _exit(code);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _exit();
+      },
+      child: Scaffold(
         backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: const Text('Scan Barcode'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.keyboard),
-            tooltip: 'Enter manually',
-            onPressed: _enterManually,
-          ),
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _controller,
-              builder: (context, state, child) => Icon(
-                state.torchState == TorchState.on
-                    ? Icons.flash_on
-                    : Icons.flash_off,
-              ),
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: const Text('Scan Barcode'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.keyboard),
+              tooltip: 'Enter manually',
+              onPressed: _enterManually,
             ),
-            tooltip: 'Toggle flashlight',
-            onPressed: () => _controller.toggleTorch(),
-          ),
-        ],
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
-          IgnorePointer(
-            child: Center(
-              child: Container(
-                width: 260,
-                height: 160,
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.terracotta, width: 3),
-                  borderRadius: AppRadius.lgAll,
+            IconButton(
+              icon: ValueListenableBuilder(
+                valueListenable: _controller,
+                builder: (context, state, child) => Icon(
+                  state.torchState == TorchState.on
+                      ? Icons.flash_on
+                      : Icons.flash_off,
+                ),
+              ),
+              tooltip: 'Toggle flashlight',
+              onPressed: () => _controller.toggleTorch(),
+            ),
+          ],
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            MobileScanner(controller: _controller, onDetect: _onDetect),
+            IgnorePointer(
+              child: Center(
+                child: Container(
+                  width: 260,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.terracotta, width: 3),
+                    borderRadius: AppRadius.lgAll,
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 40,
-            child: Text(
-              'Align the barcode within the frame',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 40,
+              child: Text(
+                'Align the barcode within the frame',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
