@@ -117,6 +117,20 @@ Future<void> maybeStartAppTour(BuildContext context) async {
   ShowcaseView.get().startShowCase(appTourSteps);
 }
 
+/// Manually replays the full tour from the beginning, regardless of whether
+/// this account has already seen (or skipped) it — used by Settings'
+/// "Give Me a Tour" row. [context] may belong to a screen pushed on top of
+/// AppShell (Settings usually is), so this pops back to it first and
+/// switches to the Overview tab, since stage one's targets only exist there.
+void restartAppTour(BuildContext context) {
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  _switchToTab?.call(0);
+  _pantryStageStarted = false;
+  WidgetsBinding.instance.endOfFrame.then((_) {
+    ShowcaseView.get().startShowCase(appTourSteps);
+  });
+}
+
 /// Wraps [child] in a Showcase styled to match the app's glass theme.
 Widget appTourTarget({
   required GlobalKey key,

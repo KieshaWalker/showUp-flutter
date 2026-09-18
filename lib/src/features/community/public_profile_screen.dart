@@ -9,7 +9,7 @@
 // silently edit the viewer's own profile instead of showing the tapped
 // user's — this screen has no edit affordances for the profile itself.
 //
-// Reached by tapping a row in community_screen.dart.
+// Reached by tapping a card in community_screen.dart.
 //
 // Pantry/habits data is fetched live from Supabase (otherUserPantryProvider /
 // otherUserHabitsProvider) rather than local Drift, since local Drift only

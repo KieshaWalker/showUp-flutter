@@ -1,5 +1,5 @@
-// settings_screen.dart — The Settings tab: profile, account, community,
-// legal, support, and (for admins) an admin dashboard.
+// settings_screen.dart — The Settings tab: profile, account, legal, support,
+// and (for admins) an admin dashboard.
 //
 // Shows:
 //   • Profile header with avatar (ProfileAvatar), display name, and username
@@ -9,16 +9,14 @@
 //     - Change Password — updates the account password via Supabase auth
 //     - Delete Account — calls the `delete-account` Edge Function, which
 //       permanently removes the account and all Show Up data server-side
-//   • Community section:
-//     - Browse Community — opens community_screen.dart, a searchable list
-//       of every other user's profile (name, username, photo); lives here
-//       rather than the bottom nav since the 5 nav tabs are all "my data"
-//       tracking screens and this is a different kind of feature
 //   • Legal section:
 //     - Terms & Agreement — view the current terms; shows the acceptance
 //       date if on file, or an "Accept" action for accounts that predate
 //       this flow (see terms_screen.dart's allowAccept)
 //   • Support section:
+//     - Give Me a Tour — replays the full onboarding coach-mark tour from
+//       the beginning (see app_tour.dart's restartAppTour), regardless of
+//       whether this account has already seen it
 //     - Report an Issue — opens report_issue_screen.dart; visible to
 //       everyone (admins can spot bugs too)
 //     - Redeem Admin Invite Code — visible only while !isAdmin; the same
@@ -31,10 +29,15 @@
 //     triggers authStateProvider to emit a null session → _AuthGate routes
 //     back to AuthScreen
 //
+// Note: "Browse Community" used to live here but moved to an AppBar icon on
+// presentation_screen.dart (Overview) on 2026-09-18, for a one-tap reach
+// from the screen users land on.
+//
 // Connections:
 //   profile_notifier.dart / profile_screen.dart — ProfileAvatar, edit profile,
 //                                                  acceptTerms()
-//   community_screen.dart                        — browse other users' profiles
+//   app_tour.dart                                 — restartAppTour() for
+//                                                    "Give Me a Tour"
 //   terms_screen.dart / terms_content.dart       — Terms & Agreement
 //   role_provider.dart                           — roleProvider (isAdmin),
 //                                                  redeemInviteCode()
@@ -53,7 +56,7 @@ import '../../core/app_theme.dart';
 import '../admin/admin_screen.dart';
 import '../admin/report_issue_screen.dart';
 import '../admin/role_provider.dart';
-import '../community/community_screen.dart';
+import '../onboarding/app_tour.dart';
 import '../legal/terms_screen.dart';
 import '../profile/profile_notifier.dart';
 import '../profile/profile_screen.dart';
@@ -121,24 +124,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              Text('Community', style: AppTextStyles.labelSmall),
-              const SizedBox(height: AppSpacing.sm),
-              _SettingsSection(
-                rows: [
-                  _SettingsRow(
-                    icon: Icons.groups_outlined,
-                    label: 'Browse Community',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CommunityScreen(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
               Text('Legal', style: AppTextStyles.labelSmall),
               const SizedBox(height: AppSpacing.sm),
               _SettingsSection(
@@ -168,6 +153,11 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               _SettingsSection(
                 rows: [
+                  _SettingsRow(
+                    icon: Icons.explore_outlined,
+                    label: 'Give Me a Tour',
+                    onTap: () => restartAppTour(context),
+                  ),
                   _SettingsRow(
                     icon: Icons.flag_outlined,
                     label: 'Report an Issue',

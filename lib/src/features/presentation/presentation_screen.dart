@@ -7,6 +7,9 @@
 //   • Today's habit completion ring / count
 //   • Nutrition calorie + macro summary for today
 //   • Habits completed today (cards)
+//   • AppBar: Community icon (left) + Settings icon (right, edge) — Community
+//     moved here from Settings' "Browse Community" row so it's a one-tap
+//     reach from the screen users land on, rather than buried in Settings
 //
 // Reused nutrition widgets (defined here, imported by nutrition_screen.dart):
 //   NutritionCalorieSummary — calorie ring summary card
@@ -18,6 +21,7 @@
 //   nutrition_notifier.dart — nutritionNotifierProvider for today's calorie/macro totals
 //   nutrition_screen.dart   — imports NutritionCalorieSummary, NutritionMacroRow,
 //                             NutritionMacroPill for reuse in the nutrition tab
+//   community_screen.dart   — AppBar's Community icon opens this
 //   app_theme.dart          — AppGlass, AppColors, AppTextStyles
 
 import 'dart:math';
@@ -34,6 +38,7 @@ import '../../shared/widgets.dart'
         SelectableChip,
         StreakBadge,
         formatWaterMl;
+import '../community/community_screen.dart';
 import '../habits/habits_notifier.dart';
 import '../nutrition/nutrition_notifier.dart';
 import '../nutrition/nutrition_screen.dart';
@@ -131,6 +136,14 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
             title: const AppLogoTitle(),
             titleTextStyle: AppTextStyles.displayLarge,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.groups_outlined),
+                tooltip: 'Community',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CommunityScreen()),
+                ),
+              ),
               IconButton(
                 icon: appTourTarget(
                   key: settingsIconKey,

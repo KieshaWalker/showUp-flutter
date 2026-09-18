@@ -1,18 +1,20 @@
 // community_screen.dart — Browse other users' profiles.
 //
-// Reached from settings_screen.dart's "Community" section — see project
-// memory for why this lives in Settings rather than the bottom nav (the
-// bottom nav's 5 tabs are all "my data" tracking screens; browsing other
-// people is a different kind of feature, more like the other Settings-hung
-// screens: Terms, Report an Issue, Admin).
+// Reached from a Community icon in presentation_screen.dart's (Overview)
+// AppBar, to the left of the Settings icon — moved there from a "Browse
+// Community" row in Settings on 2026-09-18 for a one-tap reach from the
+// screen users land on.
 //
-// A simple search-filtered list, same shape as pantry_screen.dart's food
-// search, for visual consistency with the rest of the app.
+// A search-filtered 4-column grid, same shape (SliverGridDelegateWithFixed-
+// CrossAxisCount, AppSpacing.sm gaps) as pantry_screen.dart's food grid and
+// habits_screen.dart's habit grid, for visual consistency with the rest of
+// the app.
 //
 // Connections:
 //   community_notifier.dart    — communityProvider (every other user)
 //   public_profile_screen.dart — read-only detail, opened on tap
 //   profile_notifier.dart      — UserProfile model
+//   presentation_screen.dart   — AppBar's Community icon opens this
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,16 +131,23 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             style: AppTextStyles.bodyMedium,
                           ),
                         )
-                      : ListView.builder(
+                      : GridView.builder(
                           padding: const EdgeInsets.fromLTRB(
                             AppSpacing.md,
                             0,
                             AppSpacing.md,
                             AppSpacing.lg,
                           ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: AppSpacing.sm,
+                                crossAxisSpacing: AppSpacing.sm,
+                                mainAxisExtent: 140,
+                              ),
                           itemCount: filtered.length,
                           itemBuilder: (context, i) =>
-                              _PersonRow(profile: filtered[i]),
+                              _PersonCard(profile: filtered[i]),
                         ),
                 ),
               ],
@@ -150,9 +159,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   }
 }
 
-class _PersonRow extends StatelessWidget {
+// Vertical card — same grid-card language as pantry_screen.dart's
+// _FoodCard and habits_screen.dart's habit card (icon/identity row up top,
+// name + subtitle below), sized to hold up at 4-per-row on a 375px iPhone.
+class _PersonCard extends StatelessWidget {
   final UserProfile profile;
-  const _PersonRow({required this.profile});
+  const _PersonCard({required this.profile});
 
   String get _initials {
     final name = profile.displayName;
@@ -169,85 +181,90 @@ class _PersonRow extends StatelessWidget {
     final name = profile.displayName;
     final username = profile.username;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: GestureDetector(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => PublicProfileScreen(profile: profile),
           ),
         ),
+        borderRadius: AppRadius.lgAll,
         child: AppGlass.card(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
+            horizontal: AppSpacing.sm,
             vertical: AppSpacing.sm,
           ),
           borderRadius: AppRadius.lgAll,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.terracotta.withValues(alpha: 0.15),
-                  border: Border.all(
-                    color: AppColors.terracotta.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                ),
-                child: ClipOval(
-                  child: profile.avatarUrl != null
-                      ? Image.network(
-                          profile.avatarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Center(
-                            child: Text(
-                              _initials,
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: AppColors.terracotta,
-                                fontWeight: FontWeight.bold,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.terracotta.withValues(alpha: 0.15),
+                      border: Border.all(
+                        color: AppColors.terracotta.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: profile.avatarUrl != null
+                          ? Image.network(
+                              profile.avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Center(
+                                child: Text(
+                                  _initials,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.terracotta,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                _initials,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.terracotta,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            _initials,
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.terracotta,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 14,
+                    color: AppColors.textOnDarkTertiary,
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name.isNotEmpty ? name : 'Unnamed user',
+                    style: AppTextStyles.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (username != null && username.isNotEmpty)
                     Text(
-                      name.isNotEmpty ? name : 'Unnamed user',
-                      style: AppTextStyles.bodyLarge,
+                      '@$username',
+                      style: AppTextStyles.labelSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (username != null && username.isNotEmpty)
-                      Text(
-                        '@$username',
-                        style: AppTextStyles.bodyMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: AppColors.khaki,
+                ],
               ),
             ],
           ),
