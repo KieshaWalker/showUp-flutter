@@ -94,13 +94,33 @@ void registerAppTour({required ValueChanged<int> onSwitchToTab}) {
       ),
       TooltipActionButton(
         type: TooltipDefaultActionType.next,
-        hideActionWidgetForShowcase: [pantryTourSteps.last],
+        // The tour's actual last step (pantryScanFabKey) supplies its own
+        // local tooltipActions — see finalTourStepTooltipActions — which
+        // replaces this global list outright, so nothing needs hiding here
+        // for it specifically.
         backgroundColor: AppColors.terracotta,
         textStyle: const TextStyle(color: Colors.white),
       ),
     ],
   );
 }
+
+/// Tooltip actions for the tour's very last step ([pantryTourSteps.last]) —
+/// pass this to that step's [appTourTarget] instead of relying on the
+/// global list. It replaces "Skip" with a "Done" button (still a `next`
+/// action under the hood, which correctly triggers the finish flow since
+/// there's nothing left to advance to) so completing the tour doesn't read
+/// as abandoning it. There's nothing before this step within its own
+/// startShowCase call (stage two is a single-step sequence — see
+/// [_handleStageFinish]), so no "Previous" button either.
+final List<TooltipActionButton> finalTourStepTooltipActions = [
+  TooltipActionButton(
+    type: TooltipDefaultActionType.next,
+    name: 'Done',
+    backgroundColor: AppColors.terracotta,
+    textStyle: const TextStyle(color: Colors.white),
+  ),
+];
 
 void unregisterAppTour() => ShowcaseView.get().unregister();
 
@@ -132,11 +152,14 @@ void restartAppTour(BuildContext context) {
 }
 
 /// Wraps [child] in a Showcase styled to match the app's glass theme.
+/// [tooltipActions], when given, overrides the global tooltip action buttons
+/// for just this step — see [finalTourStepTooltipActions].
 Widget appTourTarget({
   required GlobalKey key,
   required String title,
   required String description,
   required Widget child,
+  List<TooltipActionButton>? tooltipActions,
 }) {
   return Showcase(
     key: key,
@@ -150,6 +173,7 @@ Widget appTourTarget({
         AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnDark),
     tooltipBackgroundColor: AppColors.glassModal,
     targetBorderRadius: AppRadius.mdAll,
+    tooltipActions: tooltipActions,
     child: child,
   );
 }

@@ -86,6 +86,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
             description:
                 'Point your camera at a package barcode to pull its '
                 'nutrition info in automatically.',
+            tooltipActions: finalTourStepTooltipActions,
             child: FloatingActionButton(
               heroTag: 'pantry-scan-fab',
               tooltip: 'Scan Barcode',
