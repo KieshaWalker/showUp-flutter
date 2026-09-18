@@ -193,8 +193,8 @@ class _PersonCard extends StatelessWidget {
         borderRadius: AppRadius.lgAll,
         child: AppGlass.card(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
           ),
           borderRadius: AppRadius.lgAll,
           child: Column(
@@ -204,9 +204,9 @@ class _PersonCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
+                  Container( // image
+                    width: 62,
+                    height: 62,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.terracotta.withValues(alpha: 0.15),
@@ -243,7 +243,7 @@ class _PersonCard extends StatelessWidget {
                   ),
                   const Icon(
                     Icons.chevron_right,
-                    size: 14,
+                    size: 24,
                     color: AppColors.textOnDarkTertiary,
                   ),
                 ],
