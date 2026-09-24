@@ -491,35 +491,19 @@ class _MealCardState extends ConsumerState<_MealCard> {
 
   Future<void> _saveAsTemplate(BuildContext context) async {
     final m = widget.mealWithEntries;
-    final templatable = m.entries.where((e) => e.pantryFoodId != null).toList();
-    if (templatable.isEmpty) return;
+    if (m.entries.isEmpty) return;
 
-    final skippedCount = m.entries.length - templatable.length;
     final controller = TextEditingController(text: m.meal.name);
     final name = await showDialog<String>(
       context: context,
       builder:
           (dialogContext) => AlertDialog(
             title: const Text('Save as template'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Template name'),
-                ),
-                if (skippedCount > 0) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    '$skippedCount manually-entered ${skippedCount == 1 ? 'item' : 'items'} '
-                    "won't be included — only pantry-added foods can be saved.",
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                ],
-              ],
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(labelText: 'Template name'),
             ),
             actions: [
               TextButton(
@@ -542,8 +526,7 @@ class _MealCardState extends ConsumerState<_MealCard> {
         .saveTemplate(
           name: name,
           items: [
-            for (final e in templatable)
-              (pantryFoodId: e.pantryFoodId!, servings: e.servings),
+            for (final e in m.entries) MealTemplateItemInput.fromFoodEntry(e),
           ],
         );
 

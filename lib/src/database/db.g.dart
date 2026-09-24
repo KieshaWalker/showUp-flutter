@@ -5538,9 +5538,9 @@ class $MealTemplateItemsTable extends MealTemplateItems
   late final GeneratedColumn<String> pantryFoodId = GeneratedColumn<String>(
     'pantry_food_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _servingsMeta = const VerificationMeta(
     'servings',
@@ -5567,6 +5567,146 @@ class $MealTemplateItemsTable extends MealTemplateItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caloriesMeta = const VerificationMeta(
+    'calories',
+  );
+  @override
+  late final GeneratedColumn<double> calories = GeneratedColumn<double>(
+    'calories',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinMeta = const VerificationMeta(
+    'protein',
+  );
+  @override
+  late final GeneratedColumn<double> protein = GeneratedColumn<double>(
+    'protein',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbsMeta = const VerificationMeta('carbs');
+  @override
+  late final GeneratedColumn<double> carbs = GeneratedColumn<double>(
+    'carbs',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fatMeta = const VerificationMeta('fat');
+  @override
+  late final GeneratedColumn<double> fat = GeneratedColumn<double>(
+    'fat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cholesterolMeta = const VerificationMeta(
+    'cholesterol',
+  );
+  @override
+  late final GeneratedColumn<double> cholesterol = GeneratedColumn<double>(
+    'cholesterol',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _potassiumMeta = const VerificationMeta(
+    'potassium',
+  );
+  @override
+  late final GeneratedColumn<double> potassium = GeneratedColumn<double>(
+    'potassium',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _calciumMeta = const VerificationMeta(
+    'calcium',
+  );
+  @override
+  late final GeneratedColumn<double> calcium = GeneratedColumn<double>(
+    'calcium',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ironMeta = const VerificationMeta('iron');
+  @override
+  late final GeneratedColumn<double> iron = GeneratedColumn<double>(
+    'iron',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _vitaminAMeta = const VerificationMeta(
+    'vitaminA',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminA = GeneratedColumn<double>(
+    'vitamin_a',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _vitaminCMeta = const VerificationMeta(
+    'vitaminC',
+  );
+  @override
+  late final GeneratedColumn<double> vitaminC = GeneratedColumn<double>(
+    'vitamin_c',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5575,6 +5715,20 @@ class $MealTemplateItemsTable extends MealTemplateItems
     pantryFoodId,
     servings,
     synced,
+    name,
+    calories,
+    protein,
+    carbs,
+    fat,
+    sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5617,8 +5771,6 @@ class $MealTemplateItemsTable extends MealTemplateItems
           _pantryFoodIdMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_pantryFoodIdMeta);
     }
     if (data.containsKey('servings')) {
       context.handle(
@@ -5630,6 +5782,93 @@ class $MealTemplateItemsTable extends MealTemplateItems
       context.handle(
         _syncedMeta,
         synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('calories')) {
+      context.handle(
+        _caloriesMeta,
+        calories.isAcceptableOrUnknown(data['calories']!, _caloriesMeta),
+      );
+    }
+    if (data.containsKey('protein')) {
+      context.handle(
+        _proteinMeta,
+        protein.isAcceptableOrUnknown(data['protein']!, _proteinMeta),
+      );
+    }
+    if (data.containsKey('carbs')) {
+      context.handle(
+        _carbsMeta,
+        carbs.isAcceptableOrUnknown(data['carbs']!, _carbsMeta),
+      );
+    }
+    if (data.containsKey('fat')) {
+      context.handle(
+        _fatMeta,
+        fat.isAcceptableOrUnknown(data['fat']!, _fatMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
+    if (data.containsKey('cholesterol')) {
+      context.handle(
+        _cholesterolMeta,
+        cholesterol.isAcceptableOrUnknown(
+          data['cholesterol']!,
+          _cholesterolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('potassium')) {
+      context.handle(
+        _potassiumMeta,
+        potassium.isAcceptableOrUnknown(data['potassium']!, _potassiumMeta),
+      );
+    }
+    if (data.containsKey('calcium')) {
+      context.handle(
+        _calciumMeta,
+        calcium.isAcceptableOrUnknown(data['calcium']!, _calciumMeta),
+      );
+    }
+    if (data.containsKey('iron')) {
+      context.handle(
+        _ironMeta,
+        iron.isAcceptableOrUnknown(data['iron']!, _ironMeta),
+      );
+    }
+    if (data.containsKey('vitamin_a')) {
+      context.handle(
+        _vitaminAMeta,
+        vitaminA.isAcceptableOrUnknown(data['vitamin_a']!, _vitaminAMeta),
+      );
+    }
+    if (data.containsKey('vitamin_c')) {
+      context.handle(
+        _vitaminCMeta,
+        vitaminC.isAcceptableOrUnknown(data['vitamin_c']!, _vitaminCMeta),
       );
     }
     return context;
@@ -5656,11 +5895,10 @@ class $MealTemplateItemsTable extends MealTemplateItems
             DriftSqlType.string,
             data['${effectivePrefix}user_id'],
           )!,
-      pantryFoodId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}pantry_food_id'],
-          )!,
+      pantryFoodId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pantry_food_id'],
+      ),
       servings:
           attachedDatabase.typeMapping.read(
             DriftSqlType.double,
@@ -5671,6 +5909,62 @@ class $MealTemplateItemsTable extends MealTemplateItems
             DriftSqlType.bool,
             data['${effectivePrefix}synced'],
           )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
+      calories: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calories'],
+      ),
+      protein: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein'],
+      ),
+      carbs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carbs'],
+      ),
+      fat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat'],
+      ),
+      sugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar'],
+      ),
+      fiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber'],
+      ),
+      sodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium'],
+      ),
+      cholesterol: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cholesterol'],
+      ),
+      potassium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}potassium'],
+      ),
+      calcium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calcium'],
+      ),
+      iron: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}iron'],
+      ),
+      vitaminA: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}vitamin_a'],
+      ),
+      vitaminC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}vitamin_c'],
+      ),
     );
   }
 
@@ -5686,17 +5980,45 @@ class MealTemplateItem extends DataClass
   final String templateId;
   final String userId;
 
-  /// Always non-null — templates only bundle pantry foods, not manual entries.
-  final String pantryFoodId;
+  /// Non-null for a pantry-linked item; null for a manually-entered one.
+  final String? pantryFoodId;
   final double servings;
   final bool synced;
+  final String? name;
+  final double? calories;
+  final double? protein;
+  final double? carbs;
+  final double? fat;
+  final double? sugar;
+  final double? fiber;
+  final double? sodium;
+  final double? cholesterol;
+  final double? potassium;
+  final double? calcium;
+  final double? iron;
+  final double? vitaminA;
+  final double? vitaminC;
   const MealTemplateItem({
     required this.id,
     required this.templateId,
     required this.userId,
-    required this.pantryFoodId,
+    this.pantryFoodId,
     required this.servings,
     required this.synced,
+    this.name,
+    this.calories,
+    this.protein,
+    this.carbs,
+    this.fat,
+    this.sugar,
+    this.fiber,
+    this.sodium,
+    this.cholesterol,
+    this.potassium,
+    this.calcium,
+    this.iron,
+    this.vitaminA,
+    this.vitaminC,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5704,9 +6026,53 @@ class MealTemplateItem extends DataClass
     map['id'] = Variable<String>(id);
     map['template_id'] = Variable<String>(templateId);
     map['user_id'] = Variable<String>(userId);
-    map['pantry_food_id'] = Variable<String>(pantryFoodId);
+    if (!nullToAbsent || pantryFoodId != null) {
+      map['pantry_food_id'] = Variable<String>(pantryFoodId);
+    }
     map['servings'] = Variable<double>(servings);
     map['synced'] = Variable<bool>(synced);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
+    if (!nullToAbsent || calories != null) {
+      map['calories'] = Variable<double>(calories);
+    }
+    if (!nullToAbsent || protein != null) {
+      map['protein'] = Variable<double>(protein);
+    }
+    if (!nullToAbsent || carbs != null) {
+      map['carbs'] = Variable<double>(carbs);
+    }
+    if (!nullToAbsent || fat != null) {
+      map['fat'] = Variable<double>(fat);
+    }
+    if (!nullToAbsent || sugar != null) {
+      map['sugar'] = Variable<double>(sugar);
+    }
+    if (!nullToAbsent || fiber != null) {
+      map['fiber'] = Variable<double>(fiber);
+    }
+    if (!nullToAbsent || sodium != null) {
+      map['sodium'] = Variable<double>(sodium);
+    }
+    if (!nullToAbsent || cholesterol != null) {
+      map['cholesterol'] = Variable<double>(cholesterol);
+    }
+    if (!nullToAbsent || potassium != null) {
+      map['potassium'] = Variable<double>(potassium);
+    }
+    if (!nullToAbsent || calcium != null) {
+      map['calcium'] = Variable<double>(calcium);
+    }
+    if (!nullToAbsent || iron != null) {
+      map['iron'] = Variable<double>(iron);
+    }
+    if (!nullToAbsent || vitaminA != null) {
+      map['vitamin_a'] = Variable<double>(vitaminA);
+    }
+    if (!nullToAbsent || vitaminC != null) {
+      map['vitamin_c'] = Variable<double>(vitaminC);
+    }
     return map;
   }
 
@@ -5715,9 +6081,51 @@ class MealTemplateItem extends DataClass
       id: Value(id),
       templateId: Value(templateId),
       userId: Value(userId),
-      pantryFoodId: Value(pantryFoodId),
+      pantryFoodId:
+          pantryFoodId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(pantryFoodId),
       servings: Value(servings),
       synced: Value(synced),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      calories:
+          calories == null && nullToAbsent
+              ? const Value.absent()
+              : Value(calories),
+      protein:
+          protein == null && nullToAbsent
+              ? const Value.absent()
+              : Value(protein),
+      carbs:
+          carbs == null && nullToAbsent ? const Value.absent() : Value(carbs),
+      fat: fat == null && nullToAbsent ? const Value.absent() : Value(fat),
+      sugar:
+          sugar == null && nullToAbsent ? const Value.absent() : Value(sugar),
+      fiber:
+          fiber == null && nullToAbsent ? const Value.absent() : Value(fiber),
+      sodium:
+          sodium == null && nullToAbsent ? const Value.absent() : Value(sodium),
+      cholesterol:
+          cholesterol == null && nullToAbsent
+              ? const Value.absent()
+              : Value(cholesterol),
+      potassium:
+          potassium == null && nullToAbsent
+              ? const Value.absent()
+              : Value(potassium),
+      calcium:
+          calcium == null && nullToAbsent
+              ? const Value.absent()
+              : Value(calcium),
+      iron: iron == null && nullToAbsent ? const Value.absent() : Value(iron),
+      vitaminA:
+          vitaminA == null && nullToAbsent
+              ? const Value.absent()
+              : Value(vitaminA),
+      vitaminC:
+          vitaminC == null && nullToAbsent
+              ? const Value.absent()
+              : Value(vitaminC),
     );
   }
 
@@ -5730,9 +6138,23 @@ class MealTemplateItem extends DataClass
       id: serializer.fromJson<String>(json['id']),
       templateId: serializer.fromJson<String>(json['templateId']),
       userId: serializer.fromJson<String>(json['userId']),
-      pantryFoodId: serializer.fromJson<String>(json['pantryFoodId']),
+      pantryFoodId: serializer.fromJson<String?>(json['pantryFoodId']),
       servings: serializer.fromJson<double>(json['servings']),
       synced: serializer.fromJson<bool>(json['synced']),
+      name: serializer.fromJson<String?>(json['name']),
+      calories: serializer.fromJson<double?>(json['calories']),
+      protein: serializer.fromJson<double?>(json['protein']),
+      carbs: serializer.fromJson<double?>(json['carbs']),
+      fat: serializer.fromJson<double?>(json['fat']),
+      sugar: serializer.fromJson<double?>(json['sugar']),
+      fiber: serializer.fromJson<double?>(json['fiber']),
+      sodium: serializer.fromJson<double?>(json['sodium']),
+      cholesterol: serializer.fromJson<double?>(json['cholesterol']),
+      potassium: serializer.fromJson<double?>(json['potassium']),
+      calcium: serializer.fromJson<double?>(json['calcium']),
+      iron: serializer.fromJson<double?>(json['iron']),
+      vitaminA: serializer.fromJson<double?>(json['vitaminA']),
+      vitaminC: serializer.fromJson<double?>(json['vitaminC']),
     );
   }
   @override
@@ -5742,9 +6164,23 @@ class MealTemplateItem extends DataClass
       'id': serializer.toJson<String>(id),
       'templateId': serializer.toJson<String>(templateId),
       'userId': serializer.toJson<String>(userId),
-      'pantryFoodId': serializer.toJson<String>(pantryFoodId),
+      'pantryFoodId': serializer.toJson<String?>(pantryFoodId),
       'servings': serializer.toJson<double>(servings),
       'synced': serializer.toJson<bool>(synced),
+      'name': serializer.toJson<String?>(name),
+      'calories': serializer.toJson<double?>(calories),
+      'protein': serializer.toJson<double?>(protein),
+      'carbs': serializer.toJson<double?>(carbs),
+      'fat': serializer.toJson<double?>(fat),
+      'sugar': serializer.toJson<double?>(sugar),
+      'fiber': serializer.toJson<double?>(fiber),
+      'sodium': serializer.toJson<double?>(sodium),
+      'cholesterol': serializer.toJson<double?>(cholesterol),
+      'potassium': serializer.toJson<double?>(potassium),
+      'calcium': serializer.toJson<double?>(calcium),
+      'iron': serializer.toJson<double?>(iron),
+      'vitaminA': serializer.toJson<double?>(vitaminA),
+      'vitaminC': serializer.toJson<double?>(vitaminC),
     };
   }
 
@@ -5752,16 +6188,44 @@ class MealTemplateItem extends DataClass
     String? id,
     String? templateId,
     String? userId,
-    String? pantryFoodId,
+    Value<String?> pantryFoodId = const Value.absent(),
     double? servings,
     bool? synced,
+    Value<String?> name = const Value.absent(),
+    Value<double?> calories = const Value.absent(),
+    Value<double?> protein = const Value.absent(),
+    Value<double?> carbs = const Value.absent(),
+    Value<double?> fat = const Value.absent(),
+    Value<double?> sugar = const Value.absent(),
+    Value<double?> fiber = const Value.absent(),
+    Value<double?> sodium = const Value.absent(),
+    Value<double?> cholesterol = const Value.absent(),
+    Value<double?> potassium = const Value.absent(),
+    Value<double?> calcium = const Value.absent(),
+    Value<double?> iron = const Value.absent(),
+    Value<double?> vitaminA = const Value.absent(),
+    Value<double?> vitaminC = const Value.absent(),
   }) => MealTemplateItem(
     id: id ?? this.id,
     templateId: templateId ?? this.templateId,
     userId: userId ?? this.userId,
-    pantryFoodId: pantryFoodId ?? this.pantryFoodId,
+    pantryFoodId: pantryFoodId.present ? pantryFoodId.value : this.pantryFoodId,
     servings: servings ?? this.servings,
     synced: synced ?? this.synced,
+    name: name.present ? name.value : this.name,
+    calories: calories.present ? calories.value : this.calories,
+    protein: protein.present ? protein.value : this.protein,
+    carbs: carbs.present ? carbs.value : this.carbs,
+    fat: fat.present ? fat.value : this.fat,
+    sugar: sugar.present ? sugar.value : this.sugar,
+    fiber: fiber.present ? fiber.value : this.fiber,
+    sodium: sodium.present ? sodium.value : this.sodium,
+    cholesterol: cholesterol.present ? cholesterol.value : this.cholesterol,
+    potassium: potassium.present ? potassium.value : this.potassium,
+    calcium: calcium.present ? calcium.value : this.calcium,
+    iron: iron.present ? iron.value : this.iron,
+    vitaminA: vitaminA.present ? vitaminA.value : this.vitaminA,
+    vitaminC: vitaminC.present ? vitaminC.value : this.vitaminC,
   );
   MealTemplateItem copyWithCompanion(MealTemplateItemsCompanion data) {
     return MealTemplateItem(
@@ -5775,6 +6239,21 @@ class MealTemplateItem extends DataClass
               : this.pantryFoodId,
       servings: data.servings.present ? data.servings.value : this.servings,
       synced: data.synced.present ? data.synced.value : this.synced,
+      name: data.name.present ? data.name.value : this.name,
+      calories: data.calories.present ? data.calories.value : this.calories,
+      protein: data.protein.present ? data.protein.value : this.protein,
+      carbs: data.carbs.present ? data.carbs.value : this.carbs,
+      fat: data.fat.present ? data.fat.value : this.fat,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
+      cholesterol:
+          data.cholesterol.present ? data.cholesterol.value : this.cholesterol,
+      potassium: data.potassium.present ? data.potassium.value : this.potassium,
+      calcium: data.calcium.present ? data.calcium.value : this.calcium,
+      iron: data.iron.present ? data.iron.value : this.iron,
+      vitaminA: data.vitaminA.present ? data.vitaminA.value : this.vitaminA,
+      vitaminC: data.vitaminC.present ? data.vitaminC.value : this.vitaminC,
     );
   }
 
@@ -5786,14 +6265,48 @@ class MealTemplateItem extends DataClass
           ..write('userId: $userId, ')
           ..write('pantryFoodId: $pantryFoodId, ')
           ..write('servings: $servings, ')
-          ..write('synced: $synced')
+          ..write('synced: $synced, ')
+          ..write('name: $name, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbs: $carbs, ')
+          ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, templateId, userId, pantryFoodId, servings, synced);
+  int get hashCode => Object.hash(
+    id,
+    templateId,
+    userId,
+    pantryFoodId,
+    servings,
+    synced,
+    name,
+    calories,
+    protein,
+    carbs,
+    fat,
+    sugar,
+    fiber,
+    sodium,
+    cholesterol,
+    potassium,
+    calcium,
+    iron,
+    vitaminA,
+    vitaminC,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5803,16 +6316,44 @@ class MealTemplateItem extends DataClass
           other.userId == this.userId &&
           other.pantryFoodId == this.pantryFoodId &&
           other.servings == this.servings &&
-          other.synced == this.synced);
+          other.synced == this.synced &&
+          other.name == this.name &&
+          other.calories == this.calories &&
+          other.protein == this.protein &&
+          other.carbs == this.carbs &&
+          other.fat == this.fat &&
+          other.sugar == this.sugar &&
+          other.fiber == this.fiber &&
+          other.sodium == this.sodium &&
+          other.cholesterol == this.cholesterol &&
+          other.potassium == this.potassium &&
+          other.calcium == this.calcium &&
+          other.iron == this.iron &&
+          other.vitaminA == this.vitaminA &&
+          other.vitaminC == this.vitaminC);
 }
 
 class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
   final Value<String> id;
   final Value<String> templateId;
   final Value<String> userId;
-  final Value<String> pantryFoodId;
+  final Value<String?> pantryFoodId;
   final Value<double> servings;
   final Value<bool> synced;
+  final Value<String?> name;
+  final Value<double?> calories;
+  final Value<double?> protein;
+  final Value<double?> carbs;
+  final Value<double?> fat;
+  final Value<double?> sugar;
+  final Value<double?> fiber;
+  final Value<double?> sodium;
+  final Value<double?> cholesterol;
+  final Value<double?> potassium;
+  final Value<double?> calcium;
+  final Value<double?> iron;
+  final Value<double?> vitaminA;
+  final Value<double?> vitaminC;
   final Value<int> rowid;
   const MealTemplateItemsCompanion({
     this.id = const Value.absent(),
@@ -5821,20 +6362,47 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     this.pantryFoodId = const Value.absent(),
     this.servings = const Value.absent(),
     this.synced = const Value.absent(),
+    this.name = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.protein = const Value.absent(),
+    this.carbs = const Value.absent(),
+    this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MealTemplateItemsCompanion.insert({
     required String id,
     required String templateId,
     required String userId,
-    required String pantryFoodId,
+    this.pantryFoodId = const Value.absent(),
     this.servings = const Value.absent(),
     this.synced = const Value.absent(),
+    this.name = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.protein = const Value.absent(),
+    this.carbs = const Value.absent(),
+    this.fat = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sodium = const Value.absent(),
+    this.cholesterol = const Value.absent(),
+    this.potassium = const Value.absent(),
+    this.calcium = const Value.absent(),
+    this.iron = const Value.absent(),
+    this.vitaminA = const Value.absent(),
+    this.vitaminC = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        templateId = Value(templateId),
-       userId = Value(userId),
-       pantryFoodId = Value(pantryFoodId);
+       userId = Value(userId);
   static Insertable<MealTemplateItem> custom({
     Expression<String>? id,
     Expression<String>? templateId,
@@ -5842,6 +6410,20 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     Expression<String>? pantryFoodId,
     Expression<double>? servings,
     Expression<bool>? synced,
+    Expression<String>? name,
+    Expression<double>? calories,
+    Expression<double>? protein,
+    Expression<double>? carbs,
+    Expression<double>? fat,
+    Expression<double>? sugar,
+    Expression<double>? fiber,
+    Expression<double>? sodium,
+    Expression<double>? cholesterol,
+    Expression<double>? potassium,
+    Expression<double>? calcium,
+    Expression<double>? iron,
+    Expression<double>? vitaminA,
+    Expression<double>? vitaminC,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5851,6 +6433,20 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
       if (pantryFoodId != null) 'pantry_food_id': pantryFoodId,
       if (servings != null) 'servings': servings,
       if (synced != null) 'synced': synced,
+      if (name != null) 'name': name,
+      if (calories != null) 'calories': calories,
+      if (protein != null) 'protein': protein,
+      if (carbs != null) 'carbs': carbs,
+      if (fat != null) 'fat': fat,
+      if (sugar != null) 'sugar': sugar,
+      if (fiber != null) 'fiber': fiber,
+      if (sodium != null) 'sodium': sodium,
+      if (cholesterol != null) 'cholesterol': cholesterol,
+      if (potassium != null) 'potassium': potassium,
+      if (calcium != null) 'calcium': calcium,
+      if (iron != null) 'iron': iron,
+      if (vitaminA != null) 'vitamin_a': vitaminA,
+      if (vitaminC != null) 'vitamin_c': vitaminC,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5859,9 +6455,23 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     Value<String>? id,
     Value<String>? templateId,
     Value<String>? userId,
-    Value<String>? pantryFoodId,
+    Value<String?>? pantryFoodId,
     Value<double>? servings,
     Value<bool>? synced,
+    Value<String?>? name,
+    Value<double?>? calories,
+    Value<double?>? protein,
+    Value<double?>? carbs,
+    Value<double?>? fat,
+    Value<double?>? sugar,
+    Value<double?>? fiber,
+    Value<double?>? sodium,
+    Value<double?>? cholesterol,
+    Value<double?>? potassium,
+    Value<double?>? calcium,
+    Value<double?>? iron,
+    Value<double?>? vitaminA,
+    Value<double?>? vitaminC,
     Value<int>? rowid,
   }) {
     return MealTemplateItemsCompanion(
@@ -5871,6 +6481,20 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
       pantryFoodId: pantryFoodId ?? this.pantryFoodId,
       servings: servings ?? this.servings,
       synced: synced ?? this.synced,
+      name: name ?? this.name,
+      calories: calories ?? this.calories,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fat: fat ?? this.fat,
+      sugar: sugar ?? this.sugar,
+      fiber: fiber ?? this.fiber,
+      sodium: sodium ?? this.sodium,
+      cholesterol: cholesterol ?? this.cholesterol,
+      potassium: potassium ?? this.potassium,
+      calcium: calcium ?? this.calcium,
+      iron: iron ?? this.iron,
+      vitaminA: vitaminA ?? this.vitaminA,
+      vitaminC: vitaminC ?? this.vitaminC,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5896,6 +6520,48 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (calories.present) {
+      map['calories'] = Variable<double>(calories.value);
+    }
+    if (protein.present) {
+      map['protein'] = Variable<double>(protein.value);
+    }
+    if (carbs.present) {
+      map['carbs'] = Variable<double>(carbs.value);
+    }
+    if (fat.present) {
+      map['fat'] = Variable<double>(fat.value);
+    }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
+    if (cholesterol.present) {
+      map['cholesterol'] = Variable<double>(cholesterol.value);
+    }
+    if (potassium.present) {
+      map['potassium'] = Variable<double>(potassium.value);
+    }
+    if (calcium.present) {
+      map['calcium'] = Variable<double>(calcium.value);
+    }
+    if (iron.present) {
+      map['iron'] = Variable<double>(iron.value);
+    }
+    if (vitaminA.present) {
+      map['vitamin_a'] = Variable<double>(vitaminA.value);
+    }
+    if (vitaminC.present) {
+      map['vitamin_c'] = Variable<double>(vitaminC.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5910,6 +6576,954 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
           ..write('userId: $userId, ')
           ..write('pantryFoodId: $pantryFoodId, ')
           ..write('servings: $servings, ')
+          ..write('synced: $synced, ')
+          ..write('name: $name, ')
+          ..write('calories: $calories, ')
+          ..write('protein: $protein, ')
+          ..write('carbs: $carbs, ')
+          ..write('fat: $fat, ')
+          ..write('sugar: $sugar, ')
+          ..write('fiber: $fiber, ')
+          ..write('sodium: $sodium, ')
+          ..write('cholesterol: $cholesterol, ')
+          ..write('potassium: $potassium, ')
+          ..write('calcium: $calcium, ')
+          ..write('iron: $iron, ')
+          ..write('vitaminA: $vitaminA, ')
+          ..write('vitaminC: $vitaminC, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TrackedSubstancesTable extends TrackedSubstances
+    with TableInfo<$TrackedSubstancesTable, TrackedSubstance> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrackedSubstancesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitLabelMeta = const VerificationMeta(
+    'unitLabel',
+  );
+  @override
+  late final GeneratedColumn<String> unitLabel = GeneratedColumn<String>(
+    'unit_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('drink'),
+  );
+  static const VerificationMeta _dailyLimitMeta = const VerificationMeta(
+    'dailyLimit',
+  );
+  @override
+  late final GeneratedColumn<double> dailyLimit = GeneratedColumn<double>(
+    'daily_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weeklyLimitMeta = const VerificationMeta(
+    'weeklyLimit',
+  );
+  @override
+  late final GeneratedColumn<double> weeklyLimit = GeneratedColumn<double>(
+    'weekly_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    name,
+    unitLabel,
+    dailyLimit,
+    weeklyLimit,
+    createdAt,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tracked_substances';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrackedSubstance> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit_label')) {
+      context.handle(
+        _unitLabelMeta,
+        unitLabel.isAcceptableOrUnknown(data['unit_label']!, _unitLabelMeta),
+      );
+    }
+    if (data.containsKey('daily_limit')) {
+      context.handle(
+        _dailyLimitMeta,
+        dailyLimit.isAcceptableOrUnknown(data['daily_limit']!, _dailyLimitMeta),
+      );
+    }
+    if (data.containsKey('weekly_limit')) {
+      context.handle(
+        _weeklyLimitMeta,
+        weeklyLimit.isAcceptableOrUnknown(
+          data['weekly_limit']!,
+          _weeklyLimitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TrackedSubstance map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrackedSubstance(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      unitLabel:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}unit_label'],
+          )!,
+      dailyLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}daily_limit'],
+      ),
+      weeklyLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weekly_limit'],
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $TrackedSubstancesTable createAlias(String alias) {
+    return $TrackedSubstancesTable(attachedDatabase, alias);
+  }
+}
+
+class TrackedSubstance extends DataClass
+    implements Insertable<TrackedSubstance> {
+  final String id;
+  final String userId;
+  final String name;
+
+  /// Shown after counts, e.g. "3 drinks", "2 cigarettes".
+  final String unitLabel;
+
+  /// Optional limits — null means no target is set for that window.
+  final double? dailyLimit;
+  final double? weeklyLimit;
+  final DateTime createdAt;
+  final bool synced;
+  const TrackedSubstance({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.unitLabel,
+    this.dailyLimit,
+    this.weeklyLimit,
+    required this.createdAt,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['name'] = Variable<String>(name);
+    map['unit_label'] = Variable<String>(unitLabel);
+    if (!nullToAbsent || dailyLimit != null) {
+      map['daily_limit'] = Variable<double>(dailyLimit);
+    }
+    if (!nullToAbsent || weeklyLimit != null) {
+      map['weekly_limit'] = Variable<double>(weeklyLimit);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  TrackedSubstancesCompanion toCompanion(bool nullToAbsent) {
+    return TrackedSubstancesCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      name: Value(name),
+      unitLabel: Value(unitLabel),
+      dailyLimit:
+          dailyLimit == null && nullToAbsent
+              ? const Value.absent()
+              : Value(dailyLimit),
+      weeklyLimit:
+          weeklyLimit == null && nullToAbsent
+              ? const Value.absent()
+              : Value(weeklyLimit),
+      createdAt: Value(createdAt),
+      synced: Value(synced),
+    );
+  }
+
+  factory TrackedSubstance.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrackedSubstance(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      unitLabel: serializer.fromJson<String>(json['unitLabel']),
+      dailyLimit: serializer.fromJson<double?>(json['dailyLimit']),
+      weeklyLimit: serializer.fromJson<double?>(json['weeklyLimit']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'name': serializer.toJson<String>(name),
+      'unitLabel': serializer.toJson<String>(unitLabel),
+      'dailyLimit': serializer.toJson<double?>(dailyLimit),
+      'weeklyLimit': serializer.toJson<double?>(weeklyLimit),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  TrackedSubstance copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? unitLabel,
+    Value<double?> dailyLimit = const Value.absent(),
+    Value<double?> weeklyLimit = const Value.absent(),
+    DateTime? createdAt,
+    bool? synced,
+  }) => TrackedSubstance(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    unitLabel: unitLabel ?? this.unitLabel,
+    dailyLimit: dailyLimit.present ? dailyLimit.value : this.dailyLimit,
+    weeklyLimit: weeklyLimit.present ? weeklyLimit.value : this.weeklyLimit,
+    createdAt: createdAt ?? this.createdAt,
+    synced: synced ?? this.synced,
+  );
+  TrackedSubstance copyWithCompanion(TrackedSubstancesCompanion data) {
+    return TrackedSubstance(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      unitLabel: data.unitLabel.present ? data.unitLabel.value : this.unitLabel,
+      dailyLimit:
+          data.dailyLimit.present ? data.dailyLimit.value : this.dailyLimit,
+      weeklyLimit:
+          data.weeklyLimit.present ? data.weeklyLimit.value : this.weeklyLimit,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackedSubstance(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('unitLabel: $unitLabel, ')
+          ..write('dailyLimit: $dailyLimit, ')
+          ..write('weeklyLimit: $weeklyLimit, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    name,
+    unitLabel,
+    dailyLimit,
+    weeklyLimit,
+    createdAt,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrackedSubstance &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.unitLabel == this.unitLabel &&
+          other.dailyLimit == this.dailyLimit &&
+          other.weeklyLimit == this.weeklyLimit &&
+          other.createdAt == this.createdAt &&
+          other.synced == this.synced);
+}
+
+class TrackedSubstancesCompanion extends UpdateCompanion<TrackedSubstance> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> name;
+  final Value<String> unitLabel;
+  final Value<double?> dailyLimit;
+  final Value<double?> weeklyLimit;
+  final Value<DateTime> createdAt;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const TrackedSubstancesCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.unitLabel = const Value.absent(),
+    this.dailyLimit = const Value.absent(),
+    this.weeklyLimit = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrackedSubstancesCompanion.insert({
+    required String id,
+    required String userId,
+    required String name,
+    this.unitLabel = const Value.absent(),
+    this.dailyLimit = const Value.absent(),
+    this.weeklyLimit = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       name = Value(name);
+  static Insertable<TrackedSubstance> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? unitLabel,
+    Expression<double>? dailyLimit,
+    Expression<double>? weeklyLimit,
+    Expression<DateTime>? createdAt,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (unitLabel != null) 'unit_label': unitLabel,
+      if (dailyLimit != null) 'daily_limit': dailyLimit,
+      if (weeklyLimit != null) 'weekly_limit': weeklyLimit,
+      if (createdAt != null) 'created_at': createdAt,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrackedSubstancesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? name,
+    Value<String>? unitLabel,
+    Value<double?>? dailyLimit,
+    Value<double?>? weeklyLimit,
+    Value<DateTime>? createdAt,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return TrackedSubstancesCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      unitLabel: unitLabel ?? this.unitLabel,
+      dailyLimit: dailyLimit ?? this.dailyLimit,
+      weeklyLimit: weeklyLimit ?? this.weeklyLimit,
+      createdAt: createdAt ?? this.createdAt,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (unitLabel.present) {
+      map['unit_label'] = Variable<String>(unitLabel.value);
+    }
+    if (dailyLimit.present) {
+      map['daily_limit'] = Variable<double>(dailyLimit.value);
+    }
+    if (weeklyLimit.present) {
+      map['weekly_limit'] = Variable<double>(weeklyLimit.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackedSubstancesCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('unitLabel: $unitLabel, ')
+          ..write('dailyLimit: $dailyLimit, ')
+          ..write('weeklyLimit: $weeklyLimit, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SubstanceLogsTable extends SubstanceLogs
+    with TableInfo<$SubstanceLogsTable, SubstanceLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SubstanceLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _substanceIdMeta = const VerificationMeta(
+    'substanceId',
+  );
+  @override
+  late final GeneratedColumn<String> substanceId = GeneratedColumn<String>(
+    'substance_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _loggedAtMeta = const VerificationMeta(
+    'loggedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> loggedAt = GeneratedColumn<DateTime>(
+    'logged_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    substanceId,
+    userId,
+    amount,
+    loggedAt,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'substance_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SubstanceLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('substance_id')) {
+      context.handle(
+        _substanceIdMeta,
+        substanceId.isAcceptableOrUnknown(
+          data['substance_id']!,
+          _substanceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_substanceIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    }
+    if (data.containsKey('logged_at')) {
+      context.handle(
+        _loggedAtMeta,
+        loggedAt.isAcceptableOrUnknown(data['logged_at']!, _loggedAtMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SubstanceLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SubstanceLog(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      substanceId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}substance_id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      amount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}amount'],
+          )!,
+      loggedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}logged_at'],
+          )!,
+      synced:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}synced'],
+          )!,
+    );
+  }
+
+  @override
+  $SubstanceLogsTable createAlias(String alias) {
+    return $SubstanceLogsTable(attachedDatabase, alias);
+  }
+}
+
+class SubstanceLog extends DataClass implements Insertable<SubstanceLog> {
+  final String id;
+  final String substanceId;
+  final String userId;
+  final double amount;
+  final DateTime loggedAt;
+  final bool synced;
+  const SubstanceLog({
+    required this.id,
+    required this.substanceId,
+    required this.userId,
+    required this.amount,
+    required this.loggedAt,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['substance_id'] = Variable<String>(substanceId);
+    map['user_id'] = Variable<String>(userId);
+    map['amount'] = Variable<double>(amount);
+    map['logged_at'] = Variable<DateTime>(loggedAt);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  SubstanceLogsCompanion toCompanion(bool nullToAbsent) {
+    return SubstanceLogsCompanion(
+      id: Value(id),
+      substanceId: Value(substanceId),
+      userId: Value(userId),
+      amount: Value(amount),
+      loggedAt: Value(loggedAt),
+      synced: Value(synced),
+    );
+  }
+
+  factory SubstanceLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SubstanceLog(
+      id: serializer.fromJson<String>(json['id']),
+      substanceId: serializer.fromJson<String>(json['substanceId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      amount: serializer.fromJson<double>(json['amount']),
+      loggedAt: serializer.fromJson<DateTime>(json['loggedAt']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'substanceId': serializer.toJson<String>(substanceId),
+      'userId': serializer.toJson<String>(userId),
+      'amount': serializer.toJson<double>(amount),
+      'loggedAt': serializer.toJson<DateTime>(loggedAt),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  SubstanceLog copyWith({
+    String? id,
+    String? substanceId,
+    String? userId,
+    double? amount,
+    DateTime? loggedAt,
+    bool? synced,
+  }) => SubstanceLog(
+    id: id ?? this.id,
+    substanceId: substanceId ?? this.substanceId,
+    userId: userId ?? this.userId,
+    amount: amount ?? this.amount,
+    loggedAt: loggedAt ?? this.loggedAt,
+    synced: synced ?? this.synced,
+  );
+  SubstanceLog copyWithCompanion(SubstanceLogsCompanion data) {
+    return SubstanceLog(
+      id: data.id.present ? data.id.value : this.id,
+      substanceId:
+          data.substanceId.present ? data.substanceId.value : this.substanceId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      loggedAt: data.loggedAt.present ? data.loggedAt.value : this.loggedAt,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubstanceLog(')
+          ..write('id: $id, ')
+          ..write('substanceId: $substanceId, ')
+          ..write('userId: $userId, ')
+          ..write('amount: $amount, ')
+          ..write('loggedAt: $loggedAt, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, substanceId, userId, amount, loggedAt, synced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SubstanceLog &&
+          other.id == this.id &&
+          other.substanceId == this.substanceId &&
+          other.userId == this.userId &&
+          other.amount == this.amount &&
+          other.loggedAt == this.loggedAt &&
+          other.synced == this.synced);
+}
+
+class SubstanceLogsCompanion extends UpdateCompanion<SubstanceLog> {
+  final Value<String> id;
+  final Value<String> substanceId;
+  final Value<String> userId;
+  final Value<double> amount;
+  final Value<DateTime> loggedAt;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const SubstanceLogsCompanion({
+    this.id = const Value.absent(),
+    this.substanceId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.loggedAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SubstanceLogsCompanion.insert({
+    required String id,
+    required String substanceId,
+    required String userId,
+    this.amount = const Value.absent(),
+    this.loggedAt = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       substanceId = Value(substanceId),
+       userId = Value(userId);
+  static Insertable<SubstanceLog> custom({
+    Expression<String>? id,
+    Expression<String>? substanceId,
+    Expression<String>? userId,
+    Expression<double>? amount,
+    Expression<DateTime>? loggedAt,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (substanceId != null) 'substance_id': substanceId,
+      if (userId != null) 'user_id': userId,
+      if (amount != null) 'amount': amount,
+      if (loggedAt != null) 'logged_at': loggedAt,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SubstanceLogsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? substanceId,
+    Value<String>? userId,
+    Value<double>? amount,
+    Value<DateTime>? loggedAt,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return SubstanceLogsCompanion(
+      id: id ?? this.id,
+      substanceId: substanceId ?? this.substanceId,
+      userId: userId ?? this.userId,
+      amount: amount ?? this.amount,
+      loggedAt: loggedAt ?? this.loggedAt,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (substanceId.present) {
+      map['substance_id'] = Variable<String>(substanceId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (loggedAt.present) {
+      map['logged_at'] = Variable<DateTime>(loggedAt.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubstanceLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('substanceId: $substanceId, ')
+          ..write('userId: $userId, ')
+          ..write('amount: $amount, ')
+          ..write('loggedAt: $loggedAt, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5934,6 +7548,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MealTemplatesTable mealTemplates = $MealTemplatesTable(this);
   late final $MealTemplateItemsTable mealTemplateItems =
       $MealTemplateItemsTable(this);
+  late final $TrackedSubstancesTable trackedSubstances =
+      $TrackedSubstancesTable(this);
+  late final $SubstanceLogsTable substanceLogs = $SubstanceLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5949,6 +7566,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pantryFoods,
     mealTemplates,
     mealTemplateItems,
+    trackedSubstances,
+    substanceLogs,
   ];
 }
 
@@ -8710,9 +10329,23 @@ typedef $$MealTemplateItemsTableCreateCompanionBuilder =
       required String id,
       required String templateId,
       required String userId,
-      required String pantryFoodId,
+      Value<String?> pantryFoodId,
       Value<double> servings,
       Value<bool> synced,
+      Value<String?> name,
+      Value<double?> calories,
+      Value<double?> protein,
+      Value<double?> carbs,
+      Value<double?> fat,
+      Value<double?> sugar,
+      Value<double?> fiber,
+      Value<double?> sodium,
+      Value<double?> cholesterol,
+      Value<double?> potassium,
+      Value<double?> calcium,
+      Value<double?> iron,
+      Value<double?> vitaminA,
+      Value<double?> vitaminC,
       Value<int> rowid,
     });
 typedef $$MealTemplateItemsTableUpdateCompanionBuilder =
@@ -8720,9 +10353,23 @@ typedef $$MealTemplateItemsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> templateId,
       Value<String> userId,
-      Value<String> pantryFoodId,
+      Value<String?> pantryFoodId,
       Value<double> servings,
       Value<bool> synced,
+      Value<String?> name,
+      Value<double?> calories,
+      Value<double?> protein,
+      Value<double?> carbs,
+      Value<double?> fat,
+      Value<double?> sugar,
+      Value<double?> fiber,
+      Value<double?> sodium,
+      Value<double?> cholesterol,
+      Value<double?> potassium,
+      Value<double?> calcium,
+      Value<double?> iron,
+      Value<double?> vitaminA,
+      Value<double?> vitaminC,
       Value<int> rowid,
     });
 
@@ -8762,6 +10409,76 @@ class $$MealTemplateItemsTableFilterComposer
 
   ColumnFilters<bool> get synced => $composableBuilder(
     column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get protein => $composableBuilder(
+    column: $table.protein,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbs => $composableBuilder(
+    column: $table.carbs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fat => $composableBuilder(
+    column: $table.fat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8804,6 +10521,76 @@ class $$MealTemplateItemsTableOrderingComposer
     column: $table.synced,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get protein => $composableBuilder(
+    column: $table.protein,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbs => $composableBuilder(
+    column: $table.carbs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fat => $composableBuilder(
+    column: $table.fat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get potassium => $composableBuilder(
+    column: $table.potassium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calcium => $composableBuilder(
+    column: $table.calcium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get iron => $composableBuilder(
+    column: $table.iron,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminA => $composableBuilder(
+    column: $table.vitaminA,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get vitaminC => $composableBuilder(
+    column: $table.vitaminC,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MealTemplateItemsTableAnnotationComposer
@@ -8836,6 +10623,50 @@ class $$MealTemplateItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get calories =>
+      $composableBuilder(column: $table.calories, builder: (column) => column);
+
+  GeneratedColumn<double> get protein =>
+      $composableBuilder(column: $table.protein, builder: (column) => column);
+
+  GeneratedColumn<double> get carbs =>
+      $composableBuilder(column: $table.carbs, builder: (column) => column);
+
+  GeneratedColumn<double> get fat =>
+      $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
+
+  GeneratedColumn<double> get cholesterol => $composableBuilder(
+    column: $table.cholesterol,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get potassium =>
+      $composableBuilder(column: $table.potassium, builder: (column) => column);
+
+  GeneratedColumn<double> get calcium =>
+      $composableBuilder(column: $table.calcium, builder: (column) => column);
+
+  GeneratedColumn<double> get iron =>
+      $composableBuilder(column: $table.iron, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminA =>
+      $composableBuilder(column: $table.vitaminA, builder: (column) => column);
+
+  GeneratedColumn<double> get vitaminC =>
+      $composableBuilder(column: $table.vitaminC, builder: (column) => column);
 }
 
 class $$MealTemplateItemsTableTableManager
@@ -8887,9 +10718,23 @@ class $$MealTemplateItemsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> templateId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
-                Value<String> pantryFoodId = const Value.absent(),
+                Value<String?> pantryFoodId = const Value.absent(),
                 Value<double> servings = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<double?> calories = const Value.absent(),
+                Value<double?> protein = const Value.absent(),
+                Value<double?> carbs = const Value.absent(),
+                Value<double?> fat = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
+                Value<double?> cholesterol = const Value.absent(),
+                Value<double?> potassium = const Value.absent(),
+                Value<double?> calcium = const Value.absent(),
+                Value<double?> iron = const Value.absent(),
+                Value<double?> vitaminA = const Value.absent(),
+                Value<double?> vitaminC = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealTemplateItemsCompanion(
                 id: id,
@@ -8898,6 +10743,20 @@ class $$MealTemplateItemsTableTableManager
                 pantryFoodId: pantryFoodId,
                 servings: servings,
                 synced: synced,
+                name: name,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
+                sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8905,9 +10764,23 @@ class $$MealTemplateItemsTableTableManager
                 required String id,
                 required String templateId,
                 required String userId,
-                required String pantryFoodId,
+                Value<String?> pantryFoodId = const Value.absent(),
                 Value<double> servings = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<double?> calories = const Value.absent(),
+                Value<double?> protein = const Value.absent(),
+                Value<double?> carbs = const Value.absent(),
+                Value<double?> fat = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
+                Value<double?> cholesterol = const Value.absent(),
+                Value<double?> potassium = const Value.absent(),
+                Value<double?> calcium = const Value.absent(),
+                Value<double?> iron = const Value.absent(),
+                Value<double?> vitaminA = const Value.absent(),
+                Value<double?> vitaminC = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealTemplateItemsCompanion.insert(
                 id: id,
@@ -8916,6 +10789,20 @@ class $$MealTemplateItemsTableTableManager
                 pantryFoodId: pantryFoodId,
                 servings: servings,
                 synced: synced,
+                name: name,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
+                sugar: sugar,
+                fiber: fiber,
+                sodium: sodium,
+                cholesterol: cholesterol,
+                potassium: potassium,
+                calcium: calcium,
+                iron: iron,
+                vitaminA: vitaminA,
+                vitaminC: vitaminC,
                 rowid: rowid,
               ),
           withReferenceMapper:
@@ -8954,6 +10841,525 @@ typedef $$MealTemplateItemsTableProcessedTableManager =
       MealTemplateItem,
       PrefetchHooks Function()
     >;
+typedef $$TrackedSubstancesTableCreateCompanionBuilder =
+    TrackedSubstancesCompanion Function({
+      required String id,
+      required String userId,
+      required String name,
+      Value<String> unitLabel,
+      Value<double?> dailyLimit,
+      Value<double?> weeklyLimit,
+      Value<DateTime> createdAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$TrackedSubstancesTableUpdateCompanionBuilder =
+    TrackedSubstancesCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> name,
+      Value<String> unitLabel,
+      Value<double?> dailyLimit,
+      Value<double?> weeklyLimit,
+      Value<DateTime> createdAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$TrackedSubstancesTableFilterComposer
+    extends Composer<_$AppDatabase, $TrackedSubstancesTable> {
+  $$TrackedSubstancesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unitLabel => $composableBuilder(
+    column: $table.unitLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dailyLimit => $composableBuilder(
+    column: $table.dailyLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weeklyLimit => $composableBuilder(
+    column: $table.weeklyLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrackedSubstancesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrackedSubstancesTable> {
+  $$TrackedSubstancesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unitLabel => $composableBuilder(
+    column: $table.unitLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dailyLimit => $composableBuilder(
+    column: $table.dailyLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weeklyLimit => $composableBuilder(
+    column: $table.weeklyLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrackedSubstancesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrackedSubstancesTable> {
+  $$TrackedSubstancesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get unitLabel =>
+      $composableBuilder(column: $table.unitLabel, builder: (column) => column);
+
+  GeneratedColumn<double> get dailyLimit => $composableBuilder(
+    column: $table.dailyLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weeklyLimit => $composableBuilder(
+    column: $table.weeklyLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$TrackedSubstancesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrackedSubstancesTable,
+          TrackedSubstance,
+          $$TrackedSubstancesTableFilterComposer,
+          $$TrackedSubstancesTableOrderingComposer,
+          $$TrackedSubstancesTableAnnotationComposer,
+          $$TrackedSubstancesTableCreateCompanionBuilder,
+          $$TrackedSubstancesTableUpdateCompanionBuilder,
+          (
+            TrackedSubstance,
+            BaseReferences<
+              _$AppDatabase,
+              $TrackedSubstancesTable,
+              TrackedSubstance
+            >,
+          ),
+          TrackedSubstance,
+          PrefetchHooks Function()
+        > {
+  $$TrackedSubstancesTableTableManager(
+    _$AppDatabase db,
+    $TrackedSubstancesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$TrackedSubstancesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$TrackedSubstancesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$TrackedSubstancesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> unitLabel = const Value.absent(),
+                Value<double?> dailyLimit = const Value.absent(),
+                Value<double?> weeklyLimit = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackedSubstancesCompanion(
+                id: id,
+                userId: userId,
+                name: name,
+                unitLabel: unitLabel,
+                dailyLimit: dailyLimit,
+                weeklyLimit: weeklyLimit,
+                createdAt: createdAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required String name,
+                Value<String> unitLabel = const Value.absent(),
+                Value<double?> dailyLimit = const Value.absent(),
+                Value<double?> weeklyLimit = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackedSubstancesCompanion.insert(
+                id: id,
+                userId: userId,
+                name: name,
+                unitLabel: unitLabel,
+                dailyLimit: dailyLimit,
+                weeklyLimit: weeklyLimit,
+                createdAt: createdAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrackedSubstancesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrackedSubstancesTable,
+      TrackedSubstance,
+      $$TrackedSubstancesTableFilterComposer,
+      $$TrackedSubstancesTableOrderingComposer,
+      $$TrackedSubstancesTableAnnotationComposer,
+      $$TrackedSubstancesTableCreateCompanionBuilder,
+      $$TrackedSubstancesTableUpdateCompanionBuilder,
+      (
+        TrackedSubstance,
+        BaseReferences<
+          _$AppDatabase,
+          $TrackedSubstancesTable,
+          TrackedSubstance
+        >,
+      ),
+      TrackedSubstance,
+      PrefetchHooks Function()
+    >;
+typedef $$SubstanceLogsTableCreateCompanionBuilder =
+    SubstanceLogsCompanion Function({
+      required String id,
+      required String substanceId,
+      required String userId,
+      Value<double> amount,
+      Value<DateTime> loggedAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$SubstanceLogsTableUpdateCompanionBuilder =
+    SubstanceLogsCompanion Function({
+      Value<String> id,
+      Value<String> substanceId,
+      Value<String> userId,
+      Value<double> amount,
+      Value<DateTime> loggedAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+
+class $$SubstanceLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get substanceId => $composableBuilder(
+    column: $table.substanceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SubstanceLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get substanceId => $composableBuilder(
+    column: $table.substanceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SubstanceLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SubstanceLogsTable> {
+  $$SubstanceLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get substanceId => $composableBuilder(
+    column: $table.substanceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get loggedAt =>
+      $composableBuilder(column: $table.loggedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$SubstanceLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SubstanceLogsTable,
+          SubstanceLog,
+          $$SubstanceLogsTableFilterComposer,
+          $$SubstanceLogsTableOrderingComposer,
+          $$SubstanceLogsTableAnnotationComposer,
+          $$SubstanceLogsTableCreateCompanionBuilder,
+          $$SubstanceLogsTableUpdateCompanionBuilder,
+          (
+            SubstanceLog,
+            BaseReferences<_$AppDatabase, $SubstanceLogsTable, SubstanceLog>,
+          ),
+          SubstanceLog,
+          PrefetchHooks Function()
+        > {
+  $$SubstanceLogsTableTableManager(_$AppDatabase db, $SubstanceLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$SubstanceLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$SubstanceLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$SubstanceLogsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> substanceId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+                Value<DateTime> loggedAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubstanceLogsCompanion(
+                id: id,
+                substanceId: substanceId,
+                userId: userId,
+                amount: amount,
+                loggedAt: loggedAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String substanceId,
+                required String userId,
+                Value<double> amount = const Value.absent(),
+                Value<DateTime> loggedAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubstanceLogsCompanion.insert(
+                id: id,
+                substanceId: substanceId,
+                userId: userId,
+                amount: amount,
+                loggedAt: loggedAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SubstanceLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SubstanceLogsTable,
+      SubstanceLog,
+      $$SubstanceLogsTableFilterComposer,
+      $$SubstanceLogsTableOrderingComposer,
+      $$SubstanceLogsTableAnnotationComposer,
+      $$SubstanceLogsTableCreateCompanionBuilder,
+      $$SubstanceLogsTableUpdateCompanionBuilder,
+      (
+        SubstanceLog,
+        BaseReferences<_$AppDatabase, $SubstanceLogsTable, SubstanceLog>,
+      ),
+      SubstanceLog,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8978,4 +11384,8 @@ class $AppDatabaseManager {
       $$MealTemplatesTableTableManager(_db, _db.mealTemplates);
   $$MealTemplateItemsTableTableManager get mealTemplateItems =>
       $$MealTemplateItemsTableTableManager(_db, _db.mealTemplateItems);
+  $$TrackedSubstancesTableTableManager get trackedSubstances =>
+      $$TrackedSubstancesTableTableManager(_db, _db.trackedSubstances);
+  $$SubstanceLogsTableTableManager get substanceLogs =>
+      $$SubstanceLogsTableTableManager(_db, _db.substanceLogs);
 }

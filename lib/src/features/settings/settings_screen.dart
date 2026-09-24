@@ -22,6 +22,11 @@
 //     - Redeem Admin Invite Code — visible only while !isAdmin; the same
 //       invite-code mechanism sign-up offers, for turning an existing
 //       account into an admin without creating a new one
+//   • Tracking section:
+//     - Habit Tracker — opens tracking_screen.dart, for logging quantities
+//       of things being cut back on (alcohol, nicotine, etc.) against an
+//       optional daily/weekly limit; not a bottom-nav tab since it's an
+//       opt-in, personal-use feature (same reasoning as Community/Admin)
 //   • Admin section (only rendered when roleProvider is true):
 //     - Admin Dashboard — opens admin_screen.dart (invite-code generation +
 //       the issue queue)
@@ -60,6 +65,7 @@ import '../onboarding/app_tour.dart';
 import '../legal/terms_screen.dart';
 import '../profile/profile_notifier.dart';
 import '../profile/profile_screen.dart';
+import '../tracking/tracking_screen.dart';
 
 /// Pushes SettingsScreen as a modal route. Every tab's AppBar has a settings
 /// icon in its top-right action slot that calls this, so Settings is reached
@@ -187,6 +193,25 @@ class SettingsScreen extends ConsumerWidget {
                       label: 'Redeem Admin Invite Code',
                       onTap: () => _showRedeemInviteDialog(context),
                     ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              Text('Tracking', style: AppTextStyles.labelSmall),
+              const SizedBox(height: AppSpacing.sm),
+              _SettingsSection(
+                rows: [
+                  _SettingsRow(
+                    icon: Icons.timeline_outlined,
+                    label: 'Habit Tracker',
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TrackingScreen(),
+                          ),
+                        ),
+                  ),
                 ],
               ),
 

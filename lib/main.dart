@@ -16,6 +16,7 @@ import 'src/features/pantry/pantry_notifier.dart';
 import 'src/features/pantry/pantry_screen.dart';
 import 'src/features/presentation/presentation_screen.dart';
 import 'src/features/calendar/calendar_screen.dart';
+import 'src/features/tracking/tracking_notifier.dart';
 
 // main.dart — App entry point and top-level routing.
 //
@@ -130,11 +131,13 @@ class _AppShellState extends ConsumerState<AppShell> {
       await ref
           .read(mealTemplatesNotifierProvider.notifier)
           .pushUnsyncedChanges();
+      await ref.read(trackingNotifierProvider.notifier).pushUnsyncedChanges();
 
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
       ref.read(mealTemplatesNotifierProvider.notifier).syncFromRemote();
+      ref.read(trackingNotifierProvider.notifier).syncFromRemote();
 
       if (mounted) await maybeShowWelcomeSetup(context, ref);
       if (mounted) await maybeStartAppTour(context);

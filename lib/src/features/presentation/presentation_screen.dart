@@ -688,6 +688,92 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
     );
   }
 
+  void _showTemplateOptions(
+    MealTemplateWithItems template,
+    List<PantryFood> pantryFoods,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (sheetContext) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Edit template'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _editTemplate(template, pantryFoods);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.overLimit,
+                  ),
+                  title: const Text('Delete template'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _confirmDeleteTemplate(template);
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Future<void> _confirmDeleteTemplate(MealTemplateWithItems template) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete template?'),
+            content: Text(
+              'Remove "${template.template.name}"? This can\'t be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.overLimit,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await ref
+        .read(mealTemplatesNotifierProvider.notifier)
+        .deleteTemplate(template.template.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Deleted "${template.template.name}"')),
+    );
+  }
+
+  Future<void> _editTemplate(
+    MealTemplateWithItems template,
+    List<PantryFood> pantryFoods,
+  ) async {
+    final pantryFoodsById = {for (final f in pantryFoods) f.id: f};
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder:
+          (_) => _EditTemplateSheet(
+            template: template,
+            pantryFoodsById: pantryFoodsById,
+          ),
+    );
+  }
+
   Future<void> _applyTemplate(MealTemplateWithItems template) async {
     final result = await ref
         .read(mealTemplatesNotifierProvider.notifier)
@@ -766,6 +852,8 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
                       (ctx, i) => _TemplateChip(
                         template: templates[i],
                         onTap: () => _applyTemplate(templates[i]),
+                        onLongPress:
+                            () => _showTemplateOptions(templates[i], foods),
                       ),
                 ),
               ),
@@ -953,21 +1041,27 @@ class _QuickAddChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Saved meal template chip — one-shot action, not a toggle, so it reuses
-// _QuickAddChip's visual language rather than SelectableChip.
+// Saved meal template chip — tap to re-log, long-press for edit/delete.
+// Reuses _QuickAddChip's visual language rather than SelectableChip.
 // ---------------------------------------------------------------------------
 
 class _TemplateChip extends StatelessWidget {
   final MealTemplateWithItems template;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
-  const _TemplateChip({required this.template, required this.onTap});
+  const _TemplateChip({
+    required this.template,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
     final itemCount = template.items.length;
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AppGlass.card(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -1017,6 +1111,158 @@ class _TemplateChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit template sheet — rename a template and remove items from it. There's
+// no add-item flow here; a template's items are only ever seeded by
+// "Save as template" on a real meal (see nutrition_screen.dart).
+// ---------------------------------------------------------------------------
+
+class _EditTemplateSheet extends ConsumerStatefulWidget {
+  final MealTemplateWithItems template;
+  final Map<String, PantryFood> pantryFoodsById;
+
+  const _EditTemplateSheet({
+    required this.template,
+    required this.pantryFoodsById,
+  });
+
+  @override
+  ConsumerState<_EditTemplateSheet> createState() =>
+      _EditTemplateSheetState();
+}
+
+class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
+  late final TextEditingController _nameController;
+  late final List<MealTemplateItem> _items;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.template.template.name,
+    );
+    _items = List.of(widget.template.items);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  String _itemName(MealTemplateItem item) {
+    if (item.pantryFoodId != null) {
+      return widget.pantryFoodsById[item.pantryFoodId]?.name ??
+          'Deleted food';
+    }
+    return item.name ?? 'Food';
+  }
+
+  String _itemSubtitle(MealTemplateItem item) {
+    if (item.pantryFoodId != null) {
+      final servings = item.servings;
+      final label =
+          servings == servings.roundToDouble()
+              ? servings.toStringAsFixed(0)
+              : servings.toStringAsFixed(1);
+      return '$label ${servings == 1 ? 'serving' : 'servings'}';
+    }
+    return '${(item.calories ?? 0).round()} cal';
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty || _items.isEmpty || _saving) return;
+    setState(() => _saving = true);
+
+    await ref
+        .read(mealTemplatesNotifierProvider.notifier)
+        .updateTemplate(
+          templateId: widget.template.template.id,
+          name: name,
+          items: [
+            for (final item in _items) MealTemplateItemInput.fromRow(item),
+          ],
+        );
+
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppDragHandle(),
+          Text('Edit template', style: AppTextStyles.titleMedium),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(labelText: 'Template name'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text(
+                'No items left — delete the template instead of saving it empty.',
+                style: AppTextStyles.bodyMedium,
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _items.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (ctx, i) {
+                  final item = _items[i];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_itemName(item)),
+                    subtitle: Text(_itemSubtitle(item)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => setState(() => _items.removeAt(i)),
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _items.isEmpty || _saving ? null : _save,
+              child:
+                  _saving
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Text('Save'),
+            ),
+          ),
+        ],
       ),
     );
   }

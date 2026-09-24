@@ -43,6 +43,15 @@
 //         before v12 existed, by matching name against pantry foods
 //         (unique matches only — see the onUpgrade block for the two-pass
 //         personal-then-preset logic)
+//   v14 — added TrackedSubstances + SubstanceLogs tables (quantity/limit
+//         tracking for unwanted habits like drinking/smoking — each
+//         substance carries its own optional daily/weekly limit, same
+//         shape as Habits/HabitCompletions rather than nutrition's shared
+//         goals row, since substances are user-defined like habits are)
+//   v15 — made MealTemplateItems.pantryFoodId nullable and added a nullable
+//         name/nutrient snapshot (mirroring FoodEntries' manual-entry
+//         columns) so a template can include manually-entered foods, not
+//         just pantry-linked ones
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -301,15 +310,75 @@ class MealTemplates extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// One pantry food + serving count within a [MealTemplates] row.
+/// One food + serving count within a [MealTemplates] row. Either a pantry
+/// food (via [pantryFoodId], replayed live from the current [PantryFoods]
+/// row at apply time) or a manually-entered food (via the nullable
+/// name/nutrient snapshot columns, replayed as-is since there's no pantry
+/// row to look up).
 class MealTemplateItems extends Table {
   TextColumn get id => text()();
   TextColumn get templateId => text()();
   TextColumn get userId => text()();
 
-  /// Always non-null — templates only bundle pantry foods, not manual entries.
-  TextColumn get pantryFoodId => text()();
+  /// Non-null for a pantry-linked item; null for a manually-entered one.
+  TextColumn get pantryFoodId => text().nullable()();
   RealColumn get servings => real().withDefault(const Constant(1.0))();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  // Manual-entry snapshot — only populated when pantryFoodId is null, mirrors
+  // FoodEntries' manual-entry columns since there's no PantryFood to re-read
+  // servings/macros from at apply time.
+  TextColumn get name => text().nullable()();
+  RealColumn get calories => real().nullable()();
+  RealColumn get protein => real().nullable()();
+  RealColumn get carbs => real().nullable()();
+  RealColumn get fat => real().nullable()();
+  RealColumn get sugar => real().nullable()();
+  RealColumn get fiber => real().nullable()();
+  RealColumn get sodium => real().nullable()();
+  RealColumn get cholesterol => real().nullable()();
+  RealColumn get potassium => real().nullable()();
+  RealColumn get calcium => real().nullable()();
+  RealColumn get iron => real().nullable()();
+  RealColumn get vitaminA => real().nullable()();
+  RealColumn get vitaminC => real().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Tracking tables (unwanted habits — alcohol, nicotine, etc.)
+// ---------------------------------------------------------------------------
+
+/// A user-defined thing to track quantity of (e.g. "Alcohol", "Cigarettes").
+/// Mirrors [Habits] rather than the nutrition tables' shared goals row,
+/// since each substance is user-created with its own name and limits.
+class TrackedSubstances extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get name => text()();
+
+  /// Shown after counts, e.g. "3 drinks", "2 cigarettes".
+  TextColumn get unitLabel => text().withDefault(const Constant('drink'))();
+
+  /// Optional limits — null means no target is set for that window.
+  RealColumn get dailyLimit => real().nullable()();
+  RealColumn get weeklyLimit => real().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One logged occurrence of a [TrackedSubstances] row (e.g. "1 drink at 9pm").
+class SubstanceLogs extends Table {
+  TextColumn get id => text()();
+  TextColumn get substanceId => text()();
+  TextColumn get userId => text()();
+  RealColumn get amount => real().withDefault(const Constant(1.0))();
+  DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
   @override
@@ -334,13 +403,15 @@ class MealTemplateItems extends Table {
     PantryFoods,
     MealTemplates,
     MealTemplateItems,
+    TrackedSubstances,
+    SubstanceLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 15;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -486,6 +557,23 @@ class AppDatabase extends _$AppDatabase {
                 AND lower(trim(pf.name)) = lower(trim(food_entries.name))
             ) = 1
         ''');
+      }
+      if (from < 14) {
+        await m.createTable(trackedSubstances);
+        await m.createTable(substanceLogs);
+      }
+      if (from < 15) {
+        // SQLite can't relax a column's NOT NULL constraint via ALTER TABLE,
+        // so rebuild meal_template_items with pantry_food_id nullable plus
+        // the new manual-entry snapshot columns, carrying existing rows over
+        // (they're all pantry-linked, so the new columns come in NULL).
+        await customStatement('ALTER TABLE meal_template_items RENAME TO meal_template_items_old');
+        await m.createTable(mealTemplateItems);
+        await customStatement('''
+          INSERT INTO meal_template_items (id, template_id, user_id, pantry_food_id, servings, synced)
+          SELECT id, template_id, user_id, pantry_food_id, servings, synced FROM meal_template_items_old
+        ''');
+        await customStatement('DROP TABLE meal_template_items_old');
       }
     },
   );

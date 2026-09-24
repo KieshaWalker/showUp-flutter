@@ -557,12 +557,181 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
 // Meal templates — saved, reusable pantry-food bundles
 // ---------------------------------------------------------------------------
 
-/// A saved meal template with its pantry-food + serving items.
+/// A saved meal template with its food items.
 class MealTemplateWithItems {
   final MealTemplate template;
   final List<MealTemplateItem> items;
 
   const MealTemplateWithItems({required this.template, required this.items});
+}
+
+/// One item to save into a template — either a pantry-linked food (looked
+/// up live from the current [PantryFood] row at apply time) or a manually
+/// entered snapshot (replayed as-is, since there's no pantry row to re-read
+/// macros from). Build these from logged [FoodEntry] rows via
+/// [MealTemplateItemInput.fromFoodEntry].
+class MealTemplateItemInput {
+  final String? pantryFoodId;
+  final double servings;
+  final String? name;
+  final double? calories;
+  final double? protein;
+  final double? carbs;
+  final double? fat;
+  final double? sugar;
+  final double? fiber;
+  final double? sodium;
+  final double? cholesterol;
+  final double? potassium;
+  final double? calcium;
+  final double? iron;
+  final double? vitaminA;
+  final double? vitaminC;
+
+  const MealTemplateItemInput.pantry({
+    required this.pantryFoodId,
+    required this.servings,
+  }) : name = null,
+       calories = null,
+       protein = null,
+       carbs = null,
+       fat = null,
+       sugar = null,
+       fiber = null,
+       sodium = null,
+       cholesterol = null,
+       potassium = null,
+       calcium = null,
+       iron = null,
+       vitaminA = null,
+       vitaminC = null;
+
+  const MealTemplateItemInput.manual({
+    required this.name,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    this.sugar = 0,
+    this.fiber = 0,
+    this.sodium = 0,
+    this.cholesterol = 0,
+    this.potassium = 0,
+    this.calcium = 0,
+    this.iron = 0,
+    this.vitaminA = 0,
+    this.vitaminC = 0,
+  }) : pantryFoodId = null,
+       servings = 1.0;
+
+  factory MealTemplateItemInput.fromFoodEntry(FoodEntry e) {
+    if (e.pantryFoodId != null) {
+      return MealTemplateItemInput.pantry(
+        pantryFoodId: e.pantryFoodId!,
+        servings: e.servings,
+      );
+    }
+    return MealTemplateItemInput.manual(
+      name: e.name,
+      calories: e.calories,
+      protein: e.protein,
+      carbs: e.carbs,
+      fat: e.fat,
+      sugar: e.sugar,
+      fiber: e.fiber,
+      sodium: e.sodium,
+      cholesterol: e.cholesterol,
+      potassium: e.potassium,
+      calcium: e.calcium,
+      iron: e.iron,
+      vitaminA: e.vitaminA,
+      vitaminC: e.vitaminC,
+    );
+  }
+
+  /// Builds this item straight from an existing [MealTemplateItem] row, so
+  /// an edit that keeps an item unchanged can round-trip it without the
+  /// caller re-deriving every field.
+  factory MealTemplateItemInput.fromRow(MealTemplateItem i) {
+    if (i.pantryFoodId != null) {
+      return MealTemplateItemInput.pantry(
+        pantryFoodId: i.pantryFoodId!,
+        servings: i.servings,
+      );
+    }
+    return MealTemplateItemInput.manual(
+      name: i.name ?? '',
+      calories: i.calories ?? 0,
+      protein: i.protein ?? 0,
+      carbs: i.carbs ?? 0,
+      fat: i.fat ?? 0,
+      sugar: i.sugar ?? 0,
+      fiber: i.fiber ?? 0,
+      sodium: i.sodium ?? 0,
+      cholesterol: i.cholesterol ?? 0,
+      potassium: i.potassium ?? 0,
+      calcium: i.calcium ?? 0,
+      iron: i.iron ?? 0,
+      vitaminA: i.vitaminA ?? 0,
+      vitaminC: i.vitaminC ?? 0,
+    );
+  }
+
+  MealTemplateItemsCompanion _toCompanion({
+    required String id,
+    required String templateId,
+    required String userId,
+  }) {
+    return MealTemplateItemsCompanion.insert(
+      id: id,
+      templateId: templateId,
+      userId: userId,
+      pantryFoodId: Value(pantryFoodId),
+      servings: Value(servings),
+      name: Value(name),
+      calories: Value(calories),
+      protein: Value(protein),
+      carbs: Value(carbs),
+      fat: Value(fat),
+      sugar: Value(sugar),
+      fiber: Value(fiber),
+      sodium: Value(sodium),
+      cholesterol: Value(cholesterol),
+      potassium: Value(potassium),
+      calcium: Value(calcium),
+      iron: Value(iron),
+      vitaminA: Value(vitaminA),
+      vitaminC: Value(vitaminC),
+    );
+  }
+
+  Map<String, dynamic> _toRemoteJson({
+    required String id,
+    required String templateId,
+    required String userId,
+  }) {
+    return {
+      'id': id,
+      'template_id': templateId,
+      'user_id': userId,
+      'pantry_food_id': pantryFoodId,
+      'servings': servings,
+      'name': name,
+      'calories': calories,
+      'protein': protein,
+      'carbs': carbs,
+      'fat': fat,
+      'sugar': sugar,
+      'fiber': fiber,
+      'sodium': sodium,
+      'cholesterol': cholesterol,
+      'potassium': potassium,
+      'calcium': calcium,
+      'iron': iron,
+      'vitamin_a': vitaminA,
+      'vitamin_c': vitaminC,
+    };
+  }
 }
 
 final mealTemplatesNotifierProvider = StreamNotifierProvider<
@@ -625,12 +794,10 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
     ];
   }
 
-  /// Saves [items] (pantry food id + serving count pairs) as a new named
-  /// template. Callers should only pass items whose source FoodEntry had a
-  /// non-null pantryFoodId — manual entries can't be replayed at apply time.
+  /// Saves [items] as a new named template.
   Future<void> saveTemplate({
     required String name,
-    required List<({String pantryFoodId, double servings})> items,
+    required List<MealTemplateItemInput> items,
   }) async {
     if (items.isEmpty) return;
     final db = ref.read(databaseProvider);
@@ -648,14 +815,13 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
           ),
         );
 
+    final itemIds = [for (final _ in items) _uuid.v4()];
     final itemRows = [
-      for (final item in items)
-        MealTemplateItemsCompanion.insert(
-          id: _uuid.v4(),
+      for (var idx = 0; idx < items.length; idx++)
+        items[idx]._toCompanion(
+          id: itemIds[idx],
           templateId: templateId,
           userId: userId,
-          pantryFoodId: item.pantryFoodId,
-          servings: Value(item.servings),
         ),
     ];
     await db.batch((b) => b.insertAll(db.mealTemplateItems, itemRows));
@@ -667,14 +833,12 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
         'name': name,
       });
       await Supabase.instance.client.from('meal_template_items').insert([
-        for (final row in itemRows)
-          {
-            'id': row.id.value,
-            'template_id': templateId,
-            'user_id': userId,
-            'pantry_food_id': row.pantryFoodId.value,
-            'servings': row.servings.value,
-          },
+        for (var idx = 0; idx < items.length; idx++)
+          items[idx]._toRemoteJson(
+            id: itemIds[idx],
+            templateId: templateId,
+            userId: userId,
+          ),
       ]);
       await (db.update(
         db.mealTemplates,
@@ -689,10 +853,74 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
     } catch (_) {}
   }
 
-  /// Re-logs a saved template as a brand-new meal. Items whose pantry food
-  /// was deleted since the template was saved are skipped (their pantry food
-  /// ids are returned, since a name can't be looked up once deleted) rather
-  /// than failing the whole apply.
+  /// Renames a template and replaces its items wholesale — used for editing
+  /// (renaming, removing items, or changing servings all flow through this;
+  /// there's no per-item update).
+  Future<void> updateTemplate({
+    required String templateId,
+    required String name,
+    required List<MealTemplateItemInput> items,
+  }) async {
+    if (items.isEmpty) return;
+    final db = ref.read(databaseProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await (db.update(
+      db.mealTemplates,
+    )..where((t) => t.id.equals(templateId))).write(
+      MealTemplatesCompanion(name: Value(name), synced: const Value(false)),
+    );
+    await (db.delete(
+      db.mealTemplateItems,
+    )..where((i) => i.templateId.equals(templateId))).go();
+
+    final itemIds = [for (final _ in items) _uuid.v4()];
+    final itemRows = [
+      for (var idx = 0; idx < items.length; idx++)
+        items[idx]._toCompanion(
+          id: itemIds[idx],
+          templateId: templateId,
+          userId: userId,
+        ),
+    ];
+    await db.batch((b) => b.insertAll(db.mealTemplateItems, itemRows));
+
+    try {
+      await Supabase.instance.client
+          .from('meal_templates')
+          .update({'name': name})
+          .eq('id', templateId);
+      await Supabase.instance.client
+          .from('meal_template_items')
+          .delete()
+          .eq('template_id', templateId);
+      await Supabase.instance.client.from('meal_template_items').insert([
+        for (var idx = 0; idx < items.length; idx++)
+          items[idx]._toRemoteJson(
+            id: itemIds[idx],
+            templateId: templateId,
+            userId: userId,
+          ),
+      ]);
+      await (db.update(
+        db.mealTemplates,
+      )..where((t) => t.id.equals(templateId))).write(
+        const MealTemplatesCompanion(synced: Value(true)),
+      );
+      await (db.update(
+        db.mealTemplateItems,
+      )..where((i) => i.templateId.equals(templateId))).write(
+        const MealTemplateItemsCompanion(synced: Value(true)),
+      );
+    } catch (_) {}
+  }
+
+  /// Re-logs a saved template as a brand-new meal. Pantry-linked items whose
+  /// pantry food was deleted since the template was saved are skipped (their
+  /// pantry food ids are returned, since a name can't be looked up once
+  /// deleted) rather than failing the whole apply. Manually-entered items
+  /// are always replayed since their name/macros are stored on the item.
   Future<({String mealId, List<String> skippedPantryFoodIds})> applyTemplate(
     String templateId, {
     DateTime? loggedAt,
@@ -708,14 +936,20 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
         )..where((i) => i.templateId.equals(templateId))).get();
 
     final selections = <({PantryFood food, double servings})>[];
+    final manualItems = <MealTemplateItem>[];
     final skipped = <String>[];
     for (final item in items) {
+      final pantryFoodId = item.pantryFoodId;
+      if (pantryFoodId == null) {
+        manualItems.add(item);
+        continue;
+      }
       final food =
           await (db.select(
             db.pantryFoods,
-          )..where((f) => f.id.equals(item.pantryFoodId))).getSingleOrNull();
+          )..where((f) => f.id.equals(pantryFoodId))).getSingleOrNull();
       if (food == null) {
-        skipped.add(item.pantryFoodId);
+        skipped.add(pantryFoodId);
         continue;
       }
       selections.add((food: food, servings: item.servings));
@@ -728,6 +962,27 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
           selections: selections,
           loggedAt: loggedAt,
         );
+
+    final nutritionNotifier = ref.read(nutritionNotifierProvider.notifier);
+    for (final item in manualItems) {
+      await nutritionNotifier.addFoodEntry(
+        mealId: mealId,
+        name: item.name ?? 'Food',
+        calories: item.calories ?? 0,
+        protein: item.protein ?? 0,
+        carbs: item.carbs ?? 0,
+        fat: item.fat ?? 0,
+        sugar: item.sugar ?? 0,
+        fiber: item.fiber ?? 0,
+        sodium: item.sodium ?? 0,
+        cholesterol: item.cholesterol ?? 0,
+        potassium: item.potassium ?? 0,
+        calcium: item.calcium ?? 0,
+        iron: item.iron ?? 0,
+        vitaminA: item.vitaminA ?? 0,
+        vitaminC: item.vitaminC ?? 0,
+      );
+    }
 
     return (mealId: mealId, skippedPantryFoodIds: skipped);
   }
@@ -789,13 +1044,9 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
         )).get();
     for (final i in unsyncedItems) {
       try {
-        await Supabase.instance.client.from('meal_template_items').upsert({
-          'id': i.id,
-          'template_id': i.templateId,
-          'user_id': i.userId,
-          'pantry_food_id': i.pantryFoodId,
-          'servings': i.servings,
-        });
+        await Supabase.instance.client
+            .from('meal_template_items')
+            .upsert(_mealTemplateItemRowToRemoteJson(i));
         await (db.update(
           db.mealTemplateItems,
         )..where((row) => row.id.equals(i.id))).write(
@@ -850,12 +1101,54 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
                 id: row['id'] as String,
                 templateId: row['template_id'] as String,
                 userId: userId,
-                pantryFoodId: row['pantry_food_id'] as String,
+                pantryFoodId: Value(row['pantry_food_id'] as String?),
                 servings: Value(((row['servings'] as num?) ?? 1.0).toDouble()),
                 synced: const Value(true),
+                name: Value(row['name'] as String?),
+                calories: Value(_asDouble(row['calories'])),
+                protein: Value(_asDouble(row['protein'])),
+                carbs: Value(_asDouble(row['carbs'])),
+                fat: Value(_asDouble(row['fat'])),
+                sugar: Value(_asDouble(row['sugar'])),
+                fiber: Value(_asDouble(row['fiber'])),
+                sodium: Value(_asDouble(row['sodium'])),
+                cholesterol: Value(_asDouble(row['cholesterol'])),
+                potassium: Value(_asDouble(row['potassium'])),
+                calcium: Value(_asDouble(row['calcium'])),
+                iron: Value(_asDouble(row['iron'])),
+                vitaminA: Value(_asDouble(row['vitamin_a'])),
+                vitaminC: Value(_asDouble(row['vitamin_c'])),
               ),
             );
       }
     } catch (_) {}
   }
 }
+
+/// Builds the Supabase row for a locally-stored [MealTemplateItem] — shared
+/// by [MealTemplatesNotifier.pushUnsyncedChanges] and any other push path.
+Map<String, dynamic> _mealTemplateItemRowToRemoteJson(MealTemplateItem i) {
+  return {
+    'id': i.id,
+    'template_id': i.templateId,
+    'user_id': i.userId,
+    'pantry_food_id': i.pantryFoodId,
+    'servings': i.servings,
+    'name': i.name,
+    'calories': i.calories,
+    'protein': i.protein,
+    'carbs': i.carbs,
+    'fat': i.fat,
+    'sugar': i.sugar,
+    'fiber': i.fiber,
+    'sodium': i.sodium,
+    'cholesterol': i.cholesterol,
+    'potassium': i.potassium,
+    'calcium': i.calcium,
+    'iron': i.iron,
+    'vitamin_a': i.vitaminA,
+    'vitamin_c': i.vitaminC,
+  };
+}
+
+double? _asDouble(dynamic v) => (v as num?)?.toDouble();
