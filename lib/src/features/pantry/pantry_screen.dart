@@ -32,6 +32,7 @@ import '../../shared/widgets.dart';
 import '../../database/db.dart';
 import '../onboarding/app_tour.dart';
 import '../onboarding/app_tour_keys.dart';
+import '../recipes/recipe_constants.dart';
 import '../recipes/recipe_editor_screen.dart';
 import '../settings/settings_screen.dart';
 import 'barcode_scanner_screen.dart';
@@ -307,6 +308,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
               required double iron,
               required double vitaminA,
               required double vitaminC,
+              String? category,
             }) async {
               final notifier = ref.read(pantryNotifierProvider.notifier);
               if (food == null) {
@@ -326,6 +328,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                   iron: iron,
                   vitaminA: vitaminA,
                   vitaminC: vitaminC,
+                  category: category,
                 );
               } else {
                 await notifier.updateFood(
@@ -345,6 +348,7 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                   iron: iron,
                   vitaminA: vitaminA,
                   vitaminC: vitaminC,
+                  category: category,
                 );
               }
             },
@@ -509,6 +513,7 @@ typedef _SaveCallback =
       required double iron,
       required double vitaminA,
       required double vitaminC,
+      String? category,
     });
 
 class _FoodFormSheet extends StatefulWidget {
@@ -544,6 +549,7 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
   late final TextEditingController _ironCtrl;
   late final TextEditingController _vitaminACtrl;
   late final TextEditingController _vitaminCCtrl;
+  String? _category;
   bool _saving = false;
 
   bool get _isEditing => widget.food != null;
@@ -555,6 +561,7 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
     // A scanned-barcode prefill only applies to a brand-new food (widget.food
     // is null) — editing an existing food always shows its own saved values.
     final p = f == null ? widget.prefill : null;
+    _category = f?.category;
 
     String num0(double? v) => v == null ? '' : v.toStringAsFixed(0);
     String num1(double? v) => v == null ? '' : v.toStringAsFixed(1);
@@ -629,6 +636,7 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
           _servingCtrl.text.trim().isEmpty
               ? '1 serving'
               : _servingCtrl.text.trim(),
+      category: _category,
     );
     if (mounted) Navigator.pop(context);
   }
@@ -704,6 +712,28 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
               ctrl: _servingCtrl,
               label: 'Serving size',
               hint: 'e.g. 1 slice (28 g)',
+            ),
+
+            Text('Category (optional)', style: AppTextStyles.labelSmall),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: kIngredientCategories.length,
+                separatorBuilder:
+                    (_, _) => const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (_, i) {
+                  final cat = kIngredientCategories[i];
+                  final selected = cat == _category;
+                  return SelectableChip(
+                    label: cat,
+                    selected: selected,
+                    onTap:
+                        () => setState(() => _category = selected ? null : cat),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
 
