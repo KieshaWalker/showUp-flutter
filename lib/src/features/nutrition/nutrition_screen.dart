@@ -1090,7 +1090,10 @@ class _PantrySearchTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pantry = ref.watch(pantryNotifierProvider).value ?? [];
+    // Most-recently-added first — lets a food you just created in the
+    // pantry show up at the top here instead of getting buried alphabetically.
+    final pantry = [...ref.watch(pantryNotifierProvider).value ?? []]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final results =
         query.isEmpty
             ? pantry
