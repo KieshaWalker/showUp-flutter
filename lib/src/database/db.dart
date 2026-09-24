@@ -52,6 +52,14 @@
 //         name/nutrient snapshot (mirroring FoodEntries' manual-entry
 //         columns) so a template can include manually-entered foods, not
 //         just pantry-linked ones
+//   v16 — added a nullable `category` column to PantryFoods (Starch/Spice/
+//         etc., powers the recipe ingredient picker's category tabs), and
+//         added Recipes/RecipeSteps/RecipeStepIngredients tables — a recipe
+//         is an ordered list of cooking steps, each with its own ingredient
+//         list, separate from meal templates. A recipe's nutrition is kept
+//         as a derived personal PantryFood (see Recipes.pantryFoodId,
+//         recomputed by RecipesNotifier) so logging "1 serving" reuses the
+//         existing FoodEntry/Quick Add machinery.
 //
 // Connections:
 //   database_provider.dart — wraps AppDatabase in a Riverpod provider
@@ -289,6 +297,12 @@ class PantryFoods extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
+  /// One of kIngredientCategories (recipes/recipe_constants.dart), e.g.
+  /// "Starch"/"Spice"/"Protein". Null for foods added before this existed,
+  /// or where the user never categorized it. Powers the recipe ingredient
+  /// picker's category tabs — see RecipeStepIngredients.
+  TextColumn get category => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -342,6 +356,86 @@ class MealTemplateItems extends Table {
   RealColumn get iron => real().nullable()();
   RealColumn get vitaminA => real().nullable()();
   RealColumn get vitaminC => real().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Recipes — separate from meal templates. A recipe is a named dish with an
+// ordered list of cooking steps, each carrying its own ingredient list. Its
+// nutrition is kept as a derived personal PantryFood (see pantryFoodId),
+// recomputed by RecipesNotifier whenever ingredients/yield change, so
+// logging "1 serving" is a plain FoodEntry against that food.
+// ---------------------------------------------------------------------------
+
+class Recipes extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get name => text()();
+
+  /// How many servings this recipe's full batch makes. Null until the user
+  /// sets it — required (along with >=1 ingredient) before a derived
+  /// PantryFood can be computed, i.e. before the recipe is loggable.
+  RealColumn get servingsYield => real().nullable()();
+  IntColumn get prepTimeMinutes => integer().nullable()();
+  IntColumn get cookTimeMinutes => integer().nullable()();
+  TextColumn get photoUrl => text().nullable()();
+
+  /// Back-reference to the derived PantryFoods row that makes this recipe
+  /// loggable. Null until the first successful recompute.
+  TextColumn get pantryFoodId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One cooking step within a [Recipes] row, e.g. "Boil the potatoes".
+class RecipeSteps extends Table {
+  TextColumn get id => text()();
+  TextColumn get recipeId => text()();
+  TextColumn get userId => text()();
+
+  /// 0-based position — drives the editor's ReorderableListView order.
+  IntColumn get stepOrder => integer()();
+
+  /// Chosen from kStepActionVerbs (recipe_constants.dart) before ingredients
+  /// are added to the step, so the cooking method is always explicit rather
+  /// than inferred from the ingredient list.
+  TextColumn get actionVerb => text()();
+  TextColumn get instructions => text().nullable()();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One ingredient used within a [RecipeSteps] row. Always links to a
+/// PantryFood (personal or preset) — a freshly-typed ingredient (e.g. a new
+/// spice) is first saved as a personal PantryFood, then linked here, so it
+/// becomes a reusable, reclickable pick from then on.
+class RecipeStepIngredients extends Table {
+  TextColumn get id => text()();
+  TextColumn get stepId => text()();
+
+  /// Denormalized from stepId's parent — avoids a join when aggregating a
+  /// whole recipe's macros in RecipesNotifier._recomputeDerivedPantryFood.
+  TextColumn get recipeId => text()();
+  TextColumn get userId => text()();
+  TextColumn get pantryFoodId => text()();
+
+  /// Multiplier against the linked PantryFood's own per-serving macros —
+  /// same semantics as FoodEntries.servings/MealTemplateItems.servings.
+  /// There's no cup/gram unit-conversion system in this app; see amountLabel.
+  RealColumn get servings => real().withDefault(const Constant(1.0))();
+
+  /// Purely descriptive, e.g. "1/4 cup" — shown in the step UI but never
+  /// used in macro math (servings above is what's actually multiplied).
+  TextColumn get amountLabel => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -405,13 +499,16 @@ class SubstanceLogs extends Table {
     MealTemplateItems,
     TrackedSubstances,
     SubstanceLogs,
+    Recipes,
+    RecipeSteps,
+    RecipeStepIngredients,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   // Migration runs automatically when the app detects the on-device schema
   // version is older than schemaVersion. Each `if (from < N)` block applies
@@ -492,16 +589,17 @@ class AppDatabase extends _$AppDatabase {
             'ALTER TABLE food_entries ADD COLUMN $column REAL NOT NULL DEFAULT 0.0',
           );
         }
-        for (final entry in {
-          'fiber': 28.0,
-          'sodium': 2300.0,
-          'cholesterol': 300.0,
-          'potassium': 4700.0,
-          'calcium': 1300.0,
-          'iron': 18.0,
-          'vitamin_a': 900.0,
-          'vitamin_c': 90.0,
-        }.entries) {
+        for (final entry
+            in {
+              'fiber': 28.0,
+              'sodium': 2300.0,
+              'cholesterol': 300.0,
+              'potassium': 4700.0,
+              'calcium': 1300.0,
+              'iron': 18.0,
+              'vitamin_a': 900.0,
+              'vitamin_c': 90.0,
+            }.entries) {
           await customStatement(
             'ALTER TABLE daily_nutrition_goals ADD COLUMN ${entry.key} REAL NOT NULL DEFAULT ${entry.value}',
           );
@@ -567,13 +665,23 @@ class AppDatabase extends _$AppDatabase {
         // so rebuild meal_template_items with pantry_food_id nullable plus
         // the new manual-entry snapshot columns, carrying existing rows over
         // (they're all pantry-linked, so the new columns come in NULL).
-        await customStatement('ALTER TABLE meal_template_items RENAME TO meal_template_items_old');
+        await customStatement(
+          'ALTER TABLE meal_template_items RENAME TO meal_template_items_old',
+        );
         await m.createTable(mealTemplateItems);
         await customStatement('''
           INSERT INTO meal_template_items (id, template_id, user_id, pantry_food_id, servings, synced)
           SELECT id, template_id, user_id, pantry_food_id, servings, synced FROM meal_template_items_old
         ''');
         await customStatement('DROP TABLE meal_template_items_old');
+      }
+      if (from < 16) {
+        await customStatement(
+          'ALTER TABLE pantry_foods ADD COLUMN category TEXT',
+        );
+        await m.createTable(recipes);
+        await m.createTable(recipeSteps);
+        await m.createTable(recipeStepIngredients);
       }
     },
   );

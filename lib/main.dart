@@ -16,6 +16,7 @@ import 'src/features/pantry/pantry_notifier.dart';
 import 'src/features/pantry/pantry_screen.dart';
 import 'src/features/presentation/presentation_screen.dart';
 import 'src/features/calendar/calendar_screen.dart';
+import 'src/features/recipes/recipes_notifier.dart';
 import 'src/features/tracking/tracking_notifier.dart';
 
 // main.dart — App entry point and top-level routing.
@@ -33,8 +34,8 @@ import 'src/features/tracking/tracking_notifier.dart';
 //   every screen has a settings icon in its AppBar's top-right corner
 //   (openSettingsScreen(), settings_screen.dart) that pushes SettingsScreen
 //   as a modal route instead.
-//   On first mount it calls syncFromRemote() on all three notifiers so the
-//   app catches up with any data added on other devices, then (once) shows
+//   On first mount it calls syncFromRemote() on every feature's notifier so
+//   the app catches up with any data added on other devices, then (once) shows
 //   the one-time welcome setup sheet for brand-new users (see
 //   welcome_setup_sheet.dart).
 //
@@ -55,10 +56,7 @@ import 'src/features/tracking/tracking_notifier.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   runApp(const ProviderScope(child: ShowUpApp()));
 }
@@ -85,18 +83,21 @@ class _AuthGate extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
 
     return authState.when(
-      loading: () => const AppBackground(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      ),
+      loading:
+          () => const AppBackground(
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(child: CircularProgressIndicator()),
+            ),
+          ),
       // A transient error on the auth stream (e.g. a network blip during
       // token refresh) shouldn't log the user out if a session is still
       // cached locally — only fall back to AuthScreen if it really is gone.
-      error: (_, _) => Supabase.instance.client.auth.currentSession != null
-          ? const AppShell()
-          : const AuthScreen(),
+      error:
+          (_, _) =>
+              Supabase.instance.client.auth.currentSession != null
+                  ? const AppShell()
+                  : const AuthScreen(),
       data: (state) {
         if (state.session != null) return const AppShell();
         return const AuthScreen();
@@ -131,20 +132,20 @@ class _AppShellState extends ConsumerState<AppShell> {
       await ref
           .read(mealTemplatesNotifierProvider.notifier)
           .pushUnsyncedChanges();
+      await ref.read(recipesNotifierProvider.notifier).pushUnsyncedChanges();
       await ref.read(trackingNotifierProvider.notifier).pushUnsyncedChanges();
 
       ref.read(habitsNotifierProvider.notifier).syncFromRemote();
       ref.read(nutritionNotifierProvider.notifier).syncFromRemote();
       ref.read(pantryNotifierProvider.notifier).syncFromRemote();
       ref.read(mealTemplatesNotifierProvider.notifier).syncFromRemote();
+      ref.read(recipesNotifierProvider.notifier).syncFromRemote();
       ref.read(trackingNotifierProvider.notifier).syncFromRemote();
 
       if (mounted) await maybeShowWelcomeSetup(context, ref);
       if (mounted) await maybeStartAppTour(context);
     });
-    registerAppTour(
-      onSwitchToTab: (i) => setState(() => _currentIndex = i),
-    );
+    registerAppTour(onSwitchToTab: (i) => setState(() => _currentIndex = i));
   }
 
   @override

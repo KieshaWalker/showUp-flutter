@@ -52,8 +52,8 @@ const _uuid = Uuid();
 
 final pantryNotifierProvider =
     StreamNotifierProvider<PantryNotifier, List<PantryFood>>(
-  PantryNotifier.new,
-);
+      PantryNotifier.new,
+    );
 
 /// Another user's personal pantry foods, fetched directly from Supabase
 /// (not cached locally — local Drift only ever holds the current user's
@@ -61,26 +61,26 @@ final pantryNotifierProvider =
 /// Relies on the `pantry_foods` SELECT RLS policy being open to any
 /// authenticated user (widened 2026-09-18 alongside `habits`/
 /// `habit_completions`/`habit_skips` for this feature).
-final otherUserPantryProvider =
-    FutureProvider.family<List<PantryFood>, String>((ref, userId) async {
-  final rows = await Supabase.instance.client
-      .from('pantry_foods')
-      .select()
-      .eq('user_id', userId)
-      .order('name');
+final otherUserPantryProvider = FutureProvider.family<List<PantryFood>, String>(
+  (ref, userId) async {
+    final rows = await Supabase.instance.client
+        .from('pantry_foods')
+        .select()
+        .eq('user_id', userId)
+        .order('name');
 
-  return (rows as List)
-      .map((row) => _pantryFoodFromRow(row as Map<String, dynamic>, userId))
-      .toList();
-});
+    return (rows as List)
+        .map((row) => _pantryFoodFromRow(row as Map<String, dynamic>, userId))
+        .toList();
+  },
+);
 
 /// Per-food usage counts for the current time-of-day meal window (Breakfast/
 /// Lunch/Dinner/Snack, same buckets as [resolveMealNameForTime]) vs. all
 /// time. Powers Quick Add's chip ordering on the Overview tab.
-final quickAddRankingProvider =
-    FutureProvider.autoDispose<Map<String, (int window, int total)>>((
-  ref,
-) async {
+final quickAddRankingProvider = FutureProvider.autoDispose<
+  Map<String, (int window, int total)>
+>((ref) async {
   // Re-rank whenever the pantry list changes or any food entry is
   // logged/deleted. NutritionNotifier's build() stream is an unfiltered,
   // all-dates COUNT on food_entries (nutrition_notifier.dart), so it fires
@@ -97,9 +97,10 @@ final quickAddRankingProvider =
   // The CASE expression below mirrors resolveMealNameForTime's boundaries in
   // SQL so "Snack" (which spans two disjoint hour ranges) buckets correctly —
   // a plain BETWEEN on hour-of-day can't express that split.
-  final rows = await db
-      .customSelect(
-        '''
+  final rows =
+      await db
+          .customSelect(
+            '''
         SELECT fe.pantry_food_id AS food_id,
                SUM(CASE WHEN (
                  CASE
@@ -115,13 +116,13 @@ final quickAddRankingProvider =
         WHERE fe.user_id = ?2 AND fe.pantry_food_id IS NOT NULL
         GROUP BY fe.pantry_food_id
         ''',
-        variables: [
-          Variable.withString(resolvedMealName),
-          Variable.withString(userId),
-        ],
-        readsFrom: {db.foodEntries, db.meals},
-      )
-      .get();
+            variables: [
+              Variable.withString(resolvedMealName),
+              Variable.withString(userId),
+            ],
+            readsFrom: {db.foodEntries, db.meals},
+          )
+          .get();
 
   return {
     for (final row in rows)
@@ -174,10 +175,12 @@ PantryFood _pantryFoodFromRow(Map<String, dynamic> row, String userId) {
     vitaminC: ((row['vitamin_c'] as num?) ?? 0).toDouble(),
     servingLabel: row['serving_label'] as String,
     isPreset: row['is_preset'] as bool? ?? false,
-    createdAt: row['created_at'] != null
-        ? DateTime.parse(row['created_at'] as String)
-        : DateTime.now(),
+    createdAt:
+        row['created_at'] != null
+            ? DateTime.parse(row['created_at'] as String)
+            : DateTime.now(),
     synced: true,
+    category: row['category'] as String?,
   );
 }
 
@@ -211,7 +214,8 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     return (db.select(db.pantryFoods)
           ..where((t) => t.userId.isNull() | t.userId.equals(userId))
           ..orderBy([
-            (t) => OrderingTerm(expression: t.isPreset, mode: OrderingMode.desc),
+            (t) =>
+                OrderingTerm(expression: t.isPreset, mode: OrderingMode.desc),
             (t) => OrderingTerm(expression: t.name),
           ]))
         .watch();
@@ -236,6 +240,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     double iron = 0,
     double vitaminA = 0,
     double vitaminC = 0,
+    String? category,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -243,7 +248,9 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     final id = _uuid.v4();
 
     // 1. Write locally first so the UI updates instantly.
-    await db.into(db.pantryFoods).insert(
+    await db
+        .into(db.pantryFoods)
+        .insert(
           PantryFoodsCompanion.insert(
             id: id,
             userId: Value(userId),
@@ -263,6 +270,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
             vitaminC: Value(vitaminC),
             servingLabel: Value(servingLabel),
             isPreset: const Value(false),
+            category: Value(category),
           ),
         );
 
@@ -287,9 +295,11 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         'vitamin_c': vitaminC,
         'serving_label': servingLabel,
         'is_preset': false,
+        'category': category,
       });
-      await (db.update(db.pantryFoods)..where((t) => t.id.equals(id)))
-          .write(const PantryFoodsCompanion(synced: Value(true)));
+      await (db.update(db.pantryFoods)..where(
+        (t) => t.id.equals(id),
+      )).write(const PantryFoodsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
@@ -313,14 +323,14 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     double iron = 0,
     double vitaminA = 0,
     double vitaminC = 0,
+    String? category,
   }) async {
     final db = ref.read(databaseProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
     final updated = await (db.update(db.pantryFoods)
-          ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
-        .write(
+      ..where((t) => t.id.equals(id) & t.userId.equals(userId))).write(
       PantryFoodsCompanion(
         name: Value(name),
         calories: Value(calories),
@@ -337,6 +347,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
         vitaminA: Value(vitaminA),
         vitaminC: Value(vitaminC),
         servingLabel: Value(servingLabel),
+        category: Value(category),
         synced: const Value(false),
       ),
     );
@@ -361,11 +372,13 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
             'vitamin_a': vitaminA,
             'vitamin_c': vitaminC,
             'serving_label': servingLabel,
+            'category': category,
           })
           .eq('id', id)
           .eq('user_id', userId);
-      await (db.update(db.pantryFoods)..where((t) => t.id.equals(id)))
-          .write(const PantryFoodsCompanion(synced: Value(true)));
+      await (db.update(db.pantryFoods)..where(
+        (t) => t.id.equals(id),
+      )).write(const PantryFoodsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
@@ -377,9 +390,9 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
-    final deleted = await (db.delete(db.pantryFoods)
-          ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
-        .go();
+    final deleted =
+        await (db.delete(db.pantryFoods)
+          ..where((t) => t.id.equals(id) & t.userId.equals(userId))).go();
     if (deleted == 0) return; // not owned by this user (e.g. a global preset)
 
     try {
@@ -440,9 +453,10 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
-    final unsynced = await (db.select(db.pantryFoods)
-          ..where((t) => t.userId.equals(userId) & t.synced.equals(false)))
-        .get();
+    final unsynced =
+        await (db.select(db.pantryFoods)..where(
+          (t) => t.userId.equals(userId) & t.synced.equals(false),
+        )).get();
     for (final f in unsynced) {
       try {
         await Supabase.instance.client.from('pantry_foods').upsert({
@@ -464,9 +478,11 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
           'vitamin_c': f.vitaminC,
           'serving_label': f.servingLabel,
           'is_preset': false,
+          'category': f.category,
         });
-        await (db.update(db.pantryFoods)..where((t) => t.id.equals(f.id)))
-            .write(const PantryFoodsCompanion(synced: Value(true)));
+        await (db.update(db.pantryFoods)..where(
+          (t) => t.id.equals(f.id),
+        )).write(const PantryFoodsCompanion(synced: Value(true)));
       } catch (_) {}
     }
   }
@@ -489,7 +505,9 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
           .filter('user_id', 'is', null);
 
       for (final row in globals as List) {
-        await db.into(db.pantryFoods).insertOnConflictUpdate(
+        await db
+            .into(db.pantryFoods)
+            .insertOnConflictUpdate(
               PantryFoodsCompanion.insert(
                 id: row['id'] as String,
                 // userId left absent (null) — marks this as a global preset locally
@@ -512,6 +530,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
                 servingLabel: Value(row['serving_label'] as String),
                 isPreset: const Value(true),
                 synced: const Value(true),
+                category: Value(row['category'] as String?),
               ),
             );
       }
@@ -523,7 +542,9 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
           .eq('user_id', userId);
 
       for (final row in personal as List) {
-        await db.into(db.pantryFoods).insertOnConflictUpdate(
+        await db
+            .into(db.pantryFoods)
+            .insertOnConflictUpdate(
               PantryFoodsCompanion.insert(
                 id: row['id'] as String,
                 userId: Value(userId),
@@ -546,6 +567,7 @@ class PantryNotifier extends StreamNotifier<List<PantryFood>> {
                 servingLabel: Value(row['serving_label'] as String),
                 isPreset: Value(row['is_preset'] as bool? ?? false),
                 synced: const Value(true),
+                category: Value(row['category'] as String?),
               ),
             );
       }
@@ -734,16 +756,17 @@ class MealTemplateItemInput {
   }
 }
 
-final mealTemplatesNotifierProvider = StreamNotifierProvider<
-  MealTemplatesNotifier,
-  List<MealTemplateWithItems>
->(MealTemplatesNotifier.new);
+final mealTemplatesNotifierProvider =
+    StreamNotifierProvider<MealTemplatesNotifier, List<MealTemplateWithItems>>(
+      MealTemplatesNotifier.new,
+    );
 
 /// Manages user-saved "meal templates" — a named bundle of pantry foods +
 /// servings the user can re-log in one tap from Quick Add, instead of
 /// rebuilding the same meal from scratch every time. See [createMealFromPantry]
 /// for the underlying meal+entry creation this reuses.
-class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> {
+class MealTemplatesNotifier
+    extends StreamNotifier<List<MealTemplateWithItems>> {
   @override
   Stream<List<MealTemplateWithItems>> build() {
     final db = ref.watch(databaseProvider);
@@ -781,9 +804,8 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
               ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
             .get();
     final items =
-        await (db.select(
-          db.mealTemplateItems,
-        )..where((i) => i.userId.equals(userId))).get();
+        await (db.select(db.mealTemplateItems)
+          ..where((i) => i.userId.equals(userId))).get();
 
     return [
       for (final t in templates)
@@ -840,16 +862,12 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
             userId: userId,
           ),
       ]);
-      await (db.update(
-        db.mealTemplates,
-      )..where((t) => t.id.equals(templateId))).write(
-        const MealTemplatesCompanion(synced: Value(true)),
-      );
-      await (db.update(
-        db.mealTemplateItems,
-      )..where((i) => i.templateId.equals(templateId))).write(
-        const MealTemplateItemsCompanion(synced: Value(true)),
-      );
+      await (db.update(db.mealTemplates)..where(
+        (t) => t.id.equals(templateId),
+      )).write(const MealTemplatesCompanion(synced: Value(true)));
+      await (db.update(db.mealTemplateItems)..where(
+        (i) => i.templateId.equals(templateId),
+      )).write(const MealTemplateItemsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
@@ -866,14 +884,12 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
-    await (db.update(
-      db.mealTemplates,
-    )..where((t) => t.id.equals(templateId))).write(
+    await (db.update(db.mealTemplates)
+      ..where((t) => t.id.equals(templateId))).write(
       MealTemplatesCompanion(name: Value(name), synced: const Value(false)),
     );
-    await (db.delete(
-      db.mealTemplateItems,
-    )..where((i) => i.templateId.equals(templateId))).go();
+    await (db.delete(db.mealTemplateItems)
+      ..where((i) => i.templateId.equals(templateId))).go();
 
     final itemIds = [for (final _ in items) _uuid.v4()];
     final itemRows = [
@@ -903,16 +919,12 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
             userId: userId,
           ),
       ]);
-      await (db.update(
-        db.mealTemplates,
-      )..where((t) => t.id.equals(templateId))).write(
-        const MealTemplatesCompanion(synced: Value(true)),
-      );
-      await (db.update(
-        db.mealTemplateItems,
-      )..where((i) => i.templateId.equals(templateId))).write(
-        const MealTemplateItemsCompanion(synced: Value(true)),
-      );
+      await (db.update(db.mealTemplates)..where(
+        (t) => t.id.equals(templateId),
+      )).write(const MealTemplatesCompanion(synced: Value(true)));
+      await (db.update(db.mealTemplateItems)..where(
+        (i) => i.templateId.equals(templateId),
+      )).write(const MealTemplateItemsCompanion(synced: Value(true)));
     } catch (_) {}
   }
 
@@ -927,13 +939,11 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
   }) async {
     final db = ref.read(databaseProvider);
     final template =
-        await (db.select(
-          db.mealTemplates,
-        )..where((t) => t.id.equals(templateId))).getSingle();
+        await (db.select(db.mealTemplates)
+          ..where((t) => t.id.equals(templateId))).getSingle();
     final items =
-        await (db.select(
-          db.mealTemplateItems,
-        )..where((i) => i.templateId.equals(templateId))).get();
+        await (db.select(db.mealTemplateItems)
+          ..where((i) => i.templateId.equals(templateId))).get();
 
     final selections = <({PantryFood food, double servings})>[];
     final manualItems = <MealTemplateItem>[];
@@ -945,9 +955,8 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
         continue;
       }
       final food =
-          await (db.select(
-            db.pantryFoods,
-          )..where((f) => f.id.equals(pantryFoodId))).getSingleOrNull();
+          await (db.select(db.pantryFoods)
+            ..where((f) => f.id.equals(pantryFoodId))).getSingleOrNull();
       if (food == null) {
         skipped.add(pantryFoodId);
         continue;
@@ -992,9 +1001,8 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
-    await (db.delete(
-      db.mealTemplateItems,
-    )..where((i) => i.templateId.equals(templateId))).go();
+    await (db.delete(db.mealTemplateItems)
+      ..where((i) => i.templateId.equals(templateId))).go();
     final deleted =
         await (db.delete(db.mealTemplates)..where(
           (t) => t.id.equals(templateId) & t.userId.equals(userId),
@@ -1033,8 +1041,9 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
           'user_id': t.userId,
           'name': t.name,
         });
-        await (db.update(db.mealTemplates)..where((row) => row.id.equals(t.id)))
-            .write(const MealTemplatesCompanion(synced: Value(true)));
+        await (db.update(db.mealTemplates)..where(
+          (row) => row.id.equals(t.id),
+        )).write(const MealTemplatesCompanion(synced: Value(true)));
       } catch (_) {}
     }
 
@@ -1047,17 +1056,14 @@ class MealTemplatesNotifier extends StreamNotifier<List<MealTemplateWithItems>> 
         await Supabase.instance.client
             .from('meal_template_items')
             .upsert(_mealTemplateItemRowToRemoteJson(i));
-        await (db.update(
-          db.mealTemplateItems,
-        )..where((row) => row.id.equals(i.id))).write(
-          const MealTemplateItemsCompanion(synced: Value(true)),
-        );
+        await (db.update(db.mealTemplateItems)..where(
+          (row) => row.id.equals(i.id),
+        )).write(const MealTemplateItemsCompanion(synced: Value(true)));
       } catch (err) {
         if (err is PostgrestException && err.code == '23503') {
           // Parent template no longer exists remotely — drop the orphaned item.
-          await (db.delete(
-            db.mealTemplateItems,
-          )..where((row) => row.id.equals(i.id))).go();
+          await (db.delete(db.mealTemplateItems)
+            ..where((row) => row.id.equals(i.id))).go();
         }
       }
     }

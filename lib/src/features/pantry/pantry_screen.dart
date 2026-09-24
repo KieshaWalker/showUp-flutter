@@ -32,6 +32,7 @@ import '../../shared/widgets.dart';
 import '../../database/db.dart';
 import '../onboarding/app_tour.dart';
 import '../onboarding/app_tour_keys.dart';
+import '../recipes/recipe_editor_screen.dart';
 import '../settings/settings_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'open_food_facts_service.dart';
@@ -100,6 +101,17 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
             onPressed: () => _showFoodForm(context),
             icon: const Icon(Icons.add),
             label: const Text('Add Food'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FloatingActionButton.extended(
+            heroTag: 'pantry-add-recipe-fab',
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RecipeEditorScreen()),
+                ),
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('Add Recipe'),
           ),
         ],
       ),
@@ -249,9 +261,10 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppColors.terracotta),
-      ),
+      builder:
+          (_) => const Center(
+            child: CircularProgressIndicator(color: AppColors.terracotta),
+          ),
     );
     final info = await lookupBarcode(barcode);
     if (!context.mounted) return;
@@ -763,10 +776,15 @@ class _FoodFormSheetState extends State<_FoodFormSheet> {
 
             const SizedBox(height: AppSpacing.sm),
             Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: EdgeInsets.zero,
-                title: Text('Micronutrients (optional)', style: AppTextStyles.labelSmall),
+                title: Text(
+                  'Micronutrients (optional)',
+                  style: AppTextStyles.labelSmall,
+                ),
                 childrenPadding: const EdgeInsets.only(top: AppSpacing.sm),
                 children: [
                   Row(

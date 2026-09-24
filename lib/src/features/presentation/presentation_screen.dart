@@ -46,6 +46,8 @@ import '../onboarding/app_tour.dart';
 import '../onboarding/app_tour_keys.dart';
 import '../pantry/pantry_notifier.dart';
 import '../profile/profile_notifier.dart';
+import '../recipes/recipe_editor_screen.dart';
+import '../recipes/recipes_notifier.dart';
 import '../scoring/score.dart';
 import '../settings/settings_screen.dart';
 
@@ -798,6 +800,95 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
     );
   }
 
+  void _showRecipeOptions(RecipeWithSteps recipe) {
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (sheetContext) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Edit recipe'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RecipeEditorScreen(existing: recipe),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.overLimit,
+                  ),
+                  title: const Text('Delete recipe'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _confirmDeleteRecipe(recipe);
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Future<void> _confirmDeleteRecipe(RecipeWithSteps recipe) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete recipe?'),
+            content: Text(
+              'Remove "${recipe.recipe.name}"? This can\'t be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.overLimit,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await ref
+        .read(recipesNotifierProvider.notifier)
+        .deleteRecipe(recipe.recipe.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Deleted "${recipe.recipe.name}"')));
+  }
+
+  Future<void> _logRecipeServing(RecipeWithSteps recipe) async {
+    final logged = await ref
+        .read(recipesNotifierProvider.notifier)
+        .logRecipeServing(recipe.recipe.id);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          logged
+              ? 'Logged 1 serving of "${recipe.recipe.name}"'
+              : '"${recipe.recipe.name}" needs at least one ingredient before it can be logged',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pantryAsync = ref.watch(pantryNotifierProvider);
@@ -805,6 +896,7 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
     // loading/error — only the pantry list itself gates visibility below.
     final rankingCounts = ref.watch(quickAddRankingProvider).value ?? {};
     final templates = ref.watch(mealTemplatesNotifierProvider).value ?? [];
+    final recipes = ref.watch(recipesNotifierProvider).value ?? [];
 
     return pantryAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -859,6 +951,28 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
                         onTap: () => _applyTemplate(templates[i]),
                         onLongPress:
                             () => _showTemplateOptions(templates[i], foods),
+                      ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+
+            // Saved recipes — tap to log exactly 1 serving of the dish
+            if (recipes.isNotEmpty) ...[
+              Text('Your recipes', style: AppTextStyles.labelSmall),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 64,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recipes.length,
+                  separatorBuilder:
+                      (_, _) => const SizedBox(width: AppSpacing.sm),
+                  itemBuilder:
+                      (ctx, i) => _RecipeChip(
+                        recipe: recipes[i],
+                        onTap: () => _logRecipeServing(recipes[i]),
+                        onLongPress: () => _showRecipeOptions(recipes[i]),
                       ),
                 ),
               ),
@@ -1105,6 +1219,92 @@ class _TemplateChip extends StatelessWidget {
                     ),
                     Text(
                       '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.terracotta,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Saved recipe chip — tap logs exactly 1 serving, long-press for edit/delete.
+// Same visual language as _TemplateChip, distinct icon since the tap
+// semantics differ (log-1-serving vs. replay-a-whole-meal).
+// ---------------------------------------------------------------------------
+
+class _RecipeChip extends StatelessWidget {
+  final RecipeWithSteps recipe;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _RecipeChip({
+    required this.recipe,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final totalMinutes =
+        (recipe.recipe.prepTimeMinutes ?? 0) +
+        (recipe.recipe.cookTimeMinutes ?? 0);
+    final subtitle =
+        recipe.recipe.pantryFoodId == null
+            ? 'Add ingredients'
+            : totalMinutes > 0
+            ? '$totalMinutes min'
+            : '${recipe.steps.length} ${recipe.steps.length == 1 ? 'step' : 'steps'}';
+
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: AppGlass.card(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        borderRadius: AppRadius.lgAll,
+        child: SizedBox(
+          width: 140,
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.terracotta.withValues(alpha: 0.15),
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: const Icon(
+                  Icons.menu_book_outlined,
+                  size: 14,
+                  color: AppColors.terracotta,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      recipe.recipe.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      subtitle,
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.terracotta,
                       ),
