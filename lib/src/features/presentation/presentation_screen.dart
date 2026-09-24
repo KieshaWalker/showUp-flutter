@@ -139,17 +139,19 @@ class _PresentationScreenState extends ConsumerState<PresentationScreen> {
               IconButton(
                 icon: const Icon(Icons.groups_outlined),
                 tooltip: 'Community',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CommunityScreen()),
-                ),
+                onPressed:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CommunityScreen(),
+                      ),
+                    ),
               ),
               IconButton(
                 icon: appTourTarget(
                   key: settingsIconKey,
                   title: 'Settings',
-                  description:
-                      'Manage your profile, account, and preferences.',
+                  description: 'Manage your profile, account, and preferences.',
                   child: const Icon(Icons.settings_outlined),
                 ),
                 tooltip: 'Settings',
@@ -394,8 +396,10 @@ class _HeroCardState extends ConsumerState<_HeroCard>
     final habitPct = habitPctForDay(habits);
 
     final calories = nutrition?.totalCalories ?? 0.0;
-    final calGoal = (nutrition?.goals?.calories ?? NutritionRDA.calories)
-        .clamp(1.0, double.infinity);
+    final calGoal = (nutrition?.goals?.calories ?? NutritionRDA.calories).clamp(
+      1.0,
+      double.infinity,
+    );
     final rawCalPct = (calories / calGoal).clamp(0.0, 1.0);
     // Paced against the waking window so being at the expected pace (e.g.
     // 30% of the goal 30% through the day) reads as fully on-track, not a
@@ -420,7 +424,8 @@ class _HeroCardState extends ConsumerState<_HeroCard>
       nutrition?.goals?.waterMl,
     );
 
-    final score = combineScore(
+    final score =
+        combineScore(
           habitPct: habitPct,
           nutritionPct: calPct,
           overconsumptionPts: overPenalty,
@@ -933,13 +938,12 @@ class _QuickAddSectionState extends ConsumerState<_QuickAddSection> {
                   // squeezes each chip's cell far below the fixed 110px
                   // width the chip's internal layout assumes, which is
                   // what caused the RenderFlex overflow errors.
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: AppSpacing.sm,
-                        crossAxisSpacing: AppSpacing.sm,
-                        childAspectRatio: 96 / 142,
-                      ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 96 / 142,
+                  ),
                   itemBuilder:
                       (ctx, i) => _QuickAddChip(
                         food: filtered[i],
@@ -1117,9 +1121,8 @@ class _TemplateChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Edit template sheet — rename a template and remove items from it. There's
-// no add-item flow here; a template's items are only ever seeded by
-// "Save as template" on a real meal (see nutrition_screen.dart).
+// Edit template sheet — rename a template, remove items, or add new ones
+// (pantry-linked or manual) via _AddTemplateItemSheet below.
 // ---------------------------------------------------------------------------
 
 class _EditTemplateSheet extends ConsumerStatefulWidget {
@@ -1132,13 +1135,16 @@ class _EditTemplateSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_EditTemplateSheet> createState() =>
-      _EditTemplateSheetState();
+  ConsumerState<_EditTemplateSheet> createState() => _EditTemplateSheetState();
 }
 
 class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
   late final TextEditingController _nameController;
-  late final List<MealTemplateItem> _items;
+  late final List<MealTemplateItemInput> _items;
+  // Newly-added pantry items aren't in widget.pantryFoodsById (that map is
+  // built once, before this sheet opens) — track their names separately so
+  // _itemName can resolve them without a lookup.
+  final Map<String, String> _addedPantryFoodNames = {};
   bool _saving = false;
 
   @override
@@ -1147,7 +1153,10 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
     _nameController = TextEditingController(
       text: widget.template.template.name,
     );
-    _items = List.of(widget.template.items);
+    _items = [
+      for (final row in widget.template.items)
+        MealTemplateItemInput.fromRow(row),
+    ];
   }
 
   @override
@@ -1156,15 +1165,16 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
     super.dispose();
   }
 
-  String _itemName(MealTemplateItem item) {
+  String _itemName(MealTemplateItemInput item) {
     if (item.pantryFoodId != null) {
       return widget.pantryFoodsById[item.pantryFoodId]?.name ??
+          _addedPantryFoodNames[item.pantryFoodId] ??
           'Deleted food';
     }
     return item.name ?? 'Food';
   }
 
-  String _itemSubtitle(MealTemplateItem item) {
+  String _itemSubtitle(MealTemplateItemInput item) {
     if (item.pantryFoodId != null) {
       final servings = item.servings;
       final label =
@@ -1174,6 +1184,23 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
       return '$label ${servings == 1 ? 'serving' : 'servings'}';
     }
     return '${(item.calories ?? 0).round()} cal';
+  }
+
+  Future<void> _addItem() async {
+    final pantryFoods = ref.read(pantryNotifierProvider).value ?? [];
+    final result = await showModalBottomSheet<_AddedTemplateItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AddTemplateItemSheet(pantryFoods: pantryFoods),
+    );
+    if (result == null) return;
+    setState(() {
+      _items.add(result.item);
+      if (result.item.pantryFoodId != null) {
+        _addedPantryFoodNames[result.item.pantryFoodId!] = result.foodName;
+      }
+    });
   }
 
   Future<void> _save() async {
@@ -1186,9 +1213,7 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
         .updateTemplate(
           templateId: widget.template.template.id,
           name: name,
-          items: [
-            for (final item in _items) MealTemplateItemInput.fromRow(item),
-          ],
+          items: _items,
         );
 
     if (!mounted) return;
@@ -1247,7 +1272,13 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
                 },
               ),
             ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
+          TextButton.icon(
+            onPressed: _addItem,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add item'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -1262,6 +1293,397 @@ class _EditTemplateSheetState extends ConsumerState<_EditTemplateSheet> {
                       : const Text('Save'),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Result of [_AddTemplateItemSheet] — the item plus, for pantry-linked
+/// picks, the food's display name (so the edit sheet can show it without a
+/// pantryFoodsById lookup, since a just-added item's food may not be in that
+/// map if it was built before this pick).
+class _AddedTemplateItem {
+  final MealTemplateItemInput item;
+  final String foodName;
+
+  const _AddedTemplateItem({required this.item, required this.foodName});
+}
+
+// ---------------------------------------------------------------------------
+// Add template item sheet — pantry search or manual entry, mirroring
+// nutrition_screen.dart's _AddFoodSheet, but returns the picked item instead
+// of writing straight to a meal (the edit sheet holds it locally until Save).
+// ---------------------------------------------------------------------------
+
+class _AddTemplateItemSheet extends StatefulWidget {
+  final List<PantryFood> pantryFoods;
+
+  const _AddTemplateItemSheet({required this.pantryFoods});
+
+  @override
+  State<_AddTemplateItemSheet> createState() => _AddTemplateItemSheetState();
+}
+
+class _AddTemplateItemSheetState extends State<_AddTemplateItemSheet>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab;
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 2, vsync: this);
+    _searchController.addListener(
+      () => setState(() => _query = _searchController.text.toLowerCase()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPantryFood(PantryFood food) async {
+    double servings = 1.0;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) => StatefulBuilder(
+            builder:
+                (_, setSt) => AlertDialog(
+                  title: Text(food.name),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(food.servingLabel, style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed:
+                                servings > 0.5
+                                    ? () => setSt(
+                                      () =>
+                                          servings = double.parse(
+                                            (servings - 0.5).toStringAsFixed(1),
+                                          ),
+                                    )
+                                    : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                            tooltip: 'Fewer servings',
+                          ),
+                          SizedBox(
+                            width: 56,
+                            child: Center(
+                              child: Text(
+                                '${servings.toStringAsFixed(servings == servings.truncateToDouble() ? 0 : 1)}×',
+                                style: AppTextStyles.titleLarge,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed:
+                                () => setSt(
+                                  () =>
+                                      servings = double.parse(
+                                        (servings + 0.5).toStringAsFixed(1),
+                                      ),
+                                ),
+                            icon: const Icon(Icons.add_circle_outline),
+                            tooltip: 'More servings',
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${(food.calories * servings).toInt()} kcal',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: AppColors.khaki,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    Navigator.pop(
+      context,
+      _AddedTemplateItem(
+        item: MealTemplateItemInput.pantry(
+          pantryFoodId: food.id,
+          servings: servings,
+        ),
+        foodName: food.name,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final results =
+        _query.isEmpty
+            ? widget.pantryFoods
+            : widget.pantryFoods
+                .where((f) => f.name.toLowerCase().contains(_query))
+                .toList();
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.92,
+      builder:
+          (_, scrollCtrl) => Container(
+            decoration: AppGlass.modal(),
+            child: Column(
+              children: [
+                const AppDragHandle(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Add Item', style: AppTextStyles.headlineMedium),
+                      const SizedBox(height: AppSpacing.sm),
+                      TabBar(
+                        controller: _tab,
+                        tabs: const [Tab(text: 'Pantry'), Tab(text: 'Manual')],
+                        labelColor: AppColors.terracotta,
+                        unselectedLabelColor: AppColors.textOnDarkTertiary,
+                        indicatorColor: AppColors.terracotta,
+                        dividerColor: AppColors.glassBorder,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tab,
+                    children: [
+                      Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.lg,
+                              AppSpacing.sm,
+                              AppSpacing.lg,
+                              AppSpacing.sm,
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              style: AppTextStyles.bodyLarge,
+                              decoration: InputDecoration(
+                                hintText: 'Search foods...',
+                                prefixIcon: const Icon(
+                                  Icons.search_outlined,
+                                  color: AppColors.textOnDarkTertiary,
+                                ),
+                                suffixIcon:
+                                    _query.isNotEmpty
+                                        ? IconButton(
+                                          icon: const Icon(
+                                            Icons.clear,
+                                            color: AppColors.textOnDarkTertiary,
+                                          ),
+                                          tooltip: 'Clear search',
+                                          onPressed: _searchController.clear,
+                                        )
+                                        : null,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child:
+                                results.isEmpty
+                                    ? Center(
+                                      child: Text(
+                                        _query.isEmpty
+                                            ? 'Pantry is empty'
+                                            : 'No foods match "$_query"',
+                                        style: AppTextStyles.bodyMedium,
+                                      ),
+                                    )
+                                    : ListView.builder(
+                                      controller: scrollCtrl,
+                                      itemCount: results.length,
+                                      itemBuilder:
+                                          (_, i) => ListTile(
+                                            title: Text(
+                                              results[i].name,
+                                              style: AppTextStyles.bodyLarge,
+                                            ),
+                                            subtitle: Text(
+                                              '${results[i].calories.toInt()} kcal · ${results[i].servingLabel}',
+                                              style: AppTextStyles.bodyMedium,
+                                            ),
+                                            trailing: Text(
+                                              'P${results[i].protein.toInt()} C${results[i].carbs.toInt()} F${results[i].fat.toInt()}',
+                                              style: AppTextStyles.labelSmall,
+                                            ),
+                                            onTap:
+                                                () =>
+                                                    _pickPantryFood(results[i]),
+                                          ),
+                                    ),
+                          ),
+                        ],
+                      ),
+                      _ManualTemplateItemTab(scrollCtrl: scrollCtrl),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+}
+
+class _ManualTemplateItemTab extends StatefulWidget {
+  final ScrollController scrollCtrl;
+
+  const _ManualTemplateItemTab({required this.scrollCtrl});
+
+  @override
+  State<_ManualTemplateItemTab> createState() => _ManualTemplateItemTabState();
+}
+
+class _ManualTemplateItemTabState extends State<_ManualTemplateItemTab> {
+  final _nameCtrl = TextEditingController();
+  final _calCtrl = TextEditingController();
+  final _proCtrl = TextEditingController();
+  final _carbCtrl = TextEditingController();
+  final _fatCtrl = TextEditingController();
+  final _sugarCtrl = TextEditingController();
+  final _fiberCtrl = TextEditingController();
+  final _sodiumCtrl = TextEditingController();
+  final _cholesterolCtrl = TextEditingController();
+  final _potassiumCtrl = TextEditingController();
+  final _calciumCtrl = TextEditingController();
+  final _ironCtrl = TextEditingController();
+  final _vitaminACtrl = TextEditingController();
+  final _vitaminCCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _calCtrl.dispose();
+    _proCtrl.dispose();
+    _carbCtrl.dispose();
+    _fatCtrl.dispose();
+    _sugarCtrl.dispose();
+    _fiberCtrl.dispose();
+    _sodiumCtrl.dispose();
+    _cholesterolCtrl.dispose();
+    _potassiumCtrl.dispose();
+    _calciumCtrl.dispose();
+    _ironCtrl.dispose();
+    _vitaminACtrl.dispose();
+    _vitaminCCtrl.dispose();
+    super.dispose();
+  }
+
+  void _add() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    Navigator.pop(
+      context,
+      _AddedTemplateItem(
+        item: MealTemplateItemInput.manual(
+          name: name,
+          calories: double.tryParse(_calCtrl.text) ?? 0,
+          protein: double.tryParse(_proCtrl.text) ?? 0,
+          carbs: double.tryParse(_carbCtrl.text) ?? 0,
+          fat: double.tryParse(_fatCtrl.text) ?? 0,
+          sugar: double.tryParse(_sugarCtrl.text) ?? 0,
+          fiber: double.tryParse(_fiberCtrl.text) ?? 0,
+          sodium: double.tryParse(_sodiumCtrl.text) ?? 0,
+          cholesterol: double.tryParse(_cholesterolCtrl.text) ?? 0,
+          potassium: double.tryParse(_potassiumCtrl.text) ?? 0,
+          calcium: double.tryParse(_calciumCtrl.text) ?? 0,
+          iron: double.tryParse(_ironCtrl.text) ?? 0,
+          vitaminA: double.tryParse(_vitaminACtrl.text) ?? 0,
+          vitaminC: double.tryParse(_vitaminCCtrl.text) ?? 0,
+        ),
+        foodName: name,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: widget.scrollCtrl,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
+      child: Column(
+        children: [
+          NutritionFormField(ctrl: _nameCtrl, label: 'Food name', isText: true),
+          NutritionFormField(ctrl: _calCtrl, label: 'Calories', unit: 'kcal'),
+          NutritionFormField(ctrl: _proCtrl, label: 'Protein', unit: 'g'),
+          NutritionFormField(ctrl: _carbCtrl, label: 'Carbs', unit: 'g'),
+          NutritionFormField(ctrl: _fatCtrl, label: 'Fat', unit: 'g'),
+          NutritionFormField(ctrl: _sugarCtrl, label: 'Sugar', unit: 'g'),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Micronutrients (optional)',
+              style: AppTextStyles.labelSmall,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          NutritionFormField(ctrl: _fiberCtrl, label: 'Fiber', unit: 'g'),
+          NutritionFormField(ctrl: _sodiumCtrl, label: 'Sodium', unit: 'mg'),
+          NutritionFormField(
+            ctrl: _cholesterolCtrl,
+            label: 'Cholesterol',
+            unit: 'mg',
+          ),
+          NutritionFormField(
+            ctrl: _potassiumCtrl,
+            label: 'Potassium',
+            unit: 'mg',
+          ),
+          NutritionFormField(ctrl: _calciumCtrl, label: 'Calcium', unit: 'mg'),
+          NutritionFormField(ctrl: _ironCtrl, label: 'Iron', unit: 'mg'),
+          NutritionFormField(
+            ctrl: _vitaminACtrl,
+            label: 'Vitamin A',
+            unit: 'mcg',
+          ),
+          NutritionFormField(
+            ctrl: _vitaminCCtrl,
+            label: 'Vitamin C',
+            unit: 'mg',
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton(onPressed: _add, child: const Text('Add Item')),
         ],
       ),
     );
@@ -1629,7 +2051,6 @@ class _ShowFoodsToday extends ConsumerWidget {
       },
     );
   }
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -1753,15 +2174,13 @@ class _IncompleteHabitsListForDay extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: remaining.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        mainAxisSpacing: AppSpacing.sm,
-                        crossAxisSpacing: AppSpacing.sm,
-                        mainAxisExtent: 150,
-                      ),
-                  itemBuilder:
-                      (context, i) => _HabitTodayChip(h: remaining[i]),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisExtent: 150,
+                  ),
+                  itemBuilder: (context, i) => _HabitTodayChip(h: remaining[i]),
                 ),
               ],
             );
@@ -2108,4 +2527,3 @@ class _QuickCompleteHabitForDayState
     );
   }
 }
-

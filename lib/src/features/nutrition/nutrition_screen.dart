@@ -26,6 +26,9 @@
 //                                used by Quick Add (presentation_screen.dart) to
 //                                pick its implicit target meal, and by
 //                                pantry_notifier.dart's usage-frequency ranking
+//   NutritionFormField        — labeled numeric/text field used by every manual-entry
+//                                form (food macros, goals); reused by presentation_screen.dart's
+//                                template item editor
 //
 // Connections:
 //   nutrition_notifier.dart — all state + mutations
@@ -546,9 +549,7 @@ void confirmDeleteMeal(BuildContext context, WidgetRef ref, Meal meal) {
     builder:
         (ctx) => AlertDialog(
           title: const Text('Delete meal?'),
-          content: Text(
-            'Remove "${meal.name}" and all its food entries?',
-          ),
+          content: Text('Remove "${meal.name}" and all its food entries?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -557,7 +558,9 @@ void confirmDeleteMeal(BuildContext context, WidgetRef ref, Meal meal) {
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                ref.read(nutritionNotifierProvider.notifier).deleteMeal(meal.id);
+                ref
+                    .read(nutritionNotifierProvider.notifier)
+                    .deleteMeal(meal.id);
               },
               child: Text(
                 'Delete',
@@ -718,12 +721,7 @@ void showFoodNutritionDialog(BuildContext context, FoodEntry food) {
                       'mcg',
                       AppColors.vitaminAColor,
                     ),
-                    (
-                      'Vitamin C',
-                      food.vitaminC,
-                      'mg',
-                      AppColors.vitaminCColor,
-                    ),
+                    ('Vitamin C', food.vitaminC, 'mg', AppColors.vitaminCColor),
                   ],
                 ])
                   Padding(
@@ -1326,12 +1324,12 @@ class _ManualEntryTab extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _FormField(ctrl: nameCtrl, label: 'Food name', isText: true),
-          _FormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
-          _FormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
-          _FormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
-          _FormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
-          _FormField(ctrl: sugarCtrl, label: 'Sugar', unit: 'g'),
+          NutritionFormField(ctrl: nameCtrl, label: 'Food name', isText: true),
+          NutritionFormField(ctrl: calCtrl, label: 'Calories', unit: 'kcal'),
+          NutritionFormField(ctrl: proCtrl, label: 'Protein', unit: 'g'),
+          NutritionFormField(ctrl: carbCtrl, label: 'Carbs', unit: 'g'),
+          NutritionFormField(ctrl: fatCtrl, label: 'Fat', unit: 'g'),
+          NutritionFormField(ctrl: sugarCtrl, label: 'Sugar', unit: 'g'),
           const SizedBox(height: AppSpacing.sm),
           Align(
             alignment: Alignment.centerLeft,
@@ -1341,14 +1339,30 @@ class _ManualEntryTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          _FormField(ctrl: fiberCtrl, label: 'Fiber', unit: 'g'),
-          _FormField(ctrl: sodiumCtrl, label: 'Sodium', unit: 'mg'),
-          _FormField(ctrl: cholesterolCtrl, label: 'Cholesterol', unit: 'mg'),
-          _FormField(ctrl: potassiumCtrl, label: 'Potassium', unit: 'mg'),
-          _FormField(ctrl: calciumCtrl, label: 'Calcium', unit: 'mg'),
-          _FormField(ctrl: ironCtrl, label: 'Iron', unit: 'mg'),
-          _FormField(ctrl: vitaminACtrl, label: 'Vitamin A', unit: 'mcg'),
-          _FormField(ctrl: vitaminCCtrl, label: 'Vitamin C', unit: 'mg'),
+          NutritionFormField(ctrl: fiberCtrl, label: 'Fiber', unit: 'g'),
+          NutritionFormField(ctrl: sodiumCtrl, label: 'Sodium', unit: 'mg'),
+          NutritionFormField(
+            ctrl: cholesterolCtrl,
+            label: 'Cholesterol',
+            unit: 'mg',
+          ),
+          NutritionFormField(
+            ctrl: potassiumCtrl,
+            label: 'Potassium',
+            unit: 'mg',
+          ),
+          NutritionFormField(ctrl: calciumCtrl, label: 'Calcium', unit: 'mg'),
+          NutritionFormField(ctrl: ironCtrl, label: 'Iron', unit: 'mg'),
+          NutritionFormField(
+            ctrl: vitaminACtrl,
+            label: 'Vitamin A',
+            unit: 'mcg',
+          ),
+          NutritionFormField(
+            ctrl: vitaminCCtrl,
+            label: 'Vitamin C',
+            unit: 'mg',
+          ),
           const SizedBox(height: AppSpacing.lg),
           FilledButton(
             onPressed: () {
@@ -1466,31 +1480,31 @@ void _showGoalsSheet(
                 const SizedBox(height: AppSpacing.lg),
                 Text('Macronutrients', style: AppTextStyles.titleMedium),
                 const SizedBox(height: AppSpacing.sm),
-                _FormField(
+                NutritionFormField(
                   ctrl: calCtrl,
                   label: 'Calories',
                   unit: 'kcal',
                   recommended: NutritionRDA.calories,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: proCtrl,
                   label: 'Protein',
                   unit: 'g',
                   recommended: NutritionRDA.protein,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: carbCtrl,
                   label: 'Carbs',
                   unit: 'g',
                   recommended: NutritionRDA.carbs,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: fatCtrl,
                   label: 'Fat',
                   unit: 'g',
                   recommended: NutritionRDA.fat,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: waterCtrl,
                   label: 'Water',
                   unit: 'ml',
@@ -1499,49 +1513,49 @@ void _showGoalsSheet(
                 const SizedBox(height: AppSpacing.md),
                 Text('Micronutrients', style: AppTextStyles.titleMedium),
                 const SizedBox(height: AppSpacing.sm),
-                _FormField(
+                NutritionFormField(
                   ctrl: fiberCtrl,
                   label: 'Fiber',
                   unit: 'g',
                   recommended: NutritionRDA.fiber,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: sodiumCtrl,
                   label: 'Sodium',
                   unit: 'mg',
                   recommended: NutritionRDA.sodium,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: cholesterolCtrl,
                   label: 'Cholesterol',
                   unit: 'mg',
                   recommended: NutritionRDA.cholesterol,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: potassiumCtrl,
                   label: 'Potassium',
                   unit: 'mg',
                   recommended: NutritionRDA.potassium,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: calciumCtrl,
                   label: 'Calcium',
                   unit: 'mg',
                   recommended: NutritionRDA.calcium,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: ironCtrl,
                   label: 'Iron',
                   unit: 'mg',
                   recommended: NutritionRDA.iron,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: vitaminACtrl,
                   label: 'Vitamin A',
                   unit: 'mcg',
                   recommended: NutritionRDA.vitaminA,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: vitaminCCtrl,
                   label: 'Vitamin C',
                   unit: 'mg',
@@ -1550,13 +1564,13 @@ void _showGoalsSheet(
                 const SizedBox(height: AppSpacing.md),
                 Text('Weight', style: AppTextStyles.titleMedium),
                 const SizedBox(height: AppSpacing.sm),
-                _FormField(
+                NutritionFormField(
                   ctrl: curWeightCtrl,
                   label: 'Current Weight',
                   unit: 'kg',
                   decimal: true,
                 ),
-                _FormField(
+                NutritionFormField(
                   ctrl: tgtWeightCtrl,
                   label: 'Target Weight',
                   unit: 'kg',
@@ -1577,7 +1591,8 @@ void _showGoalsSheet(
                           carbs:
                               double.tryParse(carbCtrl.text) ??
                               NutritionRDA.carbs,
-                          fat: double.tryParse(fatCtrl.text) ?? NutritionRDA.fat,
+                          fat:
+                              double.tryParse(fatCtrl.text) ?? NutritionRDA.fat,
                           waterMl:
                               double.tryParse(waterCtrl.text) ??
                               NutritionRDA.waterMl,
@@ -1623,8 +1638,9 @@ void _showGoalsSheet(
 // Shared helpers
 // =============================================================================
 
-class _FormField extends StatelessWidget {
-  const _FormField({
+class NutritionFormField extends StatelessWidget {
+  const NutritionFormField({
+    super.key,
     required this.ctrl,
     required this.label,
     this.unit,
@@ -1765,50 +1781,50 @@ class NutritionMacroRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        Expanded(
-          child: NutritionMacroPill(
-            label: 'Protein',
-            current: nutrition.totalProtein,
-            goal: goals?.protein ?? NutritionRDA.protein,
-            unit: 'g',
-            color: AppColors.proteinColor,
+          Expanded(
+            child: NutritionMacroPill(
+              label: 'Protein',
+              current: nutrition.totalProtein,
+              goal: goals?.protein ?? NutritionRDA.protein,
+              unit: 'g',
+              color: AppColors.proteinColor,
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: NutritionMacroPill(
-            label: 'Carbs',
-            current: nutrition.totalCarbs,
-            goal: goals?.carbs ?? NutritionRDA.carbs,
-            unit: 'g',
-            color: AppColors.carbColor,
-            flagWhenOver: true,
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: NutritionMacroPill(
+              label: 'Carbs',
+              current: nutrition.totalCarbs,
+              goal: goals?.carbs ?? NutritionRDA.carbs,
+              unit: 'g',
+              color: AppColors.carbColor,
+              flagWhenOver: true,
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: NutritionMacroPill(
-            label: 'Fat',
-            current: nutrition.totalFat,
-            goal: goals?.fat ?? NutritionRDA.fat,
-            unit: 'g',
-            color: AppColors.fatColor,
-            flagWhenOver: true,
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: NutritionMacroPill(
+              label: 'Fat',
+              current: nutrition.totalFat,
+              goal: goals?.fat ?? NutritionRDA.fat,
+              unit: 'g',
+              color: AppColors.fatColor,
+              flagWhenOver: true,
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: NutritionMacroPill(
-            label: 'Sugar',
-            current: nutrition.totalSugar,
-            // No user-configurable goal for sugar yet — use the common
-            // recommended daily added-sugar limit as the default target.
-            goal: NutritionRDA.sugar,
-            unit: 'g',
-            color: AppColors.sugarColor,
-            flagWhenOver: true,
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: NutritionMacroPill(
+              label: 'Sugar',
+              current: nutrition.totalSugar,
+              // No user-configurable goal for sugar yet — use the common
+              // recommended daily added-sugar limit as the default target.
+              goal: NutritionRDA.sugar,
+              unit: 'g',
+              color: AppColors.sugarColor,
+              flagWhenOver: true,
+            ),
           ),
-        ),
         ],
       ),
     );
